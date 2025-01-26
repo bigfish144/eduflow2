@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>素材生成-01</title>
+    <link rel="stylesheet" href="css/create_material.css">
+    <style>
+        .slider-container {
+            position: relative;
+            width: 100%;
+        }
+
+        #weight-value {
+            position: absolute;
+            top: -20px; /* 根据需要调整 */
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 14px;
+            pointer-events: none; /* 确保不会干扰滑块操作 */
+            z-index: 10; /* 确保 weight-value 在其他元素之上 */
+        }
+
+        .preview-image.selected {
+            border: 2px solid blue;
+        }
+
+        .file-upload-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-upload {
+            width: 260px;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 20px;
+            background: #4F4C64;
+            border-radius: 5px;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        #add-btn {
+            width: 16px;
+            height: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <button id="back-to-main-btn" class="back-button">
+                <img src="images/btn_arrow-right.png" alt="返回" class="back-icon">
+                返回工作台
+            </button>
+            <p class="center-text">素材生成</p>
+        </header>
+        <div>
+            <div class="tip-text">
+                <span class="green-dot"></span>
+                <p id="tip-text">文案：想象一下，如果没有重力会是什么样子？我们的地球将无法吸引物体，你脚下的地面也会消失，而我们自己可能会漂浮在太空中。</p>
+            </div>
+        </div>
+        <main>
+            <div class="form-section" id="basic-content">
+                <label for="description" class="first-label">素材描述</label>
+                <textarea id="description" placeholder="太空中有很多星球"></textarea>
+                <label for="style">选择基础风格</label>
+                <div class="select-models">
+                    <select id="style">
+                        <option value="3D卡通">3D卡通</option>
+                        <option value="写实">写实</option>
+                        <option value="抽象">抽象</option>
+                    </select>
+                    <select id="model">
+                        <option value="微调模型（可选）">微调模型（可选）</option>
+                        <option value="基础模型">基础模型</option>
+                    </select>
+                </div>
+            
+                <label>图片尺寸</label>
+                <div class="select-size-container">
+                    <div class="set-width">
+                        <span class="input-label">W</span>
+                        <input type="number" id="width" placeholder="宽度" value="512"> 
+                    </div>
+                    <div class="set-height">
+                        <span class="input-label">H</span>
+                        <input type="number" id="height" placeholder="高度" value="512"> 
+                    </div>
+                    <button class="set-video-size-btn">视频尺寸</button>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="transparent-background" checked>
+                        <label for="transparent-background">透明背景</label>
+                    </div>
+                </div>
+                <div class="checkbox-group" id="video-checkbox">
+                    <input type="checkbox" id="enable-animation">
+                    <label for="enable-animation">启用动画</label>
+                </div>
+            
+                <div id="animation-settings">
+                    <div class="animation-settings-container">
+                        <div class="select-fps">
+                            <label for="frame-rate">帧率：</label>
+                            <input type="number" id="frame-rate" value="8">
+                        </div>
+                        <div class="select-frame-count">
+                            <label for="frame-count">帧数：</label>
+                            <input type="number" id="frame-count" value="24">
+                        </div>
+                        <span class="predict-time">预估时长: 3s</span>
+                    </div>
+                    <label for="animation-description">动画描述：</label>
+                    <textarea id="animation-description" placeholder="星球缓慢旋转"></textarea>
+                </div>
+                <button class="advanced-control-btn">高级控制</button>
+                <button class="generate-button" onclick="generateContent()">生成</button>
+            </div>
+            
+            <div id="advanced-content" style="display: none;" class="form-section">
+                <div class="upload-and-preview-container">
+                    <div class="file-upload-container">
+                        <label>导入参考图</label>
+                        <input type="file" id="file-input" accept="image/*" style="display: none;">
+                        <button class="file-upload">
+                            <img src="images/btn_add.png" alt="添加" id="add-btn">
+                            <label for="file-input" class="upload-label">点击上传</label>
+                        </button>
+                        <img id="preview-upload-image" src="#" alt="Image Preview" style="display:none; max-width: 280px; margin-top: 10px;">
+                    </div>
+                    <div class="preview-container">
+                        <label>预处理预览</label>
+                        <div class="preview-image">
+                            <img id="preview-image" alt="预览图像" style="display: none;" />
+                            <p id="no-preview" style="color: gray;">暂无预览图像</p>
+                        </div>
+                    </div>
+                </div>
+                <label>选择参考维度</label>
+                <div class="reference-dimensions">
+                    <button class="dimension-btn" data-dimension="edge-outline">边缘轮廓</button>
+                    <button class="dimension-btn" data-dimension="character">景深</button>
+                    <button class="dimension-btn" data-dimension="pose">人物姿势</button>
+                    <button class="dimension-btn" data-dimension="style">风格</button>
+                    <button class="dimension-btn" data-dimension="character">角色特征</button>
+                </div>
+                <label>选择模型 (可选)</label>
+                <select id="model-select">
+                    <option value="lineart.safetensor">lineart.safetensor</option>
+                    <option value="model2">模型2</option>
+                    <option value="model3">模型3</option>
+                </select>
+                <label>参考权重</label>
+                <span id="weight-value">0.3</span>
+                <div class="slider-container-all">
+                    <span>0</span>
+                    <div class="slider-container">
+                        <div class="slider-track"></div>
+                        <input type="range" id="weight-slider" min="0" max="1" step="0.1" value="0.3" />
+                    </div>
+                    <span>1</span>
+                </div>
+                <button id="advanced-save-btn">保存</button>
+                <button id="advanced-back-btn" class="secondary-btn">返回</button>
+            </div>            
+
+            <div class="preview-section">
+                <p>效果图预览</p>
+                <div class="preview-grid">
+                    <div class="preview-image">
+                        <img src="images/gen-image.png" alt="效果图" class="preview-image-img">
+                    </div>
+                    <div class="preview-image">
+                        <img src="images/gen-image.png" alt="效果图" class="preview-image-img">
+                    </div>
+                    <div class="preview-image">
+                        <img src="images/gen-image.png" alt="效果图" class="preview-image-img">
+                    </div>
+                    <div class="preview-image">
+                        <img src="images/gen-image.png" alt="效果图" class="preview-image-img">
+                    </div>
+                </div>
+
+                <p>视频预览</p>
+                <div class="preview-grid">
+                    <div class="preview-video">
+                        <video src="data/color.mp4"></video>
+                    </div>
+                    <div class="preview-video">
+                        <video src="data/color.mp4"></video>
+                    </div>
+                    <div class="preview-video">
+                        <video src="data/color.mp4"></video>
+                    </div>
+                    <div class="preview-video">
+                        <video src="data/color.mp4"></video>
+                    </div>
+                </div>
+
+                <button class="apply-button">应用并返回</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 返回mainboard
+            const backToMainBtn = document.getElementById('back-to-main-btn');
+            backToMainBtn.addEventListener('click', function() {
+                window.location.href = 'mainboard.html';
+            });
+
+            // 上传参考图
+            document.querySelector('.file-upload').addEventListener('click', function() {
+                document.getElementById('file-input').click();
+
+            });
+            document.getElementById('file-input').addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    // 处理文件选择后的逻辑
+                    console.log('文件已选择:', this.files[0].name);
+
+                    // 显示预览图像
+                    const previewImage = document.getElementById('preview-upload-image');
+                    previewImage.src = URL.createObjectURL(this.files[0]);
+                    previewImage.style.display = 'block';
+                    document.querySelector('.file-upload').style.display = 'none';
+                }
+            });
+            
+            // 为 advanced-save-btn 添加点击事件监听器
+            const advancedSaveBtn = document.getElementById('advanced-save-btn');
+            advancedSaveBtn.addEventListener('click', function() {
+                const advancedContent = document.getElementById('advanced-content');
+                const basicContent = document.getElementById('basic-content');
+                advancedContent.style.display = 'none';
+                basicContent.style.display = 'block';
+            });
+
+            // 选择维度
+            const dimensionButtons = document.querySelectorAll('.dimension-btn');
+            dimensionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    dimensionButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            });
+
+            // 开启关闭动画设置
+            const enableAnimationCheckbox = document.getElementById('enable-animation');
+            const animationSettings = document.getElementById('animation-settings');
+            animationSettings.style.display = 'none';
+            enableAnimationCheckbox.addEventListener('change', function() {
+                if (enableAnimationCheckbox.checked) {
+                    animationSettings.style.display = 'block'; // 显示 animation-settings
+                } else {
+                    animationSettings.style.display = 'none'; // 隐藏 animation-settings
+                }
+            });
+
+            // 高级设置
+            const advancedControlBtn = document.querySelector('.advanced-control-btn');
+            const backToBasicBtn = document.getElementById('advanced-back-btn'); // 修改选择器为 ID
+            const basicContent = document.getElementById('basic-content');
+            const advancedContent = document.getElementById('advanced-content');
+            const previewUploadImage = document.getElementById('preview-upload-image');
+            const fileInput = document.getElementById('file-input');
+            advancedControlBtn.addEventListener('click', function() {
+                basicContent.style.display = 'none'; // 隐藏基本设置
+                advancedContent.style.display = 'block'; // 显示高级设置
+                updateSliderTrack(); 
+            });
+            backToBasicBtn.addEventListener('click', function() {
+                // 隐藏高级设置面板
+                advancedContent.style.display = 'none';
+                // 显示基本设置面板
+                basicContent.style.display = 'block';
+                
+                // 重置上传的图片
+                previewUploadImage.src = '#'; // 清空图片源
+                previewUploadImage.style.display = 'none'; // 隐藏图片预览
+                fileInput.value = ''; // 重置文件输入框
+                document.querySelector('label[for="file-input"]').style.display = 'flex'; // 显示上传标签
+                document.querySelector('.file-upload').style.display = 'flex'; // 重新显示上传按钮
+            });
+
+            // 权重进度条
+            const slider = document.getElementById('weight-slider');
+            const weightValue = document.getElementById('weight-value');
+            const sliderTrack = document.querySelector('.slider-track');
+            function updateSliderTrack() {
+                const value = slider.value;
+                const width = (value * 100) + '%';
+                sliderTrack.style.width = width;
+                weightValue.textContent = slider.value;
+                // 计算 weight-value 的位置
+                const sliderRect = slider.getBoundingClientRect();
+                const sliderWidth = sliderRect.width;
+                const valuePosition = (value / slider.max) * sliderWidth;
+                weightValue.style.left = (valuePosition + 160) + 'px';
+            }
+            slider.addEventListener('input', updateSliderTrack);
+            updateSliderTrack(); 
+
+            // 选择图片
+            const previewImages = document.querySelectorAll('.preview-image-img');
+            previewImages.forEach(image => {
+                image.addEventListener('click', function() {
+                    // 移除其他图片的选中状态
+                    previewImages.forEach(img => img.classList.remove('selected'));
+
+                    // 为当前点击的图片添加选中状态
+                    this.classList.add('selected');
+                });
+            });
+
+            // 提交生成
+            function generateContent() {
+                const description = document.getElementById('description').value;
+                const style = document.getElementById('style').value;
+                const model = document.getElementById('model').value;
+                const width = document.getElementById('width').value;
+                const height = document.getElementById('height').value;
+                const transparentBackground = document.getElementById('transparent-background').checked;
+                const enableAnimation = document.getElementById('enable-animation').checked;
+                const frameRate = document.getElementById('frame-rate').value;
+                const frameCount = document.getElementById('frame-count').value;
+                const animationDescription = document.getElementById('animation-description').value;
+                console.log('Generating with the following parameters:');
+                console.log({
+                    description,
+                    style,
+                    model,
+                    width,
+                    height,
+                    transparentBackground,
+                    enableAnimation,
+                    frameRate,
+                    frameCount,
+                    animationDescription
+                });
+                alert('生成任务已提交！');
+            }
+        });
+    </script>
+</body>
+</html>

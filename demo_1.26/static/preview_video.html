@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频生成界面</title>
+    <link rel="stylesheet" href="css/preview_video.css">
+</head>
+<body>
+    <!-- 新增的顶部导航栏 -->
+    <nav class="top-nav">
+      <div class="left-section">
+        <img src="images/LOGO.png" alt="Logo" class="logo">
+        <button class="menu-btn">菜单</button>
+      </div>
+      <div class="nav-center">
+        <p class="center-text">工作台</p>
+      </div>
+      <div class="right-section">
+        <button class="output-btn" id="output-btn">
+            导出
+            <img src="images/goahead-btn.png" alt="预览图标" class="output-icon">
+        </button>
+      </div>
+    </nav>
+
+    <div class="container">
+        <div class="content-wrapper">
+            <div class="list-left-head">
+                <p>镜头列表</p>
+            </div>
+            <!-- 左侧镜头列表 -->
+            <div class="left-panel">
+                <div class="camera-item">
+                    <span class="camera-number">1</span>
+                    <img src="images/sceneimg.png" alt="1" class="sceneimg">
+                    <p>想象一下，如果没有重力会...</p>
+                </div>
+                <div class="camera-item">
+                    <span class="camera-number">2</span>
+                    <img src="images/sceneimg.png" alt="1" class="sceneimg">
+                    <p>想象一下，如果没有重力会...</p>
+                </div>
+                <div class="camera-item">
+                    <span class="camera-number">3</span>
+                    <img src="images/sceneimg.png" alt="1" class="sceneimg">
+                    <p>想象一下，如果没有重力会...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中部 -->
+        <div class="main-panel">
+            <!-- 视频面板 -->
+            <div class="vieo-head">
+                <p>播放器</p>
+                <button id="video-setting">
+                    <img src="images/btn_videoset.png" alt="设置">
+                </button>
+            </div>
+            <div class="video-player-panel">
+                <div class="video-container">
+                    <video class="this-video" id="thispape-video">
+                        <source src="data/color.mp4" type="video/mp4">
+                        您的浏览器不支持 video 标签。
+                    </video>
+                </div>
+                <div class="player-controls">
+                    <div class="time-display">
+                        <span id="currentTime">00:00:00.00</span> / <span id="duration">00:00:00.00</span>
+                    </div>
+                    <div class="play-button-container">
+                        <button id="play-this-video">
+                            <img src="images/btn_play.png" alt="播放" id="play-icon">
+                        </button>
+                    </div>
+                    <div class="ratio-button-container">
+                        <button id="ratio-button">比例</button>
+                    </div>    
+                </div>
+                <div class="part-video-edit-panel">
+                    <div class="part-video-edit-head">
+                        <button class="delete-btn">
+                            <img src="images/btn_delete_red.png" alt="删除" id="delete-btn">
+                        </button>
+                        <button class="adjust-btn">
+                            <img src="images/btn_adjust.png" alt="调节" id="adjust-btn">
+                        </button>
+                    </div>
+                    <div class="part-video-edit-content">
+                        <div class="video-tag-container">
+                            <div class="video-tag">
+                                <p>视频</p>
+                            </div>
+                            <div class="bgm-tag">
+                                <p>音乐</p>
+                            </div>
+                            <div class="audio-tag">
+                                <p>音效</p>
+                            </div>
+                        </div>
+                        <div class="track-container">
+                            <div class="video-track-container">
+                                <div class="video-track-item">
+                                    <p>01</p>
+                                </div>
+                                <div class="video-track-item">
+                                    <p>02</p>
+                                </div>
+                            </div>               
+                            <div class="bgm-track-container">
+                                <div class="bgm-track-item">
+                                    <p>01</p>
+                                </div>
+                            </div>
+                            <div class="audio-track-container">
+                                <div class="audio-track-item">
+                                    <p>01</p>
+                                </div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="slider"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+           
+            <div class="afterprocess-panel">
+                 <!-- 音乐生成面板-->
+                <div class="musicgen-panel">
+                    <div class="text-head">
+                        <p>音乐/音效生成</p>
+                    </div>
+                    <div class="afterprocess-content">
+                        <select id="audio-type">
+                            <option value="bgm">背景音乐</option>
+                            <option value="sound">音效</option>
+                        </select>
+                        <textarea placeholder="请输入音乐描述词" id="show-text-panel"></textarea>
+                        <div class="music-gen-detail-panel">
+                            <div class="music-gen-detail">
+                                <label for="music-gen-time">时长</label>
+                                <input type="text" name="short-input" id="music-gen-time">
+                                <span>s</span>
+                            </div>
+                            <div class="music-gen-detail" id="music-gen-loop-container">
+                                <input type="checkbox" id="music-gen-loop">
+                                <label for="music-gen-loop" id="music-gen-loop-label">循环播放</label>
+                            </div>
+                        </div>
+                        <div class="music-gen-preview-panel" id="audio-material-1">
+                            <div id="audio-player-1" class="audio-player">
+                                <button id="audio-play-pause-btn-1" class="audio-play-pause-btn">
+                                    <img src="images/btn_play.png" alt="播放">
+                                </button>
+                                <div id="audio-progress-container-1" class="audio-progress-container">
+                                    <div id="audio-progress-1" class="audio-progress"></div>
+                                </div>
+                            </div>
+                            <audio id="gen-audio-1">
+                                <source src="data/audio_test.wav" type="audio/wav">
+                                您的浏览器不支持 audio 元素。
+                            </audio>
+                        </div>
+                        <div class="process-btn-container">
+                            <button class="process-grey-btn">生成</button>
+                            <button class="process-main-btn">添加</button>
+                        </div>  
+                    </div>
+                </div>
+                <div class="after-effect-panel">
+                     <!-- 后期滤镜面板-->
+                    <div class="text-head">
+                        <p>后期滤镜</p>
+                    </div>
+                    <div class="afterprocess-content">
+                        <div class="effects-container">
+                            <div class="effects-item">
+                                <img src="images/sceneimg.png" alt="effect" class="effect-img">
+                                <p>效果1</p>
+                            </div>
+                            <div class="effects-item">
+                                <img src="images/sceneimg.png" alt="effect" class="effect-img">
+                                <p>效果2</p>
+                            </div>
+                            <div class="effects-item">
+                                <img src="images/sceneimg.png" alt="effect" class="effect-img">
+                                <p>效果3</p>
+                            </div>
+                            <div class="effects-item">
+                                <img src="images/sceneimg.png" alt="effect" class="effect-img">
+                                <p>效果4</p>
+                            </div>
+                            <div class="effects-item">
+                                <img src="images/sceneimg.png" alt="effect" class="effect-img">
+                                <p>效果5</p>
+                            </div>
+                            <div class="effects-item">
+                                <img src="images/sceneimg.png" alt="effect" class="effect-img">
+                                <p>效果6</p>
+                            </div>
+                        </div>
+                        <div class="process-btn-container">
+                            <button class="process-grey-btn">取消</button>
+                            <button class="process-main-btn">添加</button>
+                        </div>  
+                    </div>
+                </div>
+            </div>
+         
+        </div>
+        
+        <div class="content-wrapper">
+            <!-- 风格转绘面板 --> 
+            <div class="style-tarns-panel">
+                <div class="style-list-head">
+                    <p>风格转绘</p>
+                </div>
+
+                <div class="style-container" >
+                    <div class="style-content">
+                        <p>风格描述</p>
+                        <textarea class="style-text" placeholder="油画风格、莫奈、印象派"></textarea>
+                        <p>上传参考</p>
+                        <div class="file-upload-container">
+                            <input type="file" id="file-input" accept="image/*" style="display: none;">
+                            <button class="file-upload" id="file-upload-btn">
+                                <img src="images/btn_add.png" alt="添加" id="add-btn">
+                                <label for="file-input" class="upload-label">点击上传</label>
+                            </button>
+                            <img id="preview-upload-image" src="#" alt="Image Preview" style="display:none; margin-top: 10px;">
+                            <button id="style-preview-btn" class="primary-btn" style="display:none;">风格预览</button>
+                        </div>
+                        <p>应用范围</p>
+                        <select id="style-range">
+                            <option value="style-thispage">当前页面</option>
+                            <option value="style-allpage">所有页面</option>
+                        </select>
+                    </div>
+                    <div class="apply-style-container">
+                        <button class="apply-style-btn">应用风格</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 遮罩层 -->
+        <div class="overlay" id="overlay"></div>
+         <!-- 新面板 -->
+         <div class="export-panel" id="export-panel">
+            
+            <div class="export-head">
+                <button id="close-export-panel">
+                    <img src="images/btn_back.png" alt="关闭">
+                </button>
+                <p>导出设置</p>
+            </div>
+            <div class="export-content">
+                <div class="export-item">
+                    <p class="export-label">视频名称</p>
+                    <input type="text" class="export-input" id="export-name" placeholder="请输入视频名称"></input>
+                </div>
+                <div class="export-item">
+                    <p class="export-label">保存路径</p>
+                    <input type="text" class="export-input" id="export-name" placeholder="请输入保存路径"></input>
+                </div>
+                <div class="export-item">
+                    <p class="export-label">导出格式</p>
+                    <select id="export-format">
+                        <option value="mp4">MP4</option>
+                        <option value="avi">AVI</option>
+                        <option value="mov">MOV</option>
+                    </select>
+                </div>
+                <div class="export-item">
+                    <p class="export-label">视频分辨率</p>
+                    <select id="export-resolution">
+                        <option value="480p">480p</option>
+                        <option value="720">720p</option>
+                        <option value="1080p">1080p</option>
+                    </select>
+                </div>
+                <div class="export-item" id="srt-output-container">
+                    <input type="checkbox" id="srt-output">
+                    <label for="srt-output" id="srt-output-label" class="export-label">循环播放</label>
+                </div>
+                <div class="export-item" id="audio-output-container">
+                    <input type="checkbox" id="audio-output">
+                    <label for="audio-output" id="audio-output-label" class="export-label">音频导出</label>
+                </div>
+                <button class="process-main-btn" id="export-button">导出</button>
+                
+            </div>
+        </div>
+    </div> 
+    <script>
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            //进度条滑动
+            const panel = document.querySelector('.track-container');
+            const slider = document.querySelector('.slider');
+
+            if (panel && slider) {
+                let isDragging = false;
+                let initialX;
+                let sliderOffsetLeft;
+                const panelWidth = panel.offsetWidth;
+                slider.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    initialX = e.clientX;
+                    sliderOffsetLeft = slider.offsetLeft;
+                    e.preventDefault();
+                });
+                document.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    const dx = e.clientX - initialX;
+                    let newLeft = sliderOffsetLeft + dx;
+                    // 确保滑块不超出 panel 的范围
+                    if (newLeft < 0) newLeft = 0;
+                    if (newLeft > panelWidth - slider.offsetWidth) newLeft = panelWidth - slider.offsetWidth;
+                    slider.style.left = `${newLeft}px`;
+                });
+                document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+            }
+            //选择滤镜
+            const effectItems = document.querySelectorAll('.effects-item');
+            effectItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // 移除所有选中项的 selected 类
+                    effectItems.forEach(otherItem => {
+                        const img = otherItem.querySelector('.effect-img');
+                        if (img) {
+                            img.classList.remove('selected');
+                        }
+                    });
+
+                    // 添加选中项的 selected 类
+                    const img = this.querySelector('.effect-img');
+                    if (img) {
+                        img.classList.add('selected');
+                    }
+                });
+            });
+            //导出
+            const outputBtn = document.getElementById('output-btn');
+            const overlay = document.getElementById('overlay');
+            const exportPanel = document.getElementById('export-panel');
+
+            outputBtn.addEventListener('click', function() {
+                overlay.style.display = 'block';
+                exportPanel.style.display = 'block';
+            });
+
+            // 关闭导出面板按钮点击事件
+            const closeExportPanelBtn = document.getElementById('close-export-panel');
+            closeExportPanelBtn.addEventListener('click', function() {
+                overlay.style.display = 'none';
+                exportPanel.style.display = 'none';
+            });
+
+            // 导出按钮点击事件（实际导出逻辑）
+            const exportButton = document.getElementById('export-button');
+            exportButton.addEventListener('click', function() {
+                const format = document.getElementById('export-format').value;
+                alert(`导出格式: ${format}`);
+                // 在这里添加实际的导出逻辑
+                overlay.style.display = 'none';
+                exportPanel.style.display = 'none';
+            });
+        });
+        document.querySelector('.file-upload').addEventListener('click', function() {
+            document.getElementById('file-input').click();
+        });
+
+        document.getElementById('file-input').addEventListener('change', function() {
+            if (this.files.length > 0) {
+                // 处理文件选择后的逻辑
+                console.log('文件已选择:', this.files[0].name);
+
+                // 显示预览图像
+                const previewImage = document.getElementById('preview-upload-image');
+                previewImage.src = URL.createObjectURL(this.files[0]);
+                previewImage.style.display = 'block';
+                document.getElementById('style-preview-btn').style.display = 'block';
+                document.getElementById('file-upload-btn').style.display = 'none';
+            }
+        });
+
+    </script>
+
+</body>
+</html>

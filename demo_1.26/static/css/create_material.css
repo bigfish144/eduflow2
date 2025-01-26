@@ -1,0 +1,428 @@
+body {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    background-color: #1C1C28;
+    color: white;
+    margin: 0;
+    padding: 0;
+}
+
+.app-container {
+    padding: 20px 120px;
+}
+
+header {
+    position: relative; /* 设置相对定位 */
+    display: flex; /* 使用Flexbox布局 */
+    align-items: center; /* 垂直居中对齐 */
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    background-color: #6966FF;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-right: auto; /* 将按钮推到左边 */
+}
+.back-icon{
+    height: 20px;
+    width: 20px;
+    margin-right: 4px;
+}
+.center-text {
+    position: absolute; /* 设置绝对定位 */
+    left: 50%; /* 水平居中 */
+    transform: translateX(-50%); /* 调整水平位置 */
+    font-size: 18px;
+    font-weight: bold;
+}
+main {
+    display: flex;
+    gap: 12px;
+}
+/* 提示文案面板 */
+.tip-text{
+    margin: 12px 0;
+    background-color: #393953;
+    border-radius: 16px;
+    padding: 8px 12px;
+    display:flex;
+    flex-direction:row;
+    align-items: center;
+}
+.green-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #16B57F;
+    border-radius: 50%;
+    margin-right: 8px; /* 调整小圆点和文字之间的间距 */
+    vertical-align: middle; /* 确保小圆点和文字垂直对齐 */
+}
+/* 左侧参数面板 */
+.form-section {
+    width:100%;
+    background-color: #393953;
+    padding: 20px;
+    border-radius: 16px; 
+}
+
+label {
+    display: block;
+    margin-top: 12px;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.75);
+}
+label:first-of-type {
+    margin-top: 0;
+}
+textarea {
+    width: 100%;
+    box-sizing: border-box;
+    height: 80px; /* 设置高度 */
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background-color: #232334;
+    color: white;
+    resize: none;  
+}
+input{
+    height: 28px;
+    padding: 0 8px;
+    border: none;
+    border-radius: 8px;
+    background-color: #232334;
+    color: white; 
+    box-sizing: border-box;
+}
+.select-models{
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+}
+select{
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background-color: #4F4C64;
+    color: white;
+}
+.input-label{
+    display: flex;
+    align-items: center;
+    background-color: #232334;
+    padding: 0 8px;
+    border-radius: 8px 0 0 8px;
+    height: 28px;
+    color: rgba(255, 255, 255, 0.75);
+}
+.set-width,
+.set-height{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+.set-width input,
+.set-height input{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-radius: 0 8px 8px 0;
+    width: 80px;
+}
+.select-size-container{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: 36px;
+    gap:16px;
+}
+.set-video-size-btn{
+    background-color: transparent;
+    color:#18A0FB;
+    border: none;
+    box-shadow: none;
+    text-decoration: underline;
+}
+#video-checkbox{
+    margin: 12px 0;
+}
+.checkbox-group input[type="checkbox"] {
+    display: none;
+}
+.checkbox-group label {
+    position: relative;
+    padding-left: 24px; /* 为图标留出空间 */
+    cursor: pointer;
+    user-select: none; /* 防止文本被选中 */
+}
+.checkbox-group label::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 3px;
+    width: 16px;
+    height: 16px;
+    background-image: url('/static/images/unchecked.png'); /* 未选中图标路径 */
+    background-size: cover;
+    background-position: center;
+}
+.checkbox-group input[type="checkbox"]:checked + label::before {
+    background-image: url('/static/images/checked.png'); /* 选中图标路径 */
+}
+/* 启用动画面板 */
+#animation-settings {
+    display: none; /* 默认隐藏 */
+}
+#advanced-content {
+    display: none;
+}
+.animation-settings-container{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap:8px;
+}
+.select-fps,
+.select-frame-count{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+.select-fps input ,
+.select-frame-count input{
+    width:80px;
+}
+.predict-time{
+    color: rgba(255, 255, 255, 0.75);
+}
+.advanced-control-btn{
+    width: 100%;
+    margin: 8px 0;
+    display: flex;
+    justify-content: center;
+    background-color: transparent;
+    color:#18A0FB;
+    border: none;
+    box-shadow: none;
+    text-decoration: underline;
+}
+.generate-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4F4C64;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    margin-top: 8px;
+}
+/* 高级设置面板 */
+.upload-and-preview-container{
+    display: flex;
+    flex-direction: row;
+    gap: 40px;
+    margin-bottom: 8px;
+}
+.file-upload-container {
+    display: flex;
+    flex-direction: column;
+}
+.file-upload{
+    width: 260px;
+    height:120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    background: #4F4C64;
+    border-radius: 5px;
+    cursor: pointer;
+    color: #fff;
+    border: solid 1px #6966FF;
+    box-shadow: none;
+}
+#add-btn{
+    width: 16px;
+    height: 16px;
+}
+
+input[type="file"] {
+    display: none;
+}
+.preview-container{
+    display: flex;
+    flex-direction: column;
+}
+#preview-upload-image {
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+}
+
+.reference-dimensions {
+    display: flex;
+    flex-direction: row;
+    height:32px;
+    gap:8px;
+
+}
+.dimension-btn{
+    padding: 4px 20px;
+    border-radius: 16px;
+    background: #6966FF;
+    color: #fff;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+.dimension-btn.active{
+    border: 2px solid white;
+}
+.reference-dimensions .dimension-btn:hover {
+    background: #6C83FF;
+}
+.slider-container-all{
+    width: 100%;
+    height:48px;
+    display: flex;
+    flex-direction: row;
+    gap:8px;
+    color: rgba(255, 255, 255, 0.75);
+    align-items: center;
+}
+.slider-container {
+    width: 100%;
+    position: relative;
+}
+.slider-track {
+    position: absolute;
+    top: 9.5px;
+    left: 0;
+    height: 5px;
+    background: #6966FF;
+    border-radius: 3px; 
+    width: 0;
+    z-index: 1;
+}
+#weight-value{
+    position: absolute;
+    transform: translateX(-50%);
+    background-color: #232334;
+    padding: 4px 8px;
+    font-size: 14px;
+    border-radius: 4px;
+    pointer-events: none; /* 确保不会干扰滑块操作 */
+}
+#weight-slider {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 3px; 
+    height: 5px; 
+    position: relative;
+    background: transparent;
+}
+#weight-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 5px;
+    background: #E7E7E7; 
+    border-radius: 3px; 
+}
+#weight-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; 
+    appearance: none; 
+    width: 16px;
+    height: 16px;
+    background: #fff; 
+    border: 2px solid #6966FF;
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -5px; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 1;
+}
+#advanced-save-btn{
+    width: 100%;
+    background-color: #6966FF;
+    border-radius: 8px;
+    padding: 10px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    margin-top: 8px;
+}
+#advanced-back-btn{
+    width: 100%;
+    margin: 8px 0;
+    display: flex;
+    justify-content: center;
+    background-color: transparent;
+    color:#18A0FB;
+    border: none;
+    box-shadow: none;
+    text-decoration: underline;
+}
+/* 右侧预览面板 */
+.preview-section {
+    width: 60%;
+    background-color: #393953;
+    padding: 4px 80px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* 添加这一行 */
+}
+
+.preview-section p {
+    display: block;
+    margin-bottom: 5px;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.preview-grid {
+    width: 100%;
+    display: grid;
+    justify-content: center;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.preview-image,
+.preview-video {
+    border-radius: 8px;
+    display: flex; 
+    justify-content: center; 
+}
+
+.preview-image-img {
+    border-radius: 8px;
+    width: 220px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+  .preview-image-img.selected {
+    border: 3px solid #18A0FB;
+  }
+
+.preview-grid video{
+    border-radius: 8px;
+    width: 220px;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+}
+
+.apply-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #6966FF;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    margin-top: 12px;
+}
