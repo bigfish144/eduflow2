@@ -277,29 +277,29 @@
         console.error('Error:', error);
     }
     });
-    // 定时更新队列状态
-    async function getQueueStatus() {
-        try {
-            const response = await fetch('http://127.0.0.1:8188/prompt');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-            const queueStatusDiv = document.getElementById('queueStatus');
-            const queueRemaining = data.exec_info.queue_remaining;
-            queueStatusDiv.innerHTML = `Queue Remaining: ${queueRemaining}`;
-        } catch (error) {
-            console.error('Error:', error);
-            const queueStatusDiv = document.getElementById('queueStatus');
-            queueStatusDiv.innerHTML = 'Error retrieving queue status';
-        }
-    }
+    // // 定时更新队列状态
+    // async function getQueueStatus() {
+    //     try {
+    //         const response = await fetch('http://127.0.0.1:8188/prompt');
+    //         if (!response.ok) {
+    //             throw new Error('Network response was not ok');
+    //         }
+    //         const data = await response.json();
+    //         const queueStatusDiv = document.getElementById('queueStatus');
+    //         const queueRemaining = data.exec_info.queue_remaining;
+    //         queueStatusDiv.innerHTML = `Queue Remaining: ${queueRemaining}`;
+    //     } catch (error) {
+    //         console.error('Error:', error);
+    //         const queueStatusDiv = document.getElementById('queueStatus');
+    //         queueStatusDiv.innerHTML = 'Error retrieving queue status';
+    //     }
+    // }
 
-    // 初始加载队列状态
-    getQueueStatus();
+    // // 初始加载队列状态
+    // getQueueStatus();
 
-    // 每3秒更新一次队列状态
-    setInterval(getQueueStatus, 3000);
+    // // 每3秒更新一次队列状态
+    // setInterval(getQueueStatus, 3000);
 </script>
 </body>
 </html>

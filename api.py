@@ -146,7 +146,7 @@ class ImgToImgModel(BaseModel):
     selectedFileName: str
     queuesize: int
     batchsize:int
-UPLOAD_DIRECTORY = "./input"
+UPLOAD_DIRECTORY = "../input"
 @app.post("/imgGenerateImg", tags=["perfume bottle"])
 async def imgGenerateImg(
     prompt: str = Form(...),
@@ -159,7 +159,7 @@ async def imgGenerateImg(
     imagename = file.filename
     logger.info(f"Received image name: {imagename}")
     file_location = os.path.join(UPLOAD_DIRECTORY, imagename)
-    # 复制上传的文件至./input 目录
+    # 复制上传的文件至../input 目录
     with open(file_location, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)   
     logger.info(f"Saved uploaded image: {file_location}")
