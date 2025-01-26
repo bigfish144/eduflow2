@@ -1,0 +1,195 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+.container{
+    width: 80%;
+}
+body {
+    width: 100%;
+    font-family: 'Arial', sans-serif;
+    background-color: #1C1C28;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    z-index: 1;
+}
+
+header {
+    width: 100%;
+    background-color: none;
+    padding: 20px 0;
+    display: flex;
+    align-items: center; 
+}
+
+.home {
+    flex: 1; 
+}
+
+.center {
+    flex: 1; 
+    text-align: center; 
+}
+.center-text{
+    font-size: 18px;
+    font-weight: bold;
+}
+nav {
+    display: flex;
+    gap: 10px;
+    height: 36px; 
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    padding: 5px 20px;
+    background-color: #6966FF;
+    border-radius: 5px;
+    font-size: 16px;
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
+
+/* 分镜列表 */
+.scene-list {
+    min-height: 50px;
+    margin-top: 20px;
+}
+
+.scene-item {
+    width: 100%;
+    background-color: #393953;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 14px;
+    border: #fff 50% solid ;
+}
+.scene-item p{
+    width: 90%;
+}
+/* 输入框和按钮的容器 */
+.input-button-container {
+    display: flex;
+    align-items: center;
+    width: 100%; 
+}
+
+#newp{
+    width: 90%;
+}
+.delete-button {
+    margin-left: 10px;
+    height: 36px;
+    width: 80px;
+    background-color: #6966FF;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 18px;
+    cursor: pointer;
+}
+.edit-button {
+    margin-left: 80px;
+    height: 36px;
+    width: 80px;
+    background-color: #16B57F;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+}
+
+/* 添加分镜按钮 */
+.add-button {
+    margin-left: auto;
+    margin-top: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center; /* 水平居中 */
+}
+
+.add-button button {
+    width: 36px;
+    height: 36px;
+    background-color: #fff;
+    color: #1C1C28;
+    font-size: 1.5em;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+#newinput{
+    height: 48px;
+    color:#fff;
+    background-color: #1C1C28;
+    width: 100%;
+    border: none;
+    box-shadow: none;
+    padding: 0 8px;
+    border-radius: 4px;
+    text-align: left;
+    margin-right: 10px;
+}
+#addButton{
+    height: 36px;
+    width: 80px;
+    background-color: #16B57F;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 16px;
+    cursor: pointer;
+}
+/* 底部操作按钮 */
+.footer-buttons {
+    display: flex;
+    justify-content: space-between;
+}
+
+.footer-button {
+    padding: 10px 20px;
+    border-radius: 5px;
+    border: none;
+    font-size: 1em;
+    cursor: pointer;
+    width: 48%;
+}
+
+.footer-button.grey {
+    background-color: #4F4C64;
+    color: #fff;
+}
+
+.footer-button.blue {
+    background-color: #6966FF;
+    color: #fff;
+}
+
+
+/* 网格背景 */
+body::before {
+    content: "";
+    background-image: url('/static/images/Grid.png'); /* 网格图片路径 */
+    background-position: center;
+    background-size: cover; /* 调整为contain可保持网格原始比例 */
+    background-repeat: no-repeat; /* 不重复显示网格 */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1; /* 确保网格位于内容下方 */
+}

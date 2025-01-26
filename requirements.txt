@@ -1,0 +1,8 @@
+fastapi
+pillow
+uvicorn
+beautifulsoup4
+websockets
+python-multipart
+openai
+python-multipart

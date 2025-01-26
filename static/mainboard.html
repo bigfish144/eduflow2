@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频生成界面</title>
+    <link rel="stylesheet" href="css/mainboard.css">
+</head>
+<body>
+    <!-- 新增的顶部导航栏 -->
+    <nav class="top-nav">
+      <div class="left-section">
+        <img src="images/LOGO.png" alt="Logo" class="logo">
+        <button class="menu-btn">菜单</button>
+      </div>
+      <div class="nav-center">
+        <p class="center-text">工作台</p>
+      </div>
+      <div class="right-section">
+        <button class="preview-btn" id="preview-btn">
+            预览
+            <img src="images/goahead-btn.png" alt="预览图标" class="preview-icon">
+        </button>
+      </div>
+    </nav>
+
+    <div class="container">
+        <div class="content-wrapper">
+            <div class="list-left-head">
+                <p>镜头列表</p>
+            </div>
+            <!-- 左侧镜头列表 -->
+            <div class="left-panel">
+                <div class="camera-item">
+                    <span class="camera-number">1</span>
+                    <img src="images/sceneimg.png" alt="1" class="sceneimg">
+                    <p>想象一下，如果没有重力会...</p>
+                </div>
+                <div class="camera-item">
+                    <span class="camera-number">2</span>
+                    <img src="images/sceneimg.png" alt="1" class="sceneimg">
+                    <p>想象一下，如果没有重力会...</p>
+                </div>
+                <div class="camera-item">
+                    <span class="camera-number">3</span>
+                    <img src="images/sceneimg.png" alt="1" class="sceneimg">
+                    <p>想象一下，如果没有重力会...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中部 -->
+        <div class="main-panel">
+            <!-- 视频面板 -->
+            <div class="vieo-head">
+                <p>播放器</p>
+                <button id="video-setting">
+                    <img src="images/btn_videoset.png" alt="设置">
+                </button>
+            </div>
+            <div class="video-player-panel">
+                <div class="video-container">
+                    <video class="this-video" id="thispape-video">
+                        <source src="data/color.mp4" type="video/mp4">
+                        您的浏览器不支持 video 标签。
+                    </video>
+                </div>
+                <div class="range-container">
+                    <input class="video-range" type="range" id="videoProgress" value="0" min="0" max="100" step="0.1" >
+                </div>
+                <div class="player-controls">
+                    <div class="time-display">
+                        <span id="currentTime">00:00:00.00</span> / <span id="duration">00:00:00.00</span>
+                    </div>
+                    <div class="play-button-container">
+                        <button id="play-this-video">
+                            <img src="images/btn_play.png" alt="播放" id="play-icon">
+                        </button>
+                    </div>
+                    <div class="ratio-button-container">
+                        <button id="ratio-button">比例</button>
+                    </div>    
+                </div>
+            </div>
+            <!-- 文字处理面板 -->
+            <div class="process-panel">
+                <div class="text-head">
+                    <div class="custom-select">
+                        <select id="choose-voice">
+                            <option value="voice1">男声</option>
+                            <option value="voice2">女声</option>
+                            <!-- 可以根据需要添加更多选项 -->
+                        </select>
+                        <div class="select-icon"></div>
+                    </div>
+                    <div class="voice-gen-btn-container">
+                        <button id="voice-gen-btn">语音生成</button>
+                        <button id="motion-gen-btn">动作生成</button>
+                        <button id="wav2lip-gen-btn">口型匹配</button>
+                    </div>
+                    <div>
+                        <button class="video-gen-setting">设置</button>
+                    </div>
+                </div>
+                <div class="process-tab-container" id="voice-tab-container">
+                    <div class="process-tab-content">
+                        <textarea placeholder="请输入生成文本" id="show-text-panel"></textarea>
+                        <div class="process-btn-container">
+                            <button class="process-grey-btn">文本解析</button>
+                            <button class="process-main-btn">生成语音</button>
+                        </div>
+                    </div>
+                    <div class="wav-edit-panel">
+                        <div class="wav-head">
+                            <p>录音编辑</p>
+                        </div>
+                        <div class="wav-range-container">
+                            <!-- 音频列表 -->
+                            <div class="audio-container">
+                                <div class="audio-material" id="audio-material-1">
+                                    <div id="audio-player-1" class="audio-player">
+                                        <button id="audio-play-pause-btn-1" class="audio-play-pause-btn">
+                                            <img src="images/btn_play.png" alt="播放">
+                                        </button>
+                                        <div id="audio-progress-container-1" class="audio-progress-container">
+                                            <div id="audio-progress-1" class="audio-progress"></div>
+                                        </div>
+                                    </div>
+                                    <audio id="gen-audio-1">
+                                        <source src="data/audio_test.wav" type="audio/wav">
+                                        您的浏览器不支持 audio 元素。
+                                    </audio>
+                                </div>
+                                <div class="audio-material" id="audio-material-2">
+                                    <div id="audio-player-2" class="audio-player">
+                                        <button id="audio-play-pause-btn-2" class="audio-play-pause-btn">
+                                            <img src="images/btn_play.png" alt="播放">
+                                        </button>
+                                        <div id="audio-progress-container-2" class="audio-progress-container">
+                                            <div id="audio-progress-2" class="audio-progress"></div>
+                                        </div>
+                                    </div>
+                                    <audio id="gen-audio-2">
+                                        <source src="data/audio_test.wav" type="audio/wav">
+                                        您的浏览器不支持 audio 元素。
+                                    </audio>
+                                </div>
+                                <div class="audio-material" id="audio-material-3">
+                                    <div id="audio-player-3" class="audio-player">
+                                        <button id="audio-play-pause-btn-3" class="audio-play-pause-btn">
+                                            <img src="images/btn_play.png" alt="播放">
+                                        </button>
+                                        <div id="audio-progress-container-3" class="audio-progress-container">
+                                            <div id="audio-progress-3" class="audio-progress"></div>
+                                        </div>
+                                    </div>
+                                    <audio id="gen-audio-3">
+                                        <source src="data/audio_test.wav" type="audio/wav">
+                                        您的浏览器不支持 audio 元素。
+                                    </audio>
+                                </div>
+                            </div>
+                            <div class="audio-controls">
+                                <button id="audio-del-btn">删除</button>
+                                <button id="audio-replace-btn">录音替换</button>
+                                <button id="audio-apply-btn">应用</button>
+                            </div>
+                        </div>      
+                    </div>
+                </div>
+                <div class="process-tab-container" id="motion-tab-container">
+                    <div class="process-tab-content">
+                        <textarea placeholder="请输入生成文本" id="show-motion-panel"></textarea>
+                        <div class="motion-preview-panel">
+                            
+                        </div>
+                        <div class="process-btn-container">
+                            <button class="process-grey-btn">姿态预览</button>
+                            <button class="process-main-btn">应用</button>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="process-tab-container" id="wav2lip-tab-container">
+                    <div class="process-tab-content">
+                        <div class="lip-text-choose-panel">
+                            <div class="lip-text-item" id="lip-item-1">
+                                <p>想象一下，如果没有重力会是什么样子？</p>
+                                <input type="checkbox" name="example" value="value" class="lip-choose-box" id="checkbox1">
+                                <label for="checkbox1"></label>
+                            </div>
+                            <div class="lip-text-item" id="lip-item-2">
+                                <p>想象一下，如果没有重力会是什么样子？</p>
+                                <input type="checkbox" name="example" value="value" class="lip-choose-box" id="checkbox2">
+                                <label for="checkbox2"></label>
+                            </div>
+                        </div>
+                        <div class="lip-gen-ctrl-panel">
+                            <div class="slider-container" id="slider-container1">
+                                <div class="slider-label">嘴部开合</div>
+                                <div class="slider-wrapper">
+                                    <span>-9</span>
+                                    <input id="slider" type="range" min="-9" max="9" step="0.1" value="0" class="lip-slider">
+                                    <div id="tooltip" class="tooltip">0</div>
+                                    <span>9</span>
+                                </div>
+                            </div>
+                                                        <div class="slider-container" id="slider-container1">
+                                <div class="slider-label">嘴部开合</div>
+                                <div class="slider-wrapper">
+                                    <span>-9</span>
+                                    <input id="slider" type="range" min="-9" max="9" step="0.1" value="0" class="lip-slider">
+                                    <div id="tooltip" class="tooltip">0</div>
+                                    <span>9</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="process-btn-container">
+                            <button class="process-main-btn">应用</button>
+                        </div>
+                    </div>    
+                </div>
+            </div>
+        </div>
+        
+        <div class="content-wrapper">
+            <!-- 当前素材列表面板 --> 
+            <div class="part-material-panel">
+                <div class="part-list-head">
+                    <p>当前分镜素材-01</p>
+                </div>
+                <div class="part-tabs">
+                    <button class="part-tab-button active" data-tab="part-images">图片</button>
+                    <button class="part-tab-button" data-tab="part-characters">角色</button>
+                </div>
+                <div class="part-tab-content active" id="part-images">
+                    <div class="apply-img-material">
+                        <p>01</p>
+                        <p class="part-img-name">背景</p>
+                        <button class="del-part-img-btn">删除</button>
+                    </div>
+                    <div class="apply-img-material">
+                        <p>02</p>
+                        <p class="part-img-name">星球</p>
+                        <button class="del-part-img-btn">删除</button>
+                    </div>
+
+                </div>
+                <div class="part-tab-content" id="part-characters">
+                    <div class="apply-cha-material">
+                        <p>01</p>
+                        <p class="part-cha-name">一个角色素材</p>
+                        <button class="del-part-cha-btn">删除</button>
+                    </div>
+                </div>
+                <div class="part-blender-btn-container">
+                    <button class="blend-part-img-btn">A I融合</button>
+                </div>
+
+            </div>
+            <!-- 素材库面板 --> 
+            <div class="all-material-panel">
+                <div class="all-list-head">
+                    <p>素材库</p>
+                </div>
+                <div class="all-tabs">
+                    <button class="all-tab-button active" data-tab="all-images">图片</button>
+                    <button class="all-tab-button" data-tab="all-characters">角色</button>
+                </div>
+                <div class="all-tab-content active" id="all-images">
+                    <div class="content-list">
+                        <div class="ori-img-material">
+                            <p>01</p>
+                            <p class="all-img-name">背景</p>
+                            <button class="edit-all-img-btn">编辑</button>
+                            <button class="del-all-img-btn">删除</button>
+                        </div>
+                    </div>
+                    <div >
+                        <button class="add-all-img-btn">新建图片</button>
+                    </div>
+                </div>
+                <div class="all-tab-content" id="all-characters">
+                    <div class="content-list">
+                        <div class="ori-cha-material">
+                            <p>01</p>
+                            <p class="all-cha-name">一个角色素材</p>
+                            <button class="edit-all-cha-btn">编辑</button>
+                            <button class="del-all-cha-btn">删除</button>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="add-all-cha-btn">新建角色</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div> 
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        //素材列表面板
+
+        // 处理 part-tabs 的点击事件
+        const partTabButtons = document.querySelectorAll('.part-tab-button');
+        const partTabContents = document.querySelectorAll('.part-tab-content');
+        partTabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.getAttribute('data-tab');
+                // 移除所有按钮的激活状态
+                partTabButtons.forEach(btn => btn.classList.remove('active'));
+                // 移除所有内容区域的激活状态
+                partTabContents.forEach(content => content.classList.remove('active'));
+                // 激活当前按钮和对应的内容区域
+                button.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+
+        //素材库面板
+        // 处理 all-tabs 的点击事件
+        const allTabButtons = document.querySelectorAll('.all-tab-button');
+        const allTabContents = document.querySelectorAll('.all-tab-content');
+        allTabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.getAttribute('data-tab');
+                // 移除所有按钮的激活状态
+                allTabButtons.forEach(btn => btn.classList.remove('active'));
+                // 移除所有内容区域的激活状态
+                allTabContents.forEach(content => content.classList.remove('active'));
+                // 激活当前按钮和对应的内容区域
+                button.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+        
+        //文本处理面板
+        //处理文本处理面板的tab
+        const voiceGenBtn = document.getElementById('voice-gen-btn');
+        const motionGenBtn = document.getElementById('motion-gen-btn');
+        const wav2lipGenBtn = document.getElementById('wav2lip-gen-btn');
+        const voiceTabContainer = document.getElementById('voice-tab-container');
+        const motionTabContainer = document.getElementById('motion-tab-container');
+        const wav2lipTabContainer = document.getElementById('wav2lip-tab-container');
+        function hideAllTabs() {
+            voiceTabContainer.style.display = 'none';
+            motionTabContainer.style.display = 'none';
+            wav2lipTabContainer.style.display = 'none';
+        }
+        function showTab(tabId, activeBtn) {
+            hideAllTabs();
+            document.getElementById(tabId).style.display = 'block';
+            voiceGenBtn.classList.remove('active');
+            motionGenBtn.classList.remove('active');
+            wav2lipGenBtn.classList.remove('active');
+            activeBtn.classList.add('active');
+        }
+        voiceGenBtn.addEventListener('click', function() {
+            showTab('voice-tab-container', voiceGenBtn);
+        });
+        motionGenBtn.addEventListener('click', function() {
+            showTab('motion-tab-container', motionGenBtn);
+        });
+        wav2lipGenBtn.addEventListener('click', function() {
+            showTab('wav2lip-tab-container', wav2lipGenBtn);
+        });
+        showTab('voice-tab-container', voiceGenBtn);
+
+        //处理视频播放进度条
+        const video = document.getElementById('thispape-video');
+        const progress = document.getElementById('videoProgress');
+        const currentTimeDisplay = document.getElementById('currentTime');
+        const durationDisplay = document.getElementById('duration');
+        const playButton = document.getElementById('play-this-video'); 
+        const playIcon = document.getElementById('play-icon');
+        const frameRate = 24;
+        function formatTime(time) {
+            const hours = Math.floor(time / 3600);
+            const minutes = Math.floor((time % 3600) / 60);
+            const seconds = Math.floor(time % 60);
+            const frames = Math.floor((time % 1) * frameRate);
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${frames.toString().padStart(2, '0')}`;
+        }
+        video.addEventListener('timeupdate', () => {
+            const value = (100 / video.duration) * video.currentTime;
+            progress.value = value;
+            currentTimeDisplay.textContent = formatTime(video.currentTime);
+            updateFilledWidth(progress);
+        });
+
+        video.addEventListener('loadedmetadata', () => {
+            durationDisplay.textContent = formatTime(video.duration);
+        });
+        progress.addEventListener('input', () => {
+            const time = video.duration * (progress.value / 100);
+            video.currentTime = time;
+            updateFilledWidth(progress);
+        });
+        playButton.addEventListener('click', () => {
+            if (video.paused) {
+                video.play();
+                playIcon.src = "images/btn_pause.png"; 
+            } else {
+                video.pause();
+                playIcon.src = "images/btn_play.png"; 
+            }
+        });
+        function updateFilledWidth(element) {
+            element.style.setProperty('--filled-width', element.value + '%');
+        }
+        updateFilledWidth(progress);
+        video.addEventListener('ended', () => {
+            playIcon.src = "images/btn_play.png";
+        });  
+
+        //音频面板
+        // 获取所有的音频元素和相关的 DOM 元素
+        const audioElements = document.querySelectorAll('audio');
+        const playPauseButtons = document.querySelectorAll('.audio-play-pause-btn');
+        const audioPlayers = document.querySelectorAll('.audio-player');
+        const progressContainers = document.querySelectorAll('.audio-progress-container');
+        const progressBars = document.querySelectorAll('.audio-progress');
+
+        let selectedAudioIndex = null; // 当前选中的音频索引
+        let currentPlayingAudioIndex = null; // 当前正在播放的音频索引
+
+        // 播放/暂停按钮点击事件
+        playPauseButtons.forEach((btn, index) => {
+            btn.addEventListener('click', function () {
+                const audio = audioElements[index];
+                const progressBar = progressBars[index];
+
+                if (audio.paused) {
+                    // 播放当前音频
+                    audio.play();
+                    btn.querySelector('img').src = "images/btn_pause.png"; // 切换为暂停图标
+
+                    // 如果有其他音频在播放，暂停它
+                    if (currentPlayingAudioIndex !== null && currentPlayingAudioIndex !== index) {
+                        const otherAudio = audioElements[currentPlayingAudioIndex];
+                        const otherButton = playPauseButtons[currentPlayingAudioIndex];
+                        otherAudio.pause();
+                        otherButton.querySelector('img').src = "images/btn_play.png"; // 恢复播放图标
+                    }
+
+                    currentPlayingAudioIndex = index; // 更新当前播放的音频索引
+                } else {
+                    // 暂停当前音频
+                    audio.pause();
+                    btn.querySelector('img').src = "images/btn_play.png"; // 切换为播放图标
+                    currentPlayingAudioIndex = null; // 清除当前播放的音频索引
+                }
+
+                // 自动选择当前音频
+                selectAudio(index);
+            });
+        });
+
+        // 进度条点击事件
+        progressContainers.forEach((container, index) => {
+            container.addEventListener('click', function (event) {
+                const audio = audioElements[index];
+                const progressBar = progressBars[index];
+                const progressWidth = container.offsetWidth;
+                const clickPosition = event.offsetX; 
+                const newTime = (clickPosition / progressWidth) * audio.duration;
+                audio.currentTime = newTime;
+                progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+                selectAudio(index);
+            });
+        });
+
+        // 音频播放事件：动态更新进度条
+        audioElements.forEach((audio, index) => {
+            audio.addEventListener('timeupdate', function () {
+                const progressBar = progressBars[index];
+                progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; // 更新进度条宽度
+            });
+
+            audio.addEventListener('ended', function () {
+                // 音频结束后恢复播放按钮图标
+                playPauseButtons[index].querySelector('img').src = "images/btn_play.png";
+                currentPlayingAudioIndex = null; // 清除播放索引
+            });
+        });
+
+        // 选择音频的方法
+        function selectAudio(index) {
+            if (selectedAudioIndex !== null && selectedAudioIndex !== index) {
+                const previousPlayer = audioPlayers[selectedAudioIndex];
+                const previousProgressBar = progressBars[selectedAudioIndex];
+                previousPlayer.style.border = ''; // 移除描边
+                previousProgressBar.style.backgroundColor = '#8785FF'; // 恢复原来的颜色
+            }
+            selectedAudioIndex = index;
+            const currentPlayer = audioPlayers[index];
+            const currentProgressBar = progressBars[index];
+            currentPlayer.style.border = '3px solid #6366f1'; // 增加描边
+            currentProgressBar.style.backgroundColor = '#6366f1'; // 修改进度条颜色
+        }
+        // 口型匹配
+        const slider = document.getElementById('slider'); // 滑块
+        const tooltip = document.getElementById('tooltip'); // Tooltip
+        function updateTooltip() {
+            const sliderRect = slider.getBoundingClientRect();
+            const sliderWidth = slider.offsetWidth;
+            const position = ((slider.value - slider.min) / (slider.max - slider.min)) * sliderWidth;
+            tooltip.style.left = `${position - tooltip.offsetWidth / 2}px`; // 调整为 Tooltip 居中
+            tooltip.textContent = slider.value; 
+        }
+        // 初始化 Tooltip
+        slider.value = 0;
+        updateTooltip(); // 调用此函数以初始化 Tooltip 的位置和内容
+        tooltip.style.opacity = 0; // 默认隐藏提示框
+        // 监听滑块的拖动事件
+        slider.addEventListener('input', updateTooltip);
+        // 悬停时显示 Tooltip
+        slider.addEventListener('mouseenter', () => tooltip.style.opacity = 1);
+        slider.addEventListener('mouseleave', () => tooltip.style.opacity = 0);
+        //跳转
+        // 创建角色跳转
+        const createcharbtn = document.querySelector('.add-all-cha-btn');
+        createcharbtn.addEventListener('click', function() {
+            window.location.href = 'create_char.html';
+        });
+
+        // 创建图片跳转
+        const creatematbtn = document.querySelector('.add-all-img-btn');
+        creatematbtn.addEventListener('click', function() {
+            window.location.href = 'create_material.html';
+        });
+
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片生成</title>
+</head>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .container {
+        display: flex;
+        width: 90%;
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .left-panel {
+        flex: 1;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .right-panel {
+        flex: 1;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .bottom-panel {
+        width: 90%;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-top: 20px;
+    }
+
+    h1 {
+        text-align: center;
+    }
+
+    #queueStatus {
+        text-align: center;
+        margin-bottom: 5px;
+    }
+
+    #prompt {
+        height: 150px;
+        width: 100%;
+        resize: none;
+        padding: 10px;
+        box-sizing: border-box;
+        font-size: 16px;
+    }
+
+    #fileSelect {
+        height: 30px;
+        width: 100%;
+        margin-top: 10px;
+    }
+    #submitbut,
+    #submitimgbut {
+        height: 50px;
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    #images img {
+        max-width: 100%;
+        height: auto;
+    }
+</style>
+</head>
+<body>
+<h1>Image Generator</h1>
+<!-- 显示队列状态 -->
+<div id="queueStatus">Loading...</div>
+<div class="container">
+    <div class="left-panel">
+        <form id="generateForm">
+            
+            <!-- 用户输入的提示词 -->
+            <label for="prompt">请输入提示词:</label>
+            <br><br>
+            <textarea id="prompt" required></textarea>
+            <br><br>
+            <!-- 文件选择 -->
+            <label for="fileSelect">请选择模型:</label>
+            <br><br>
+            <select id="fileSelect" name="fileSelect">
+                <!-- 选项动态添加 -->
+            </select>
+            <br><br>
+            <!-- 滑动条用于设置queuesize -->
+            <label for="queuesize">Queue Size:</label>
+            <input type="range" id="queuesize" name="queuesize" min="1" max="10" value="1" step="1">
+            <span id="queuesizeValue">1</span>
+            <br><br>
+            <!-- 滑动条用于设置batchsize -->
+            <div id="batchsizeDiv">
+                <label for="batchsize">Batch Size:</label>
+                <input type="range" id="batchsize" name="batchsize" min="1" max="10" value="1" step="1">
+                <span id="batchsizeValue">1</span>
+            </div>
+            <br><br>
+            <!-- 提交按钮 -->
+            <button type="submit" id="submitbut">Generate Image</button>
+            <!-- 提交图生图按钮 -->
+            <button type="submitimg" id="submitimgbut">Image Generate Image</button>
+        </form>
+    </div>
+    <div class="right-panel">
+        <!-- 上传图片 -->
+        <input type="file" id="imageUpload" accept="image/*">
+        <div id="uploadedImageDiv"></div>
+    </div>
+</div>
+<div class="bottom-panel">
+    <!-- 显示生成的图片 -->
+    <div id="images"></div>
+</div>
+<script>
+    // 获取文件列表并填充到下拉菜单中
+    async function getFileList() {
+        try {
+            const response = await fetch('/get_file_list');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const fileList = await response.json();
+            const fileSelect = document.getElementById('fileSelect');
+
+            // 清空现有选项
+            fileSelect.innerHTML = '';
+            // 将文件列表填充到下拉选项中
+            fileList.files.forEach(fileName => {
+                const option = document.createElement('option');
+                option.text = fileName;
+                option.value = fileName;
+                fileSelect.add(option);
+            });
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+    // 初始化文件列表
+    getFileList();
+
+    // 监听下拉列表值的变化
+    document.getElementById('fileSelect').addEventListener('change', async () => {
+        const selectedFileName = document.getElementById('fileSelect').value;
+        console.log(selectedFileName);
+    });
+    document.getElementById('queuesize').addEventListener('input', function() {
+        document.getElementById('queuesizeValue').textContent = this.value;
+    });
+    document.getElementById('batchsize').addEventListener('input', function() {
+        document.getElementById('batchsizeValue').textContent = this.value;
+    });
+    // 实时预览上传的图片
+    document.getElementById('imageUpload').addEventListener('change', function() {
+    const fileInput = this;
+    const file = fileInput.files[0];
+    const uploadedImageDiv = document.getElementById('uploadedImageDiv');
+    uploadedImageDiv.innerHTML = '';  // 清空之前的图片
+
+    // 预览图片
+    if (file) {
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.alt = 'Uploaded Image';
+        img.style.height = '500px';  
+        img.style.margin = '10px';  
+        uploadedImageDiv.appendChild(img);
+    }
+    });
+
+    // 监听表单提交，发送用户的提示词（prompt）和文件名（selectedFileName）生成图片
+    document.getElementById('submitbut').addEventListener('click', async function() {
+        event.preventDefault();
+        const prompt = document.getElementById('prompt').value;
+        const selectedFileName = document.getElementById('fileSelect').value;
+        const queuesize = document.getElementById('queuesize').value;
+        const batchsize = document.getElementById('batchsize').value;
+
+        try {
+        const response = await fetch('/generate_img', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ prompt: prompt, selectedFileName: selectedFileName, queuesize: queuesize,batchsize:batchsize })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        console.log(data);
+
+        const imagesDiv = document.getElementById('images');
+        imagesDiv.innerHTML = '';  // 清空之前的图片
+
+        // 展开嵌套的列表，处理所有图片 URL
+        data.images.flat().forEach(imageUrl => {
+            const img = document.createElement('img');
+            img.onload = function() {
+                imagesDiv.appendChild(img);  // 加载完成后添加到页面
+            };
+            img.src = imageUrl;  
+            img.alt = 'Generated Image';  
+            img.style.width = '200px';  
+            img.style.margin = '10px';  
+        });
+    } catch (error) {
+        console.error('Error:', error);
+    }
+    });
+    // 按钮点击事件处理
+    document.getElementById('submitimgbut').addEventListener('click', async function(event) {
+        event.preventDefault();
+        
+        const fileInput = document.getElementById('imageUpload');
+        const file = fileInput.files[0];
+        const filename = file.name;
+        const prompt = document.getElementById('prompt').value;
+        const selectedFileName = document.getElementById('fileSelect').value;
+        const queuesize = document.getElementById('queuesize').value;
+        const batchsize = document.getElementById('batchsize').value;
+
+        // 创建 FormData 对象
+        const formData = new FormData();
+        formData.append('file', file, filename);
+        formData.append('prompt', prompt);
+        formData.append('selectedFileName', selectedFileName);
+        formData.append('queuesize', queuesize);
+        formData.append('batchsize', batchsize);
+
+        try {
+            const response = await fetch('/imgGenerateImg', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+        const data = await response.json();
+        console.log(data);
+
+        const imagesDiv = document.getElementById('images');
+        imagesDiv.innerHTML = '';  // 清空之前的图片
+
+        // 展开嵌套的列表，处理所有图片 URL
+        data.images.flat().forEach(imageUrl => {
+            const img = document.createElement('img');
+            img.onload = function() {
+                imagesDiv.appendChild(img);  // 加载完成后添加到页面
+            };
+            img.src = imageUrl;  
+            img.alt = 'Generated Image';  
+            img.style.width = '200px';  
+            img.style.margin = '10px';  
+        });
+    } catch (error) {
+        console.error('Error:', error);
+    }
+    });
+    // 定时更新队列状态
+    async function getQueueStatus() {
+        try {
+            const response = await fetch('http://127.0.0.1:8188/prompt');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            const queueStatusDiv = document.getElementById('queueStatus');
+            const queueRemaining = data.exec_info.queue_remaining;
+            queueStatusDiv.innerHTML = `Queue Remaining: ${queueRemaining}`;
+        } catch (error) {
+            console.error('Error:', error);
+            const queueStatusDiv = document.getElementById('queueStatus');
+            queueStatusDiv.innerHTML = 'Error retrieving queue status';
+        }
+    }
+
+    // 初始加载队列状态
+    getQueueStatus();
+
+    // 每3秒更新一次队列状态
+    setInterval(getQueueStatus, 3000);
+</script>
+</body>
+</html>
