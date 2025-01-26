@@ -4,7 +4,7 @@ import urllib.request
 import urllib.parse
 import websockets
  
-from demo.utils import image_to_base64
+from utils import image_to_base64
  
 server_address = "127.0.0.1:8188"
 def queue_prompt(prompt, client_id):

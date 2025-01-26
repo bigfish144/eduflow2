@@ -5,9 +5,9 @@ import json
 import requests
 import websockets
 import logging
-from demo.utils import load_json_template
+from utils import load_json_template
 # from api_utils.prompt_loader import load_checkpoint, load_controlnet, load_loras, load_prompt, load_controlnet_webui
-from demo.get_output import get_imgoutputs,get_videooutputs,get_splitoutputs
+from get_output import get_imgoutputs,get_videooutputs,get_splitoutputs
 from fastapi import UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from fastapi.responses import HTMLResponse
@@ -24,7 +24,7 @@ async def process_generateimg(data, request_count=1):
     imagesurls = []  # 存储所有生成的图像
     for _ in range(request_count):
         client_id = str(uuid.uuid4()) 
-        prompt = load_json_template('demo/workfolows/workflow_api.json')
+        prompt = load_json_template('./workfolows/workflow_api.json')
         prompt["3"]["inputs"]["seed"] = random.randrange(10**14, 10**15)
         prompt["6"]["inputs"]["text"] = data.prompt
         prompt["4"]["inputs"]["ckpt_name"] = data.selectedFileName
@@ -37,10 +37,9 @@ async def process_videogenerateimg(data, request_count=1):
     videos = []
     for _ in range(request_count):
         client_id = str(uuid.uuid4()) 
-        prompt = load_json_template('demo/workfolows/workflow_api_video.json')
+        prompt = load_json_template('./workfolows/workflow_api_video.json')
         generated_images = await get_videooutputs(client_id, prompt)
         videos.extend(generated_images['videos'])
-
     return {"video": videos}
 
 #图生图
@@ -49,7 +48,7 @@ async def process_imggenerateimg(data, request_count=1):
     imagesurls = []  # 存储所有生成的图像
     for _ in range(request_count):
         client_id = str(uuid.uuid4()) 
-        prompt = load_json_template('demo/workfolows/workflow_api_i2i.json')
+        prompt = load_json_template('./workfolows/workflow_api_i2i.json')
         prompt["3"]["inputs"]["seed"] = random.randrange(10**14, 10**15) 
         prompt["6"]["inputs"]["text"] = data.prompt
         prompt["4"]["inputs"]["ckpt_name"] = data.selectedFileName
@@ -60,7 +59,7 @@ async def process_imggenerateimg(data, request_count=1):
 #切分文本
 async def process_split_text(text_content,data):
     client_id = str(uuid.uuid4()) 
-    prompt = load_json_template('demo/workfolows/split_text.json')
+    prompt = load_json_template('./workfolows/split_text.json')
     prompt["52"]["inputs"]["input_text"] = text_content
     prompt["52"]["inputs"]["split_num"] = data.mode
     generated_texts = await get_splitoutputs(client_id, prompt)
