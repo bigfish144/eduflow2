@@ -180,5 +180,5 @@ async def imgGenerateImg(
 if __name__ == '__main__':    
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-# cd ComfyUI/demo/
+# cd /root/autodl-tmp/ComfyUI/demo
 # 运行命令：uvicorn api:app --reload

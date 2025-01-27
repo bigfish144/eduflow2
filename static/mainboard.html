@@ -100,7 +100,7 @@
                         </div>
                         <div class="process-btn-container">
                             <button class="process-grey-btn" id="emo-analysis-btn">文本解析</button>
-                            <button class="process-main-btn">生成语音</button>
+                            <button class="process-main-btn" id="text-to-audio-btn">生成语音</button>
                         </div>
                     </div>
                     <div class="wav-edit-panel">
@@ -421,7 +421,7 @@
             });
             
             //文字处理面板
-            //语音生成区域
+            //语音生成tab
             const emoAnalysisBtn = document.getElementById('emo-analysis-btn');
             emoAnalysisBtn.addEventListener('click', function() {
                 // 获取当前选中的 camera-item 的描述内容
@@ -435,7 +435,7 @@
                     alert('请先选择一个镜头');
                 }
             });
-            // 示例函数：分析文本内容
+            // 分析文本内容
             async function analyzeText(text) {
                 try {
                     const response = await fetch('/analyze-text', {
@@ -465,9 +465,9 @@
                     console.error('Element with id "show-emo-panel" not found');
                 }
             }
+            // 将分析结果保存到后端
             async function saveAnalyzedText(sceneIndex,text) {
                 const sceneIndexStr = sceneIndex.toString();
-                // 将分析结果保存到后端
                 try {
                     const response = await fetch('/save-emotion-analysis', {
                         method: 'POST',
@@ -488,6 +488,28 @@
                     console.error('保存分析结果失败:', error);
                 }
             }
+            const textToAudioBtn = document.getElementById('text-to-audio-btn');
+            textToAudioBtn.addEventListener('click', function() {
+                console.log('生成语音按钮被点击');
+                // 读取并处理 JSON 文件
+                fetch('data/emotion_analysis.json')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('网络响应失败');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('读取到的数据:', data);
+                        // 在这里处理读取到的数据
+                        // processEmotionData(data);
+                    })
+                    .catch(error => {
+                        console.error('读取文件时出错:', error);
+                    });
+                        // generateAudio();
+                    });
+
             //处理文本处理面板的tab
             const voiceGenBtn = document.getElementById('voice-gen-btn');
             const motionGenBtn = document.getElementById('motion-gen-btn');
