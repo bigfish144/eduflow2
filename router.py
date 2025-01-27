@@ -7,7 +7,7 @@ import websockets
 import logging
 from utils import load_json_template
 # from api_utils.prompt_loader import load_checkpoint, load_controlnet, load_loras, load_prompt, load_controlnet_webui
-from get_output import get_imgoutputs,get_videooutputs,get_splitoutputs
+from get_output import *
 from fastapi import UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from fastapi.responses import HTMLResponse
@@ -64,3 +64,11 @@ async def process_split_text(text_content,data):
     prompt["52"]["inputs"]["split_num"] = data.mode
     generated_texts = await get_splitoutputs(client_id, prompt)
     # return generated_texts
+
+async def process_getemotion_text(data):
+    client_id = str(uuid.uuid4())
+    prompt = load_json_template('./workfolows/get_emotion.json')
+    prompt["1"]["inputs"]["input_text"] = data.text
+    generate_emo_text =await get_emotionoutputs(client_id,prompt)
+    # print(generate_emo_text)
+    return {"text": generate_emo_text}

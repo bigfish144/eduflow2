@@ -37,55 +37,57 @@
 </body>
 <script>
     // 读取本地 JSON 文件并创建 scene-item
-    function loadScenesFromJSON() {
-        fetch('/getscenes')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
-                }
-                return response.json();
-            })
-            .then(data => {
-                const sceneList = document.querySelector('.scene-list');
-                data.scenes.forEach(scene => {
-                    const newSceneItem = document.createElement('div');
-                    newSceneItem.className = 'scene-item';
+    async function loadScenesFromJSON() {
+        try {
+            const response = await fetch('data/textsplit.json');
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            const data = await response.json();
+            console.log('Data from JSON:', data); // 添加调试日志
 
-                    // 创建 p 元素并显示内容
-                    const p = document.createElement('p');
-                    p.textContent = scene.value;
-                    newSceneItem.appendChild(p);
-                    // 添加编辑按钮
-                    const editButton = document.createElement('button');
-                    editButton.className = 'edit-button';
-                    editButton.textContent = '编辑';
-                    editButton.onclick = function() {
-                        const p = this.parentNode.querySelector('p');
-                        const newContent = prompt('请输入新的内容', p.textContent);
-                        if (newContent !== null) {
-                            p.textContent = newContent;
-                        }
-                    };
-                    newSceneItem.appendChild(editButton);
-                    // 添加删除按钮
-                    const deleteButton = document.createElement('button');
-                    deleteButton.className = 'delete-button';
-                    deleteButton.textContent = '删除';
-                    deleteButton.onclick = function() {
-                        newSceneItem.remove();
-                    };
-                    newSceneItem.appendChild(deleteButton);
+            if (!data) {
+                throw new Error('JSON data is missing');
+            }
 
-                    // 将新的 scene-item 添加到 scene-list 中
-                    sceneList.appendChild(newSceneItem);
-                });
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('读取 JSON 文件失败: ' + error.message);
+            const sceneList = document.querySelector('.scene-list');
+            Object.values(data).forEach(sceneValue => {
+                const newSceneItem = document.createElement('div');
+                newSceneItem.className = 'scene-item';
+
+                // 创建 p 元素并显示内容
+                const p = document.createElement('p');
+                p.textContent = sceneValue;
+                newSceneItem.appendChild(p);
+                // 添加编辑按钮
+                const editButton = document.createElement('button');
+                editButton.className = 'edit-button';
+                editButton.textContent = '编辑';
+                editButton.onclick = function() {
+                    const p = this.parentNode.querySelector('p');
+                    const newContent = prompt('请输入新的内容', p.textContent);
+                    if (newContent !== null) {
+                        p.textContent = newContent;
+                    }
+                };
+                newSceneItem.appendChild(editButton);
+                // 添加删除按钮
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'delete-button';
+                deleteButton.textContent = '删除';
+                deleteButton.onclick = function() {
+                    newSceneItem.remove();
+                };
+                newSceneItem.appendChild(deleteButton);
+
+                // 将新的 scene-item 添加到 scene-list 中
+                sceneList.appendChild(newSceneItem);
             });
+        } catch (error) {
+            console.error('Error:', error);
+            alert('读取 JSON 文件失败: ' + error.message);
+        }
     }
-
     // 页面加载时调用 loadScenesFromJSON 函数
     document.addEventListener('DOMContentLoaded', function() {
         loadScenesFromJSON();
@@ -98,67 +100,73 @@
             };
         });
     });
-    function addSceneItem() {
-        // 创建新的 scene-item 元素
-        const newSceneItem = document.createElement('div');
-        newSceneItem.className = 'scene-item';
-    
-        // 创建输入框
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.id = "newinput";
-        input.placeholder = '请输入场景内容';
-    
-        // 创建添加按钮
-        const addButton = document.createElement('button');
-        addButton.className = 'add-button';
-        addButton.id = "addButton";
-        addButton.textContent = '添加';
-    
-        // 创建一个 Flex 容器来包裹输入框和按钮
-        const inputButtonContainer = document.createElement('div');
-        inputButtonContainer.className = 'input-button-container';
-        
-        // 将输入框和按钮添加到 Flex 容器中
-        inputButtonContainer.appendChild(input);
-        inputButtonContainer.appendChild(addButton);
-        newSceneItem.appendChild(inputButtonContainer); // 将容器添加到 newSceneItem
-    
-        // 创建 p 元素并初始隐藏
-        const p = document.createElement('p');
-        p.textContent = ''; // 初始为空
-        p.id = "newp";
-        p.style.display = 'none'; // 初始隐藏
-    
-        newSceneItem.appendChild(p); // 将 p 元素添加到 newSceneItem
-    
-        addButton.onclick = function() {
-            // 获取输入框的值
-            const content = input.value.trim();
-            if (content) {
-                // 更新 p 元素的内容
-                p.textContent = content; // 直接更新 p 元素
-                p.style.display = 'block'; // 显示 p 元素
-                // 移除输入框和添加按钮
-                inputButtonContainer.remove(); // 移除输入框和按钮的容器
-                // 添加删除按钮
-                const deleteButton = document.createElement('button');
-                deleteButton.className = 'delete-button';
-                deleteButton.textContent = '删除';
-                deleteButton.onclick = function() {
-                    newSceneItem.remove();
-                };
-                newSceneItem.appendChild(deleteButton);
-            } else {
-                alert('请输入场景内容');
-            }
-        };
-    
-        // 将新的 scene-item 添加到 scene-list 中
-        const sceneList = document.querySelector('.scene-list');
-        sceneList.appendChild(newSceneItem);
-    }
 
+    //添加分镜
+    function addSceneItem() {
+    // 创建新的 scene-item 元素
+    const newSceneItem = document.createElement('div');
+    newSceneItem.className = 'scene-item';
+    // 创建输入框
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = "newinput";
+    input.placeholder = '请输入场景内容';
+    // 创建添加按钮
+    const addButton = document.createElement('button');
+    addButton.className = 'add-button';
+    addButton.id = "addButton";
+    addButton.textContent = '添加';
+    // 创建一个 Flex 容器来包裹输入框和按钮
+    const inputButtonContainer = document.createElement('div');
+    inputButtonContainer.className = 'input-button-container';
+    // 将输入框和按钮添加到 Flex 容器中
+    inputButtonContainer.appendChild(input);
+    inputButtonContainer.appendChild(addButton);
+    newSceneItem.appendChild(inputButtonContainer); // 将容器添加到 newSceneItem
+    // 创建 p 元素并初始隐藏
+    const p = document.createElement('p');
+    p.textContent = ''; // 初始为空
+    p.id = "newp";
+    p.style.display = 'none'; // 初始隐藏
+    newSceneItem.appendChild(p); // 将 p 元素添加到 newSceneItem
+    addButton.onclick = function() {
+        // 获取输入框的值
+        const content = input.value.trim();
+        if (content) {
+            // 更新 p 元素的内容
+            p.textContent = content; // 直接更新 p 元素
+            p.style.display = 'block'; // 显示 p 元素
+            // 移除输入框和添加按钮
+            inputButtonContainer.remove(); // 移除输入框和按钮的容器
+            // 添加编辑按钮
+            const editButton = document.createElement('button');
+            editButton.className = 'edit-button';
+            editButton.textContent = '编辑';
+            editButton.onclick = function() {
+                const p = this.parentNode.querySelector('p');
+                const newContent = prompt('请输入新的内容', p.textContent);
+                if (newContent !== null) {
+                    p.textContent = newContent;
+                }
+            };
+            newSceneItem.appendChild(editButton);
+            // 添加删除按钮
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-button';
+            deleteButton.textContent = '删除';
+            deleteButton.onclick = function() {
+                newSceneItem.remove();
+            };
+            newSceneItem.appendChild(deleteButton);
+        } else {
+            alert('请输入场景内容');
+        }
+    };
+
+    // 将新的 scene-item 添加到 scene-list 中
+    const sceneList = document.querySelector('.scene-list');
+    sceneList.appendChild(newSceneItem);
+}
 
     // 页面加载时为现有的 delete-button 绑定点击事件
     document.addEventListener('DOMContentLoaded', function() {

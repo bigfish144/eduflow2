@@ -25,7 +25,7 @@ Returns:
     HTMLResponse: 包含HTML内容的响应，状态码为200或404。
 """
 
-# 将 static 目录中的文件作为静态文件提供
+# 初始化，将static 目录中的文件作为静态文件提供
 app.mount("/static", StaticFiles(directory="./static"), name="static")
 current_directory = os.getcwd()
 logger.info(current_directory)
@@ -38,6 +38,93 @@ def read_root():
             return HTMLResponse(content=f.read(), status_code=200)
     except FileNotFoundError:
         return HTMLResponse(content="File not found", status_code=404)
+
+#文本处理-存储断点
+class TextRequest(BaseModel):
+    text: str
+@app.post("/save_text")
+async def save_text(request: TextRequest):
+    original_text = request.text
+    soup = BeautifulSoup(original_text, "html.parser")
+    for span in soup.find_all("span", class_="cutscene-marker"):
+        span.string = "*"  # 将 span 中的内容替换为 "*"
+    modified_text = soup.get_text()
+    try:
+        file_path = "./static/data/output.txt"
+        with open(file_path, "w", encoding="utf-8") as file:
+            file.write(modified_text)
+        return {"message": f"文本已保存至 {file_path}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))  
+
+#文本处理-获取切分文本
+class SplitTextModel(BaseModel):
+    mode: str
+@app.post("/split_text", tags=["perfume bottle"])
+async def split_text(data:SplitTextModel):
+    file_path = './static/data/output.txt'
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not exist")
+    # 读取文件内容
+    with open(file_path, 'r', encoding='utf-8') as file:
+        text_content = file.read()
+    # logger.info(f"模式为：{data.mode}")
+    split_result = await process_split_text(text_content,data)
+
+# 文本处理-保存分镜数据
+class SceneData(BaseModel): 
+    scenes: dict
+@app.post("/save-storyboard")
+async def save_storyboard(scene_data: SceneData):
+    file_path = "./static/data/storyboard.json"
+    os.makedirs(os.path.dirname(file_path), exist_ok=True) 
+    try:
+        # print("Received data:", scene_data)
+        with open(file_path, 'w', encoding='utf-8') as file:
+            file.write(json.dumps(scene_data.dict(), indent=4, ensure_ascii=False))
+        return {"success": True, "message": "文件保存成功"}
+    except Exception as e:
+        print(f"Error saving file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"文件保存失败: {str(e)}")
+
+#文本情感分析
+class TextAnalysisRequest(BaseModel):
+    text: str
+@app.post("/analyze-text")
+async def analyze_text(data: TextAnalysisRequest):
+    text = data.text
+    return await process_getemotion_text(data)
+
+#文本情感分析-保存情感分析数据
+class SaveAnalysisRequest(BaseModel):
+    sceneIndex: str
+    text: list
+@app.post("/save-emotion-analysis")
+async def save_analysis(data: SaveAnalysisRequest):
+    file_path = "./static/data/emotion_analysis.json"
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            analysis_data = json.load(file)
+    else:
+        analysis_data = {}  # 初始化为空对象
+    analysis_data[data.sceneIndex] = data.text
+    # 保存数据
+    with open(file_path, 'w', encoding='utf-8') as file:
+        json.dump(analysis_data, file, ensure_ascii=False, indent=4)
+    return {"message": "分析结果已保存"}
+
+#文生图
+class TextToImageModel(BaseModel):
+    prompt: str
+    selectedFileName: str
+    queuesize: int
+    batchsize:int
+@app.post("/generate_img", tags=["perfume bottle"])
+async def generate_img(data:TextToImageModel):
+    logger.info(f"批次为：{data.queuesize}")
+    # logger.info(await process_generateimg(data,batch_size))
+    return await process_generateimg(data,data.queuesize)
 
 #获取模型文件列表
 @app.get("/get_file_list", response_class=JSONResponse)
@@ -54,90 +141,6 @@ async def get_file_list():
         return {"files": files}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    # test_list = ["file1.txt", "file2.txt", "file3.txt"]
-    # return {"files": test_list}
-
-#文本处理-存储断点
-class TextRequest(BaseModel):
-    text: str
-@app.post("/save_text")
-async def save_text(request: TextRequest):
-    original_text = request.text
-    soup = BeautifulSoup(original_text, "html.parser")
-    for span in soup.find_all("span", class_="cutscene-marker"):
-        span.string = "*"  # 将 span 中的内容替换为 "*"
-    modified_text = soup.get_text()
-    try:
-        file_path = "./static/data/output.txt"
-        
-        with open(file_path, "w", encoding="utf-8") as file:
-            file.write(modified_text)
-        
-        return {"message": f"文本已保存至 {file_path}"}
-    
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
-# 文本处理-保存分镜数据
-class SceneData(BaseModel): 
-    scenes: dict
-@app.post("/save-storyboard")
-async def save_storyboard(scene_data: SceneData):
-    file_path = "./static/data/storyboard.json"
-    os.makedirs(os.path.dirname(file_path), exist_ok=True) 
-    try:
-        print("Received data:", scene_data)
-        with open(file_path, 'w', encoding='utf-8') as file:
-            file.write(json.dumps(scene_data.dict(), indent=4, ensure_ascii=False))
-        return {"success": True, "message": "文件保存成功"}
-    except Exception as e:
-        print(f"Error saving file: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"文件保存失败: {str(e)}")
-
-#文本处理-获取分镜
-class Scene(BaseModel):
-    key: str
-    value: str
-@app.get("/getscenes")
-def get_scenes():
-    JSON_FILE_PATH = './static/data/textsplit.json'
-    try:
-        with open(JSON_FILE_PATH, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-            # 将对象转换为数组
-            scenes = [{"key": key, "value": value} for key, value in data.items()]
-            return {"scenes": scenes}
-    except FileNotFoundError:
-        return {"error": "File not found"}
-    except json.JSONDecodeError:
-        return {"error": "Invalid JSON format"}
-
-#文生图
-class TextToImageModel(BaseModel):
-    prompt: str
-    selectedFileName: str
-    queuesize: int
-    batchsize:int
-@app.post("/generate_img", tags=["perfume bottle"])
-async def generate_img(data:TextToImageModel):
-    logger.info(f"批次为：{data.queuesize}")
-    # logger.info(await process_generateimg(data,batch_size))
-    return await process_generateimg(data,data.queuesize)
-
-#文本处理-获取切分文本
-class SplitTextModel(BaseModel):
-    mode: str
-@app.post("/split_text", tags=["perfume bottle"])
-async def split_text(data:SplitTextModel):
-    file_path = './static/data/output.txt'
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File not exist")
-    
-    # 读取文件内容
-    with open(file_path, 'r', encoding='utf-8') as file:
-        text_content = file.read()
-    # logger.info(f"模式为：{data.mode}")
-    split_result = await process_split_text(text_content,data)
 
 # 图生图
 class ImgToImgModel(BaseModel):
@@ -177,5 +180,5 @@ async def imgGenerateImg(
 if __name__ == '__main__':    
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-# cd Comfyui
+# cd ComfyUI/demo/
 # 运行命令：uvicorn api:app --reload

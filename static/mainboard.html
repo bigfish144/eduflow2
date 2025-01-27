@@ -34,17 +34,7 @@
                 <div class="camera-item">
                     <span class="camera-number">1</span>
                     <img src="images/sceneimg.png" alt="1" class="sceneimg">
-                    <p>想象一下，如果没有重力会...</p>
-                </div>
-                <div class="camera-item">
-                    <span class="camera-number">2</span>
-                    <img src="images/sceneimg.png" alt="1" class="sceneimg">
-                    <p>想象一下，如果没有重力会...</p>
-                </div>
-                <div class="camera-item">
-                    <span class="camera-number">3</span>
-                    <img src="images/sceneimg.png" alt="1" class="sceneimg">
-                    <p>想象一下，如果没有重力会...</p>
+                    <p class="camera-description">想象一下，如果没有重力会...</p>
                 </div>
             </div>
         </div>
@@ -104,9 +94,12 @@
                 </div>
                 <div class="process-tab-container" id="voice-tab-container">
                     <div class="process-tab-content">
-                        <textarea placeholder="请输入生成文本" id="show-text-panel"></textarea>
+                        <div class="process-input-container">
+                            <textarea placeholder="请输入生成文本" id="show-text-panel" class="show-text-panel"></textarea>
+                            <textarea placeholder="请输入生成文本" id="show-emo-panel" class="show-text-panel" readonly></textarea>
+                        </div>
                         <div class="process-btn-container">
-                            <button class="process-grey-btn">文本解析</button>
+                            <button class="process-grey-btn" id="emo-analysis-btn">文本解析</button>
                             <button class="process-main-btn">生成语音</button>
                         </div>
                     </div>
@@ -299,239 +292,394 @@
         </div>
     </div> 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        //素材列表面板
+        document.addEventListener('DOMContentLoaded', function() {
+            let selectedCameraItem = null; // 用于存储当前选中的 camera-item
+            let selectedSceneIndex = -1; // 用于存储当前选中的 sceneIndex
 
-        // 处理 part-tabs 的点击事件
-        const partTabButtons = document.querySelectorAll('.part-tab-button');
-        const partTabContents = document.querySelectorAll('.part-tab-content');
-        partTabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const targetTab = button.getAttribute('data-tab');
-                // 移除所有按钮的激活状态
-                partTabButtons.forEach(btn => btn.classList.remove('active'));
-                // 移除所有内容区域的激活状态
-                partTabContents.forEach(content => content.classList.remove('active'));
-                // 激活当前按钮和对应的内容区域
-                button.classList.add('active');
-                document.getElementById(targetTab).classList.add('active');
-            });
-        });
-
-        //素材库面板
-        // 处理 all-tabs 的点击事件
-        const allTabButtons = document.querySelectorAll('.all-tab-button');
-        const allTabContents = document.querySelectorAll('.all-tab-content');
-        allTabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const targetTab = button.getAttribute('data-tab');
-                // 移除所有按钮的激活状态
-                allTabButtons.forEach(btn => btn.classList.remove('active'));
-                // 移除所有内容区域的激活状态
-                allTabContents.forEach(content => content.classList.remove('active'));
-                // 激活当前按钮和对应的内容区域
-                button.classList.add('active');
-                document.getElementById(targetTab).classList.add('active');
-            });
-        });
-        
-        //文本处理面板
-        //处理文本处理面板的tab
-        const voiceGenBtn = document.getElementById('voice-gen-btn');
-        const motionGenBtn = document.getElementById('motion-gen-btn');
-        const wav2lipGenBtn = document.getElementById('wav2lip-gen-btn');
-        const voiceTabContainer = document.getElementById('voice-tab-container');
-        const motionTabContainer = document.getElementById('motion-tab-container');
-        const wav2lipTabContainer = document.getElementById('wav2lip-tab-container');
-        function hideAllTabs() {
-            voiceTabContainer.style.display = 'none';
-            motionTabContainer.style.display = 'none';
-            wav2lipTabContainer.style.display = 'none';
-        }
-        function showTab(tabId, activeBtn) {
-            hideAllTabs();
-            document.getElementById(tabId).style.display = 'block';
-            voiceGenBtn.classList.remove('active');
-            motionGenBtn.classList.remove('active');
-            wav2lipGenBtn.classList.remove('active');
-            activeBtn.classList.add('active');
-        }
-        voiceGenBtn.addEventListener('click', function() {
-            showTab('voice-tab-container', voiceGenBtn);
-        });
-        motionGenBtn.addEventListener('click', function() {
-            showTab('motion-tab-container', motionGenBtn);
-        });
-        wav2lipGenBtn.addEventListener('click', function() {
-            showTab('wav2lip-tab-container', wav2lipGenBtn);
-        });
-        showTab('voice-tab-container', voiceGenBtn);
-
-        //处理视频播放进度条
-        const video = document.getElementById('thispape-video');
-        const progress = document.getElementById('videoProgress');
-        const currentTimeDisplay = document.getElementById('currentTime');
-        const durationDisplay = document.getElementById('duration');
-        const playButton = document.getElementById('play-this-video'); 
-        const playIcon = document.getElementById('play-icon');
-        const frameRate = 24;
-        function formatTime(time) {
-            const hours = Math.floor(time / 3600);
-            const minutes = Math.floor((time % 3600) / 60);
-            const seconds = Math.floor(time % 60);
-            const frames = Math.floor((time % 1) * frameRate);
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${frames.toString().padStart(2, '0')}`;
-        }
-        video.addEventListener('timeupdate', () => {
-            const value = (100 / video.duration) * video.currentTime;
-            progress.value = value;
-            currentTimeDisplay.textContent = formatTime(video.currentTime);
-            updateFilledWidth(progress);
-        });
-
-        video.addEventListener('loadedmetadata', () => {
-            durationDisplay.textContent = formatTime(video.duration);
-        });
-        progress.addEventListener('input', () => {
-            const time = video.duration * (progress.value / 100);
-            video.currentTime = time;
-            updateFilledWidth(progress);
-        });
-        playButton.addEventListener('click', () => {
-            if (video.paused) {
-                video.play();
-                playIcon.src = "images/btn_pause.png"; 
-            } else {
-                video.pause();
-                playIcon.src = "images/btn_play.png"; 
+            // 镜头列表面板
+            async function loadStoryboardData() { // 获取并加载分镜数据
+                const leftPanel = document.querySelector('.left-panel');
+                leftPanel.innerHTML = '';
+                try {
+                    const response = await fetch('data/storyboard.json');
+                    if (!response.ok) {
+                        throw new Error('网络响应失败');
+                    }
+                    const data = await response.json();
+                    const scenes = data.scenes;
+                    // 遍历 scenes 对象并创建 camera-item
+                    for (const [key, value] of Object.entries(scenes)) {
+                        const cameraItem = document.createElement('div');
+                        cameraItem.className = 'camera-item';
+                        cameraItem.setAttribute('data-index', key); // 存储索引
+                        const cameraNumber = document.createElement('span');
+                        cameraNumber.className = 'camera-number';
+                        cameraNumber.textContent = parseInt(key) + 1;
+                        const sceneImg = document.createElement('img');
+                        sceneImg.src = "images/sceneimg.png"; 
+                        sceneImg.alt = key;
+                        sceneImg.className = 'sceneimg';
+                        const description = document.createElement('p');
+                        description.className = 'camera-description'; 
+                        description.textContent = value;
+                        cameraItem.appendChild(cameraNumber);
+                        cameraItem.appendChild(sceneImg);
+                        cameraItem.appendChild(description);
+                        leftPanel.appendChild(cameraItem);
+                        // 切换/选择分镜
+                        cameraItem.addEventListener('click', function() {
+                            const allCameraItems = document.querySelectorAll('.camera-item');
+                            allCameraItems.forEach(item => item.classList.remove('selected'));
+                            cameraItem.classList.add('selected');
+                            const showTextPanel = document.getElementById('show-text-panel');
+                            showTextPanel.value = description.textContent; 
+                            selectedCameraItem = cameraItem;
+                            selectedSceneIndex = parseInt(cameraItem.getAttribute('data-index'), 10); // 获取索引
+                            saveStoryboardData();
+                        });
+                    }
+                    // 默认选择第一个 camera-item
+                    const firstCameraItem = leftPanel.querySelector('.camera-item');
+                    if (firstCameraItem) {
+                        firstCameraItem.click(); 
+                    }
+                } catch (error) {
+                    console.error('加载分镜数据失败:', error);
+                }
             }
-        });
-        function updateFilledWidth(element) {
-            element.style.setProperty('--filled-width', element.value + '%');
-        }
-        updateFilledWidth(progress);
-        video.addEventListener('ended', () => {
-            playIcon.src = "images/btn_play.png";
-        });  
+            // 加载分镜数据
+            loadStoryboardData();       
+            // 添加事件监听器到 #show-text-panel
+            const showTextPanel = document.getElementById('show-text-panel');
+            showTextPanel.addEventListener('input', function() {
+                if (selectedCameraItem) {
+                    const description = selectedCameraItem.querySelector('.camera-description');
+                    if (description) {
+                        description.textContent = showTextPanel.value; 
+                        saveStoryboardData();
+                    }
+                }
+            });
+            // 保存更新后的描述内容到 data/storyboard.json
+            async function saveStoryboardData() {
+                const leftPanel = document.querySelector('.left-panel');
+                const cameraItems = leftPanel.querySelectorAll('.camera-item');
+                const scenes = {};
+                cameraItems.forEach((item, index) => {
+                    const description = item.querySelector('.camera-description');
+                    if (description) {
+                        scenes[index] = description.textContent;
+                    }
+                });
+                const data = { scenes };
+                try {
+                    const response = await fetch('/save-storyboard', { 
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    if (!response.ok) {
+                        throw new Error('保存数据失败');
+                    }
+                    console.log('数据保存成功');
+                } catch (error) {
+                    console.error('保存数据失败:', error);
+                }
+            }
 
-        //音频面板
-        // 获取所有的音频元素和相关的 DOM 元素
-        const audioElements = document.querySelectorAll('audio');
-        const playPauseButtons = document.querySelectorAll('.audio-play-pause-btn');
-        const audioPlayers = document.querySelectorAll('.audio-player');
-        const progressContainers = document.querySelectorAll('.audio-progress-container');
-        const progressBars = document.querySelectorAll('.audio-progress');
+            //素材列表面板
+            const partTabButtons = document.querySelectorAll('.part-tab-button');// 处理当前素材part-tabs 的点击事件
+            const partTabContents = document.querySelectorAll('.part-tab-content');
+            partTabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.getAttribute('data-tab');
+                    // 移除所有按钮的激活状态
+                    partTabButtons.forEach(btn => btn.classList.remove('active'));
+                    partTabContents.forEach(content => content.classList.remove('active'));
+                    // 激活当前按钮和对应的内容区域
+                    button.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+                });
+            });
 
-        let selectedAudioIndex = null; // 当前选中的音频索引
-        let currentPlayingAudioIndex = null; // 当前正在播放的音频索引
+            //素材库面板
+            const allTabButtons = document.querySelectorAll('.all-tab-button');// 处理素材库all-tabs 的点击事件
+            const allTabContents = document.querySelectorAll('.all-tab-content');
+            allTabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.getAttribute('data-tab');
+                    // 移除所有按钮的激活状态
+                    allTabButtons.forEach(btn => btn.classList.remove('active'));
+                    // 移除所有内容区域的激活状态
+                    allTabContents.forEach(content => content.classList.remove('active'));
+                    // 激活当前按钮和对应的内容区域
+                    button.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+                });
+            });
+            
+            //文字处理面板
+            //语音生成区域
+            const emoAnalysisBtn = document.getElementById('emo-analysis-btn');
+            emoAnalysisBtn.addEventListener('click', function() {
+                // 获取当前选中的 camera-item 的描述内容
+                if (selectedCameraItem) {
+                    const description = selectedCameraItem.querySelector('.camera-description');
+                    if (description) {
+                        const textContent = description.textContent;
+                        analyzeText(textContent);
+                    }
+                } else {
+                    alert('请先选择一个镜头');
+                }
+            });
+            // 示例函数：分析文本内容
+            async function analyzeText(text) {
+                try {
+                    const response = await fetch('/analyze-text', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ text: text })
+                    });
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    const data = await response.json();
+                    displayAnalysisResult(data.text);
+                    saveAnalyzedText(selectedSceneIndex,data.text);
+                } catch (error) {
+                    console.error('文本分析失败:', error);
+                }
+            }
+            // 显示分析结果
+            function displayAnalysisResult(text) {
+                const inputpanel = document.getElementById('show-emo-panel');
+                inputpanel.style.display = 'block';
+                if (inputpanel) {
+                    inputpanel.value = text;
+                } else {
+                    console.error('Element with id "show-emo-panel" not found');
+                }
+            }
+            async function saveAnalyzedText(sceneIndex,text) {
+                const sceneIndexStr = sceneIndex.toString();
+                // 将分析结果保存到后端
+                try {
+                    const response = await fetch('/save-emotion-analysis', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            sceneIndex: sceneIndexStr,
+                            text: text.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+                        })
+                    });
+                    if (!response.ok) {
+                        throw new Error('保存分析结果失败: ' + response.statusText);
+                    }
+                    const result = await response.json();
+                    console.log(result.message);  // 打印保存结果的消息
+                } catch (error) {
+                    console.error('保存分析结果失败:', error);
+                }
+            }
+            //处理文本处理面板的tab
+            const voiceGenBtn = document.getElementById('voice-gen-btn');
+            const motionGenBtn = document.getElementById('motion-gen-btn');
+            const wav2lipGenBtn = document.getElementById('wav2lip-gen-btn');
+            const voiceTabContainer = document.getElementById('voice-tab-container');
+            const motionTabContainer = document.getElementById('motion-tab-container');
+            const wav2lipTabContainer = document.getElementById('wav2lip-tab-container');
+            function hideAllTabs() {
+                voiceTabContainer.style.display = 'none';
+                motionTabContainer.style.display = 'none';
+                wav2lipTabContainer.style.display = 'none';
+            }
+            function showTab(tabId, activeBtn) {
+                hideAllTabs();
+                document.getElementById(tabId).style.display = 'block';
+                voiceGenBtn.classList.remove('active');
+                motionGenBtn.classList.remove('active');
+                wav2lipGenBtn.classList.remove('active');
+                activeBtn.classList.add('active');
+            }
+            voiceGenBtn.addEventListener('click', function() {
+                showTab('voice-tab-container', voiceGenBtn);
+            });
+            motionGenBtn.addEventListener('click', function() {
+                showTab('motion-tab-container', motionGenBtn);
+            });
+            wav2lipGenBtn.addEventListener('click', function() {
+                showTab('wav2lip-tab-container', wav2lipGenBtn);
+            });
+            showTab('voice-tab-container', voiceGenBtn);
 
-        // 播放/暂停按钮点击事件
-        playPauseButtons.forEach((btn, index) => {
-            btn.addEventListener('click', function () {
-                const audio = audioElements[index];
-                const progressBar = progressBars[index];
+            //处理视频播放进度条
+            const video = document.getElementById('thispape-video');
+            const progress = document.getElementById('videoProgress');
+            const currentTimeDisplay = document.getElementById('currentTime');
+            const durationDisplay = document.getElementById('duration');
+            const playButton = document.getElementById('play-this-video'); 
+            const playIcon = document.getElementById('play-icon');
+            const frameRate = 24;
+            function formatTime(time) {
+                const hours = Math.floor(time / 3600);
+                const minutes = Math.floor((time % 3600) / 60);
+                const seconds = Math.floor(time % 60);
+                const frames = Math.floor((time % 1) * frameRate);
+                return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${frames.toString().padStart(2, '0')}`;
+            }
+            video.addEventListener('timeupdate', () => {
+                const value = (100 / video.duration) * video.currentTime;
+                progress.value = value;
+                currentTimeDisplay.textContent = formatTime(video.currentTime);
+                updateFilledWidth(progress);
+            });
 
-                if (audio.paused) {
-                    // 播放当前音频
-                    audio.play();
-                    btn.querySelector('img').src = "images/btn_pause.png"; // 切换为暂停图标
+            video.addEventListener('loadedmetadata', () => {
+                durationDisplay.textContent = formatTime(video.duration);
+            });
+            progress.addEventListener('input', () => {
+                const time = video.duration * (progress.value / 100);
+                video.currentTime = time;
+                updateFilledWidth(progress);
+            });
+            playButton.addEventListener('click', () => {
+                if (video.paused) {
+                    video.play();
+                    playIcon.src = "images/btn_pause.png"; 
+                } else {
+                    video.pause();
+                    playIcon.src = "images/btn_play.png"; 
+                }
+            });
+            function updateFilledWidth(element) {
+                element.style.setProperty('--filled-width', element.value + '%');
+            }
+            updateFilledWidth(progress);
+            video.addEventListener('ended', () => {
+                playIcon.src = "images/btn_play.png";
+            });  
 
-                    // 如果有其他音频在播放，暂停它
-                    if (currentPlayingAudioIndex !== null && currentPlayingAudioIndex !== index) {
-                        const otherAudio = audioElements[currentPlayingAudioIndex];
-                        const otherButton = playPauseButtons[currentPlayingAudioIndex];
-                        otherAudio.pause();
-                        otherButton.querySelector('img').src = "images/btn_play.png"; // 恢复播放图标
+            //音频面板
+            // 获取所有的音频元素和相关的 DOM 元素
+            const audioElements = document.querySelectorAll('audio');
+            const playPauseButtons = document.querySelectorAll('.audio-play-pause-btn');
+            const audioPlayers = document.querySelectorAll('.audio-player');
+            const progressContainers = document.querySelectorAll('.audio-progress-container');
+            const progressBars = document.querySelectorAll('.audio-progress');
+
+            let selectedAudioIndex = null; // 当前选中的音频索引
+            let currentPlayingAudioIndex = null; // 当前正在播放的音频索引
+
+            // 播放/暂停按钮点击事件
+            playPauseButtons.forEach((btn, index) => {
+                btn.addEventListener('click', function () {
+                    const audio = audioElements[index];
+                    const progressBar = progressBars[index];
+
+                    if (audio.paused) {
+                        // 播放当前音频
+                        audio.play();
+                        btn.querySelector('img').src = "images/btn_pause.png"; // 切换为暂停图标
+
+                        // 如果有其他音频在播放，暂停它
+                        if (currentPlayingAudioIndex !== null && currentPlayingAudioIndex !== index) {
+                            const otherAudio = audioElements[currentPlayingAudioIndex];
+                            const otherButton = playPauseButtons[currentPlayingAudioIndex];
+                            otherAudio.pause();
+                            otherButton.querySelector('img').src = "images/btn_play.png"; // 恢复播放图标
+                        }
+
+                        currentPlayingAudioIndex = index; // 更新当前播放的音频索引
+                    } else {
+                        // 暂停当前音频
+                        audio.pause();
+                        btn.querySelector('img').src = "images/btn_play.png"; // 切换为播放图标
+                        currentPlayingAudioIndex = null; // 清除当前播放的音频索引
                     }
 
-                    currentPlayingAudioIndex = index; // 更新当前播放的音频索引
-                } else {
-                    // 暂停当前音频
-                    audio.pause();
-                    btn.querySelector('img').src = "images/btn_play.png"; // 切换为播放图标
-                    currentPlayingAudioIndex = null; // 清除当前播放的音频索引
+                    // 自动选择当前音频
+                    selectAudio(index);
+                });
+            });
+
+            // 进度条点击事件
+            progressContainers.forEach((container, index) => {
+                container.addEventListener('click', function (event) {
+                    const audio = audioElements[index];
+                    const progressBar = progressBars[index];
+                    const progressWidth = container.offsetWidth;
+                    const clickPosition = event.offsetX; 
+                    const newTime = (clickPosition / progressWidth) * audio.duration;
+                    audio.currentTime = newTime;
+                    progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+                    selectAudio(index);
+                });
+            });
+
+            // 音频播放事件：动态更新进度条
+            audioElements.forEach((audio, index) => {
+                audio.addEventListener('timeupdate', function () {
+                    const progressBar = progressBars[index];
+                    progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; // 更新进度条宽度
+                });
+
+                audio.addEventListener('ended', function () {
+                    // 音频结束后恢复播放按钮图标
+                    playPauseButtons[index].querySelector('img').src = "images/btn_play.png";
+                    currentPlayingAudioIndex = null; // 清除播放索引
+                });
+            });
+
+            // 选择音频的方法
+            function selectAudio(index) {
+                if (selectedAudioIndex !== null && selectedAudioIndex !== index) {
+                    const previousPlayer = audioPlayers[selectedAudioIndex];
+                    const previousProgressBar = progressBars[selectedAudioIndex];
+                    previousPlayer.style.border = ''; // 移除描边
+                    previousProgressBar.style.backgroundColor = '#8785FF'; // 恢复原来的颜色
                 }
-
-                // 自动选择当前音频
-                selectAudio(index);
-            });
-        });
-
-        // 进度条点击事件
-        progressContainers.forEach((container, index) => {
-            container.addEventListener('click', function (event) {
-                const audio = audioElements[index];
-                const progressBar = progressBars[index];
-                const progressWidth = container.offsetWidth;
-                const clickPosition = event.offsetX; 
-                const newTime = (clickPosition / progressWidth) * audio.duration;
-                audio.currentTime = newTime;
-                progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
-                selectAudio(index);
-            });
-        });
-
-        // 音频播放事件：动态更新进度条
-        audioElements.forEach((audio, index) => {
-            audio.addEventListener('timeupdate', function () {
-                const progressBar = progressBars[index];
-                progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; // 更新进度条宽度
-            });
-
-            audio.addEventListener('ended', function () {
-                // 音频结束后恢复播放按钮图标
-                playPauseButtons[index].querySelector('img').src = "images/btn_play.png";
-                currentPlayingAudioIndex = null; // 清除播放索引
-            });
-        });
-
-        // 选择音频的方法
-        function selectAudio(index) {
-            if (selectedAudioIndex !== null && selectedAudioIndex !== index) {
-                const previousPlayer = audioPlayers[selectedAudioIndex];
-                const previousProgressBar = progressBars[selectedAudioIndex];
-                previousPlayer.style.border = ''; // 移除描边
-                previousProgressBar.style.backgroundColor = '#8785FF'; // 恢复原来的颜色
+                selectedAudioIndex = index;
+                const currentPlayer = audioPlayers[index];
+                const currentProgressBar = progressBars[index];
+                currentPlayer.style.border = '3px solid #6366f1'; // 增加描边
+                currentProgressBar.style.backgroundColor = '#6366f1'; // 修改进度条颜色
             }
-            selectedAudioIndex = index;
-            const currentPlayer = audioPlayers[index];
-            const currentProgressBar = progressBars[index];
-            currentPlayer.style.border = '3px solid #6366f1'; // 增加描边
-            currentProgressBar.style.backgroundColor = '#6366f1'; // 修改进度条颜色
-        }
-        // 口型匹配
-        const slider = document.getElementById('slider'); // 滑块
-        const tooltip = document.getElementById('tooltip'); // Tooltip
-        function updateTooltip() {
-            const sliderRect = slider.getBoundingClientRect();
-            const sliderWidth = slider.offsetWidth;
-            const position = ((slider.value - slider.min) / (slider.max - slider.min)) * sliderWidth;
-            tooltip.style.left = `${position - tooltip.offsetWidth / 2}px`; // 调整为 Tooltip 居中
-            tooltip.textContent = slider.value; 
-        }
-        // 初始化 Tooltip
-        slider.value = 0;
-        updateTooltip(); // 调用此函数以初始化 Tooltip 的位置和内容
-        tooltip.style.opacity = 0; // 默认隐藏提示框
-        // 监听滑块的拖动事件
-        slider.addEventListener('input', updateTooltip);
-        // 悬停时显示 Tooltip
-        slider.addEventListener('mouseenter', () => tooltip.style.opacity = 1);
-        slider.addEventListener('mouseleave', () => tooltip.style.opacity = 0);
-        //跳转
-        // 创建角色跳转
-        const createcharbtn = document.querySelector('.add-all-cha-btn');
-        createcharbtn.addEventListener('click', function() {
-            window.location.href = 'create_char.html';
-        });
+            // 口型匹配
+            const slider = document.getElementById('slider'); // 滑块
+            const tooltip = document.getElementById('tooltip'); // Tooltip
+            function updateTooltip() {
+                const sliderRect = slider.getBoundingClientRect();
+                const sliderWidth = slider.offsetWidth;
+                const position = ((slider.value - slider.min) / (slider.max - slider.min)) * sliderWidth;
+                tooltip.style.left = `${position - tooltip.offsetWidth / 2}px`; // 调整为 Tooltip 居中
+                tooltip.textContent = slider.value; 
+            }
+            slider.value = 0; // 初始化 Tooltip
+            updateTooltip(); // 调用此函数以初始化 Tooltip 的位置和内容
+            tooltip.style.opacity = 0; // 默认隐藏提示框
+            slider.addEventListener('input', updateTooltip);// 监听滑块的拖动事件
+            // 悬停时显示 Tooltip
+            slider.addEventListener('mouseenter', () => tooltip.style.opacity = 1);
+            slider.addEventListener('mouseleave', () => tooltip.style.opacity = 0);
 
-        // 创建图片跳转
-        const creatematbtn = document.querySelector('.add-all-img-btn');
-        creatematbtn.addEventListener('click', function() {
-            window.location.href = 'create_material.html';
-        });
+            //跳转
+            const createcharbtn = document.querySelector('.add-all-cha-btn');// 创建角色跳转
+            createcharbtn.addEventListener('click', function() {
+                window.location.href = 'create_char.html';
+            });
+            const creatematbtn = document.querySelector('.add-all-img-btn');// 创建图片跳转
+            creatematbtn.addEventListener('click', function() {
+                window.location.href = 'create_material.html';
+            });
 
-    });
+        });
 </script>
 
 </body>

@@ -89,6 +89,38 @@ async def get_splitoutputs(client_id,prompt):
                         break
     history = get_history(prompt_id)[prompt_id]
     print(f"prompt_id:{prompt_id}")
+
+#获取文本情感
+async def get_emotionoutputs(client_id,prompt):
+    prompt_id = queue_prompt(prompt, client_id)['prompt_id']
+    async with websockets.connect(f"ws://{server_address}/ws?clientId={client_id}") as websocket:        
+        while True:
+            out = await websocket.recv()
+            if isinstance(out, str):
+                message= json.loads(out)
+                if message['type'] == 'executing':
+                    data = message['data']
+                    if data['node'] is None and data['prompt_id'] == prompt_id:
+                        break
+    history = get_history(prompt_id)[prompt_id]
+    print(f"prompt_id:{prompt_id}")
+    for node_id, node_output in history['outputs'].items():
+        if 'text' in node_output:
+            # 确保 node_output['text'] 是一个列表并且至少有一个元素
+            if isinstance(node_output['text'], list) and len(node_output['text']) > 0:
+                output_text = node_output['text'][0]  
+                print(output_text)
+                return output_text
+            else:
+                print("Text list is empty or not a list")
+                return None 
+        else:
+            print("No text found in node_output")
+            return None  
+ 
+
+
+
 # async def get_outputs(client_id, prompt):
 #     prompt_id = queue_prompt(prompt, client_id)['prompt_id']
 #     output_images = []
