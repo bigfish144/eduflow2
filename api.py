@@ -115,6 +115,16 @@ async def save_analysis(data: SaveAnalysisRequest):
         json.dump(analysis_data, file, ensure_ascii=False, indent=4)
     return {"message": "分析结果已保存"}
 
+#文本生成语音
+class TexttoSpeech(BaseModel):
+    text: str
+    emotion:str
+@app.post("/text-to-speech")
+async def text_to_speech(data: TexttoSpeech):
+    text = data.text
+    emotion = data.emotion
+    return await process_texttospeech(data)
+
 #文生图
 class TextToImageModel(BaseModel):
     prompt: str
@@ -130,14 +140,10 @@ async def generate_img(data:TextToImageModel):
 #获取模型文件列表
 @app.get("/get_file_list", response_class=JSONResponse)
 async def get_file_list():
-    #模型的存放路径
     directory_path = "../models/checkpoints"
-    
     if not os.path.exists(directory_path):
         return {"detail": f"Directory {directory_path} not found"}
-
     try:
-        # 获取文件列表
         files = os.listdir(directory_path)
         return {"files": files}
     except Exception as e:

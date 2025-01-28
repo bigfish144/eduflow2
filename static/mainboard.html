@@ -198,7 +198,7 @@
                                     <span>9</span>
                                 </div>
                             </div>
-                                                        <div class="slider-container" id="slider-container1">
+                            <div class="slider-container" id="slider-container1">
                                 <div class="slider-label">嘴部开合</div>
                                 <div class="slider-wrapper">
                                     <span>-9</span>
@@ -479,19 +479,15 @@
                             inputpanel.appendChild(remainingTextContainer);
                         }
                     }
-
                     const sentence = match[1].trim();
                     const emotion = match[2].trim();
-
                     // 创建包含句子和下拉列表的子div
                     const sentenceContainer = document.createElement('div');
                     sentenceContainer.className = 'sentence-container';
                     sentenceContainer.setAttribute('data-sentence', sentence);  // 添加数据属性
-
                     // 添加句子
                     const sentenceText = document.createTextNode(sentence);
                     sentenceContainer.appendChild(sentenceText);
-
                     // 创建下拉列表
                     const select = document.createElement('select');
                     select.onchange = function() {
@@ -509,13 +505,10 @@
                         select.appendChild(option);
                     });
                     sentenceContainer.appendChild(select);
-
                     // 添加换行符
                     sentenceContainer.appendChild(document.createElement('br'));
-
                     // 将子div添加到主div中
                     inputpanel.appendChild(sentenceContainer);
-
                     // 更新 lastIndex
                     lastIndex = regex.lastIndex;
                 }
@@ -563,7 +556,6 @@
                     }
                     const sentenceContainers = inputpanel.getElementsByClassName('sentence-container');
                     const data = [];
-
                     for (let i = 0; i < sentenceContainers.length; i++) {
                         const container = sentenceContainers[i];
                         const sentenceText = container.getAttribute('data-sentence').trim();  // 使用 data-sentence 属性
@@ -625,27 +617,68 @@
                 }
             }
               
-            //语音转文字
+            // 语音转文字
             const textToAudioBtn = document.getElementById('text-to-audio-btn');
-            textToAudioBtn.addEventListener('click', function() {
+            textToAudioBtn.addEventListener('click', async function() {
                 console.log('生成语音按钮被点击');
-                fetch('data/emotion_analysis.json')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('网络响应失败');
+                try {
+                    const response = await fetch('data/emotion_analysis.json');
+                    if (!response.ok) {
+                        throw new Error('网络响应失败');
+                    }
+                    const data = await response.json();
+                    console.log('读取到的数据:', data);
+                    // 假设 selectedSceneIndex 是一个变量，表示要提取的键
+                    const selectedSceneIndex = 1; // 这里可以动态设置
+                    // 提取 selectedSceneIndex 对应的值
+                    const selectedSceneData = data[selectedSceneIndex.toString()];
+                    if (!selectedSceneData) {
+                        console.error('未找到对应的 selectedSceneIndex 数据');
+                        return;
+                    }
+                    // 遍历每个 selectedSceneData 的值
+                    for (const item of selectedSceneData) {
+                        const match = item.match(/^(.+)\((.+)\)$/);
+                        if (match) {
+                            const text = match[1].trim();
+                            const emotion = match[2].trim();
+                            console.log('Text:', text);
+                            console.log('Emotion:', emotion);
+                            // 发送数据到后端
+                            try {
+                                await sendToBackend(text, emotion);
+                            } catch (error) {
+                                console.error('发送数据到后端时出错:', error);
+                            }
+                        } else {
+                            console.error('无法拆分文本和情绪:', item);
                         }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('读取到的数据:', data);
-                        // 在这里处理读取到的数据
-                        // processEmotionData(data);
-                    })
-                    .catch(error => {
-                        console.error('读取文件时出错:', error);
+                    }
+                } catch (error) {
+                    console.error('读取文件时出错:', error);
+                }
+            });
+
+            // 发送数据到后端的异步函数
+            async function sendToBackend(text, emotion) {
+                console.log('发送数据到后端:', text, emotion);
+                try {
+                    const response = await fetch('/text-to-speech', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ text, emotion })
                     });
-                        // generateAudio();
-                    });
+                    if (!response.ok) {
+                        throw new Error('后端响应失败');
+                    }
+                    const data = await response.json();
+                    console.log('后端响应:', data);
+                } catch (error) {
+                    console.error('发送数据到后端时出错:', error);
+                }
+            }
 
             //处理文本处理面板的tab
             const voiceGenBtn = document.getElementById('voice-gen-btn');
