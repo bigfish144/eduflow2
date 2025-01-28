@@ -11,6 +11,7 @@ from router import *
 import base64
 from io import BytesIO
 from PIL import Image
+from pydub import AudioSegment
 # 配置日志记录
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

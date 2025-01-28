@@ -96,7 +96,7 @@
                     <div class="process-tab-content">
                         <div class="process-input-container">
                             <textarea placeholder="请输入生成文本" id="show-text-panel" class="show-text-panel"></textarea>
-                            <textarea placeholder="请输入生成文本" id="show-emo-panel" class="show-text-panel" readonly></textarea>
+                            <div id="show-emo-panel" class="show-text-panel"></div>
                         </div>
                         <div class="process-btn-container">
                             <button class="process-grey-btn" id="emo-analysis-btn">文本解析</button>
@@ -455,16 +455,152 @@
                     console.error('文本分析失败:', error);
                 }
             }
+
             // 显示分析结果
             function displayAnalysisResult(text) {
                 const inputpanel = document.getElementById('show-emo-panel');
-                inputpanel.style.display = 'block';
-                if (inputpanel) {
-                    inputpanel.value = text;
-                } else {
+                if (!inputpanel) {
                     console.error('Element with id "show-emo-panel" not found');
+                    return;
+                }
+                inputpanel.style.display = 'block';
+                inputpanel.innerHTML = '';
+                // 解析文本，提取情绪和文字
+                const regex = /([^()]+)\(([^)]+)\)/g;
+                let lastIndex = 0;
+                let match;
+                while ((match = regex.exec(text)) !== null) {
+                    // 添加匹配前的剩余文本
+                    if (match.index > lastIndex) {
+                        const remainingText = text.slice(lastIndex, match.index).trim();
+                        if (remainingText) {
+                            const remainingTextContainer = document.createElement('div');
+                            remainingTextContainer.textContent = remainingText;
+                            inputpanel.appendChild(remainingTextContainer);
+                        }
+                    }
+
+                    const sentence = match[1].trim();
+                    const emotion = match[2].trim();
+
+                    // 创建包含句子和下拉列表的子div
+                    const sentenceContainer = document.createElement('div');
+                    sentenceContainer.className = 'sentence-container';
+                    sentenceContainer.setAttribute('data-sentence', sentence);  // 添加数据属性
+
+                    // 添加句子
+                    const sentenceText = document.createTextNode(sentence);
+                    sentenceContainer.appendChild(sentenceText);
+
+                    // 创建下拉列表
+                    const select = document.createElement('select');
+                    select.onchange = function() {
+                        console.log('Selected emotion:', this.value);
+                        updateEmotion(sentence, this.value);
+                    };
+                    const emotions = ['平静', '兴奋', '悲伤', '疑惑', '激动'];
+                    emotions.forEach(e => {
+                        const option = document.createElement('option');
+                        option.value = e;
+                        option.textContent = e;
+                        if (e === emotion) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                    sentenceContainer.appendChild(select);
+
+                    // 添加换行符
+                    sentenceContainer.appendChild(document.createElement('br'));
+
+                    // 将子div添加到主div中
+                    inputpanel.appendChild(sentenceContainer);
+
+                    // 更新 lastIndex
+                    lastIndex = regex.lastIndex;
+                }
+                // 添加剩余的文本（如果有的话）
+                if (lastIndex < text.length) {
+                    const remainingText = text.slice(lastIndex).trim();
+                    if (remainingText) {
+                        const remainingTextContainer = document.createElement('div');
+                        remainingTextContainer.textContent = remainingText;
+                        inputpanel.appendChild(remainingTextContainer);
+                    }
                 }
             }
+
+            // 更新情绪的函数
+            function updateEmotion(sentence, newEmotion) {
+                const inputpanel = document.getElementById('show-emo-panel');
+                if (!inputpanel) {
+                    console.error('Element with id "show-emo-panel" not found');
+                    return;
+                }
+                // 通过 data-sentence 属性找到对应的 sentenceContainer
+                const sentenceContainer = inputpanel.querySelector(`.sentence-container[data-sentence="${sentence}"]`);
+                if (!sentenceContainer) {
+                    console.error('Sentence container not found for sentence:', sentence);
+                    return;
+                }
+                const select = sentenceContainer.querySelector('select');
+                if (select) {
+                    select.value = newEmotion;
+                    // 保存更新后的情绪
+                    saveUpdatedEmotion(selectedSceneIndex);
+                } else {
+                    console.error('Select element not found in sentence container');
+                }
+            }
+            // 保存更新后的情绪
+            async function saveUpdatedEmotion(sceneIndex) {
+                try {
+                    // 获取 inputpanel 中的所有 sentence-container
+                    const inputpanel = document.getElementById('show-emo-panel');
+                    if (!inputpanel) {
+                        console.error('Element with id "show-emo-panel" not found');
+                        return;
+                    }
+                    const sentenceContainers = inputpanel.getElementsByClassName('sentence-container');
+                    const data = [];
+
+                    for (let i = 0; i < sentenceContainers.length; i++) {
+                        const container = sentenceContainers[i];
+                        const sentenceText = container.getAttribute('data-sentence').trim();  // 使用 data-sentence 属性
+                        const select = container.querySelector('select');
+                        if (select) {
+                            const emotion = select.value;
+                            data.push(`${sentenceText}(${emotion})`);
+                        } else {
+                            console.error('Select element not found in sentence container');
+                        }
+                    }
+
+                    // 构建请求数据
+                    const requestData = {
+                        sceneIndex: sceneIndex.toString(),
+                        text: data
+                    };
+
+                    // 发送请求到后端 API
+                    const response = await fetch('/save-emotion-analysis', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('保存分析结果失败: ' + response.statusText);
+                    }
+                    const result = await response.json();
+                    console.log(result.message);  // 打印保存结果的消息
+                } catch (error) {
+                    console.error('保存分析结果失败:', error);
+                }
+            }            
+
             // 将分析结果保存到后端
             async function saveAnalyzedText(sceneIndex,text) {
                 const sceneIndexStr = sceneIndex.toString();
@@ -488,10 +624,11 @@
                     console.error('保存分析结果失败:', error);
                 }
             }
+              
+            //语音转文字
             const textToAudioBtn = document.getElementById('text-to-audio-btn');
             textToAudioBtn.addEventListener('click', function() {
                 console.log('生成语音按钮被点击');
-                // 读取并处理 JSON 文件
                 fetch('data/emotion_analysis.json')
                     .then(response => {
                         if (!response.ok) {
