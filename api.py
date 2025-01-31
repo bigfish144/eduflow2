@@ -119,10 +119,10 @@ async def save_analysis(data: SaveAnalysisRequest):
 class TexttoSpeech(BaseModel):
     text: str
     emotion:str
+    tts_char:str
+    output_name:str
 @app.post("/text-to-speech")
 async def text_to_speech(data: TexttoSpeech):
-    text = data.text
-    emotion = data.emotion
     return await process_texttospeech(data)
 
 #文生图

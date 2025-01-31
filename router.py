@@ -64,7 +64,7 @@ async def process_split_text(text_content,data):
     prompt["52"]["inputs"]["split_num"] = data.mode
     generated_texts = await get_splitoutputs(client_id, prompt)
     # return generated_texts
-
+#文本情绪分析
 async def process_getemotion_text(data):
     client_id = str(uuid.uuid4())
     prompt = load_json_template('./workfolows/get_emotion.json')
@@ -72,3 +72,33 @@ async def process_getemotion_text(data):
     generate_emo_text =await get_emotionoutputs(client_id,prompt)
     # print(generate_emo_text)
     return {"text": generate_emo_text}
+
+async def process_texttospeech(data):
+    client_id = str(uuid.uuid4())
+    prompt = load_json_template('./workfolows/gsv_tts_workflow.json')
+    prompt["2"]["inputs"]["input_text"] = data.text
+    prompt["9"]["inputs"]["filename_prefix"] = data.output_name
+    if data.tts_char == "voice1":
+        if data.emotion == "平静":
+            prompt["8"]["inputs"]["SoVITS_weight"] = "paimeng-0_e25_s11925.pth"
+            prompt["8"]["inputs"]["GPT_weight"] = "paimeng-0-e10.ckpt"
+            prompt["3"]["inputs"]["text"] = ""
+            prompt["4"]["inputs"]["audio"] = ""
+        elif data.emotion == "兴奋":
+            prompt["8"]["inputs"]["SoVITS_weight"] = "paimeng-3_e25_s2150.pth"
+            prompt["8"]["inputs"]["GPT_weight"] = "paimeng-3-e10.ckpt"
+            prompt["3"]["inputs"]["text"] = ""
+            prompt["4"]["inputs"]["audio"] = ""
+        elif data.emotion == "悲伤":
+            prompt["8"]["inputs"]["SoVITS_weight"] = "paimeng-4_e25_s300.pth"
+            prompt["8"]["inputs"]["GPT_weight"] = "paimeng-4-e10.ckpt"
+            prompt["3"]["inputs"]["text"] = ""
+            prompt["4"]["inputs"]["audio"] = ""
+        else:
+            prompt["8"]["inputs"]["SoVITS_weight"] = "paimeng-0_e25_s11925.pth"
+            prompt["8"]["inputs"]["GPT_weight"] = "paimeng-0-e10.ckpt"
+            prompt["3"]["inputs"]["text"] = ""
+            prompt["4"]["inputs"]["audio"] = ""
+        await get_audiooutputs(client_id, prompt)
+
+        

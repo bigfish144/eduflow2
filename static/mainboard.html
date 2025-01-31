@@ -490,6 +490,7 @@
                     sentenceContainer.appendChild(sentenceText);
                     // 创建下拉列表
                     const select = document.createElement('select');
+                    select.className = 'emo-select';
                     select.onchange = function() {
                         console.log('Selected emotion:', this.value);
                         updateEmotion(sentence, this.value);
@@ -505,14 +506,11 @@
                         select.appendChild(option);
                     });
                     sentenceContainer.appendChild(select);
-                    // 添加换行符
                     sentenceContainer.appendChild(document.createElement('br'));
-                    // 将子div添加到主div中
                     inputpanel.appendChild(sentenceContainer);
-                    // 更新 lastIndex
                     lastIndex = regex.lastIndex;
                 }
-                // 添加剩余的文本（如果有的话）
+                // 添加剩余的文本
                 if (lastIndex < text.length) {
                     const remainingText = text.slice(lastIndex).trim();
                     if (remainingText) {
@@ -628,8 +626,6 @@
                     }
                     const data = await response.json();
                     console.log('读取到的数据:', data);
-                    // 假设 selectedSceneIndex 是一个变量，表示要提取的键
-                    const selectedSceneIndex = 1; // 这里可以动态设置
                     // 提取 selectedSceneIndex 对应的值
                     const selectedSceneData = data[selectedSceneIndex.toString()];
                     if (!selectedSceneData) {
@@ -637,38 +633,39 @@
                         return;
                     }
                     // 遍历每个 selectedSceneData 的值
-                    for (const item of selectedSceneData) {
+                    selectedSceneData.forEach((item, index) => {
                         const match = item.match(/^(.+)\((.+)\)$/);
                         if (match) {
                             const text = match[1].trim();
                             const emotion = match[2].trim();
-                            console.log('Text:', text);
-                            console.log('Emotion:', emotion);
+                            const tts_char = document.getElementById('choose-voice').value;
+                            const output_name = selectedSceneIndex.toString()+'_'+index.toString()
                             // 发送数据到后端
-                            try {
-                                await sendToBackend(text, emotion);
-                            } catch (error) {
-                                console.error('发送数据到后端时出错:', error);
-                            }
+                            sendToBackend(text, emotion, tts_char,output_name)
+                                .then(response => {
+                                    console.log('数据发送成功:', response);
+                                })
+                                .catch(error => {
+                                    console.error('发送数据到后端时出错:', error);
+                                });
                         } else {
                             console.error('无法拆分文本和情绪:', item);
                         }
-                    }
+                    });
                 } catch (error) {
                     console.error('读取文件时出错:', error);
                 }
             });
 
-            // 发送数据到后端的异步函数
-            async function sendToBackend(text, emotion) {
-                console.log('发送数据到后端:', text, emotion);
+            // 发送文本生成语音数据到后端
+            async function sendToBackend(text, emotion,tts_char,output_name) {
                 try {
                     const response = await fetch('/text-to-speech', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ text, emotion })
+                        body: JSON.stringify({ text, emotion, tts_char, output_name})
                     });
                     if (!response.ok) {
                         throw new Error('后端响应失败');
