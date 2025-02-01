@@ -125,11 +125,55 @@ class TexttoSpeech(BaseModel):
     savedCutValue:str
     savedVoiceSpeedValue:str
     savedVoiceTempValue:str
-
-    
 @app.post("/text-to-speech")
 async def text_to_speech(data: TexttoSpeech):
     return await process_texttospeech(data)
+
+# 获取语音文件
+class AudioFileRequest(BaseModel):
+    output_name: str# 获取语音文件
+@app.post("/get-audio-file")
+async def get_audio_file(data: AudioFileRequest):
+    output_name = data.output_name
+    directory = '/root/autodl-tmp/ComfyUI/output/audio'
+    new_file_path = './static/data/audio'
+    if not os.path.exists(new_file_path):
+        os.makedirs(new_file_path)
+    files = os.listdir(directory)
+    target_file = None
+    for filename in files:
+        basename = os.path.splitext(filename)[0]
+        if basename == output_name:
+            file_path = os.path.join(directory, filename)
+            os.remove(file_path)
+            logger.info(f"删除文件: {file_path}")
+        else:
+            target_file = filename
+    if target_file:
+        target_basename, target_ext = os.path.splitext(target_file)
+        new_filename = f"{output_name}{target_ext}"
+        old_file_path = os.path.join(directory, target_file)
+        new_file_path_full = os.path.join(directory, new_filename)
+        os.rename(old_file_path, new_file_path_full)
+        logger.info(f"重命名文件: {old_file_path} -> {new_file_path_full}")
+        # 复制文件到 new_file_path
+        destination_path = os.path.join(new_file_path, new_filename)
+        shutil.copy(new_file_path_full, destination_path)
+        logger.info(f"复制文件: {new_file_path_full} -> {destination_path}")
+        return {"fileName": new_filename}
+    raise HTTPException(status_code=404, detail="文件未找到")
+#删除语音文件
+class DeleteAudioFileRequest(BaseModel):
+    fileName: str
+@app.post("/delete-audio-file")
+async def delete_audio_file(data: DeleteAudioFileRequest):
+    file_path = os.path.join('./static/data/audio', data.fileName)
+    logger.info(f"删除文件: {file_path}")
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return {"message": f"文件 {data.fileName} 已删除"}
+    else:
+        raise HTTPException(status_code=404, detail=f"文件 {data.fileName} 未找到")
 
 #文生图
 class TextToImageModel(BaseModel):

@@ -135,8 +135,8 @@
                 <div class="text-head">
                     <div class="custom-select">
                         <select id="choose-voice">
-                            <option value="voice1">男声</option>
-                            <option value="voice2">女声</option>
+                            <option value="voice1">女声</option>
+                            <option value="voice2">男声</option>
                             <!-- 可以根据需要添加更多选项 -->
                         </select>
                         <div class="select-icon"></div>
@@ -168,45 +168,17 @@
                         <div class="wav-range-container">
                             <!-- 音频列表 -->
                             <div class="audio-container">
-                                <div class="audio-material" id="audio-material-1">
-                                    <div id="audio-player-1" class="audio-player">
-                                        <button id="audio-play-pause-btn-1" class="audio-play-pause-btn">
+                                <div class="audio-material">
+                                    <div class="audio-player">
+                                        <button class="audio-play-pause-btn">
                                             <img src="images/btn_play.png" alt="播放">
                                         </button>
                                         <div id="audio-progress-container-1" class="audio-progress-container">
-                                            <div id="audio-progress-1" class="audio-progress"></div>
+                                            <div class="audio-progress"></div>
                                         </div>
                                     </div>
-                                    <audio id="gen-audio-1">
-                                        <source src="data/audio_test.wav" type="audio/wav">
-                                        您的浏览器不支持 audio 元素。
-                                    </audio>
-                                </div>
-                                <div class="audio-material" id="audio-material-2">
-                                    <div id="audio-player-2" class="audio-player">
-                                        <button id="audio-play-pause-btn-2" class="audio-play-pause-btn">
-                                            <img src="images/btn_play.png" alt="播放">
-                                        </button>
-                                        <div id="audio-progress-container-2" class="audio-progress-container">
-                                            <div id="audio-progress-2" class="audio-progress"></div>
-                                        </div>
-                                    </div>
-                                    <audio id="gen-audio-2">
-                                        <source src="data/audio_test.wav" type="audio/wav">
-                                        您的浏览器不支持 audio 元素。
-                                    </audio>
-                                </div>
-                                <div class="audio-material" id="audio-material-3">
-                                    <div id="audio-player-3" class="audio-player">
-                                        <button id="audio-play-pause-btn-3" class="audio-play-pause-btn">
-                                            <img src="images/btn_play.png" alt="播放">
-                                        </button>
-                                        <div id="audio-progress-container-3" class="audio-progress-container">
-                                            <div id="audio-progress-3" class="audio-progress"></div>
-                                        </div>
-                                    </div>
-                                    <audio id="gen-audio-3">
-                                        <source src="data/audio_test.wav" type="audio/wav">
+                                    <audio>
+                                        <source src="data/audio/0_0.flac" type="audio/wav">
                                         您的浏览器不支持 audio 元素。
                                     </audio>
                                 </div>
@@ -351,9 +323,9 @@
     </div> 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+
             let selectedCameraItem = null; // 用于存储当前选中的 camera-item
             let selectedSceneIndex = -1; // 用于存储当前选中的 sceneIndex
-
             // 镜头列表面板
             async function loadStoryboardData() { // 获取并加载分镜数据
                 const leftPanel = document.querySelector('.left-panel');
@@ -748,6 +720,11 @@
                 updatespeedTooltip();
                 updatetempTooltip();
             });
+            
+            // 在页面加载时删除 audio-container 下的所有 audio-material
+            const audioContainer = document.querySelector('.audio-container');
+            const audioMaterials = audioContainer.querySelectorAll('.audio-material');
+            audioMaterials.forEach(material => material.remove());
 
             //点击语音生成按钮
             const textToAudioBtn = document.getElementById('text-to-audio-btn');
@@ -776,12 +753,7 @@
                             const output_name = selectedSceneIndex.toString()+'_'+index.toString()
                             // 发送数据到后端
                             sendToBackend(text, emotion, tts_char,output_name,savedLangValue,savedCutValue,savedVoiceSpeedValue,savedVoiceTempValue)
-                                .then(response => {
-                                    console.log('数据发送成功:', response);
-                                })
-                                .catch(error => {
-                                    console.error('发送数据到后端时出错:', error);
-                                });
+
                         } else {
                             console.error('无法拆分文本和情绪:', item);
                         }
@@ -805,11 +777,203 @@
                         throw new Error('后端响应失败');
                     }
                     const data = await response.json();
-                    console.log('后端响应:', data);
+                    console.log('后端响应:', data.output_name);
+                    // 获取文件名
+                    const fileNameResponse = await fetch('/get-audio-file', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ output_name })
+                    });
+                    if (!fileNameResponse.ok) {
+                        throw new Error('获取文件名失败');
+                    }
+                    const fileNameData = await fileNameResponse.json();
+                    console.log('文件名:', fileNameData.fileName);
+                    // 创建音频播放器
+                    createAudioPlayer(fileNameData.fileName);
                 } catch (error) {
                     console.error('发送数据到后端时出错:', error);
                 }
             }
+            // 创建音频播放器函数
+            function createAudioPlayer(fileName) {
+                // 创建音频播放器的 HTML 结构
+                const audioMaterial = document.createElement('div');
+                audioMaterial.className = 'audio-material';
+                const audioPlayer = document.createElement('div');
+                audioPlayer.className = 'audio-player';
+                const playPauseBtn = document.createElement('button');
+                playPauseBtn.className = 'audio-play-pause-btn';
+                const playPauseImg = document.createElement('img');
+                playPauseImg.src = 'images/btn_play.png';
+                playPauseImg.alt = '播放';
+                playPauseBtn.appendChild(playPauseImg);
+                audioPlayer.appendChild(playPauseBtn);
+                const audioProgressContainer = document.createElement('div');
+                audioProgressContainer.className = 'audio-progress-container';
+                const audioProgress = document.createElement('div');
+                audioProgress.className = 'audio-progress';
+                audioProgressContainer.appendChild(audioProgress);
+                audioPlayer.appendChild(audioProgressContainer);
+                audioMaterial.appendChild(audioPlayer);
+                const audioElement = document.createElement('audio');
+                const sourceElement = document.createElement('source');
+                sourceElement.src = `data/audio/${fileName}`;
+                sourceElement.type = 'audio/flac'; // 根据文件类型调整 MIME 类型
+                audioElement.appendChild(sourceElement);
+                audioElement.appendChild(document.createTextNode('您的浏览器不支持 audio 元素。'));
+                audioMaterial.appendChild(audioElement);
+                const audioContainer = document.querySelector('.audio-container');
+                if (audioContainer) {
+                    audioContainer.appendChild(audioMaterial);
+                } else {
+                    console.error('audio-container 元素未找到');
+                }
+
+                // 选择音频
+                const newAudioElements = document.querySelectorAll('audio');
+                const newPlayPauseButtons = document.querySelectorAll('.audio-play-pause-btn');
+                const newAudioPlayers = document.querySelectorAll('.audio-player');
+                const newProgressContainers = document.querySelectorAll('.audio-progress-container');
+                const newProgressBars = document.querySelectorAll('.audio-progress');
+                const newIndex = newAudioElements.length - 1;
+                newPlayPauseButtons[newIndex].addEventListener('click', function () {
+                    const audio = newAudioElements[newIndex];
+                    const progressBar = newProgressBars[newIndex];
+                    if (audio.paused) {
+                        // 如果当前音频是暂停状态，则播放当前音频
+                        audio.play();
+                        newPlayPauseButtons[newIndex].querySelector('img').src = "images/btn_pause.png"; // 切换为暂停图标
+                        // 如果之前有其他音频在播放，则暂停它
+                        if (currentPlayingAudioIndex !== null && currentPlayingAudioIndex !== newIndex) {
+                            const otherAudio = newAudioElements[currentPlayingAudioIndex];
+                            const otherButton = newPlayPauseButtons[currentPlayingAudioIndex];
+                            otherAudio.pause();
+                            otherButton.querySelector('img').src = "images/btn_play.png"; // 恢复播放图标
+                        }
+                        // 更新当前播放的音频索引
+                        currentPlayingAudioIndex = newIndex;
+                    } else {
+                        // 如果当前音频是播放状态，则暂停当前音频
+                        audio.pause();
+                        newPlayPauseButtons[newIndex].querySelector('img').src = "images/btn_play.png"; // 切换为播放图标
+                        
+                        // 清除当前播放的音频索引
+                        currentPlayingAudioIndex = null;
+                    }
+                    // 自动选择当前音频
+                    selectAudio(newIndex);
+                });
+
+                // 绑定进度条点击事件
+                newProgressContainers[newIndex].addEventListener('click', function (event) {
+                    const audio = newAudioElements[newIndex];
+                    const progressBar = newProgressBars[newIndex];
+                    const progressWidth = newProgressContainers[newIndex].offsetWidth;
+                    const clickPosition = event.offsetX; 
+                    const newTime = (clickPosition / progressWidth) * audio.duration;
+                    audio.currentTime = newTime;
+                    progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+                    selectAudio(newIndex);
+                });
+
+                // 动态更新进度条
+                newAudioElements[newIndex].addEventListener('timeupdate', function () {
+                    const progressBar = newProgressBars[newIndex];
+                    progressBar.style.width = `${(newAudioElements[newIndex].currentTime / newAudioElements[newIndex].duration) * 100}%`; // 更新进度条宽度
+                });
+
+                newAudioElements[newIndex].addEventListener('ended', function () {
+                    // 音频结束后恢复播放按钮图标
+                    newPlayPauseButtons[newIndex].querySelector('img').src = "images/btn_play.png";
+                    currentPlayingAudioIndex = null; // 清除播放索引
+                });
+            }
+            
+            let selectedAudioIndex = null; // 当前选中的音频索引
+            let currentPlayingAudioIndex = null; // 当前正在播放的音频索引
+            let selectedAudioFileName = null; // 存储所选音频文件的文件名
+            // 选择音频的方法
+            function selectAudio(index) {
+                // 重新获取所有音频播放器和进度条
+                const audioPlayers = document.querySelectorAll('.audio-player');
+                const progressBars = document.querySelectorAll('.audio-progress');
+                const audioElements = document.querySelectorAll('audio');
+
+                if (selectedAudioIndex !== null && selectedAudioIndex !== index) {
+                    const previousPlayer = audioPlayers[selectedAudioIndex];
+                    const previousProgressBar = progressBars[selectedAudioIndex];
+                    if (previousPlayer) {
+                        previousPlayer.style.border = ''; // 移除描边
+                    }
+                    if (previousProgressBar) {
+                        previousProgressBar.style.backgroundColor = '#8785FF'; // 恢复原来的颜色
+                    }
+                }
+                selectedAudioIndex = index;
+                const currentPlayer = audioPlayers[index];
+                const currentProgressBar = progressBars[index];
+                const currentAudioElement = audioElements[index];
+                if (currentPlayer) {
+                    currentPlayer.style.border = '3px solid #6366f1'; // 增加描边
+                }
+                if (currentProgressBar) {
+                    currentProgressBar.style.backgroundColor = '#6366f1'; // 修改进度条颜色
+                }
+                // 获取当前音频元素的 <source> 元素
+                if (currentAudioElement) {
+                    const sourceElement = currentAudioElement.querySelector('source');
+                    if (sourceElement) {
+                        const src = sourceElement.src;
+                        const fileName = src.split('/').pop(); 
+                        console.log('所选播放器的源音乐文件名:', fileName);
+                        selectedAudioFileName = fileName; 
+                    } else {
+                        console.error('当前音频元素没有 <source> 元素');
+                        selectedAudioFileName = null;
+                    }
+                } else {
+                    console.error('当前音频元素未找到');
+                    selectedAudioFileName = null; 
+                }
+            }
+            // 删除按钮点击事件
+            const audioDelBtn = document.getElementById('audio-del-btn');
+            audioDelBtn.addEventListener('click', async function() {
+                console.log('删除按钮被点击:'+selectedAudioFileName);
+                if (selectedAudioFileName) {
+                    try {
+                        const response = await fetch('/delete-audio-file', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ fileName: selectedAudioFileName })
+                        });
+                        if (!response.ok) {
+                            throw new Error('删除文件失败');
+                        }
+                        const data = await response.json();
+                        console.log('文件删除成功:', data.message);
+                        // 从页面中移除所选的音频播放器
+                        const audioContainer = document.querySelector('.audio-container');
+                        const audioMaterials = audioContainer.querySelectorAll('.audio-material');
+                        if (audioMaterials[selectedAudioIndex]) {
+                            audioMaterials[selectedAudioIndex].remove();
+                        }
+                        // 重置选中的音频索引和文件名
+                        selectedAudioIndex = null;
+                        selectedAudioFileName = null;
+                    } catch (error) {
+                        console.error('删除文件时出错:', error);
+                    }
+                } else {
+                    console.error('未选择音频文件');
+                }
+            });
+
 
             //处理文本处理面板的tab
             const voiceGenBtn = document.getElementById('voice-gen-btn');
@@ -889,91 +1053,7 @@
                 playIcon.src = "images/btn_play.png";
             });  
 
-            //音频面板
-            // 获取所有的音频元素和相关的 DOM 元素
-            const audioElements = document.querySelectorAll('audio');
-            const playPauseButtons = document.querySelectorAll('.audio-play-pause-btn');
-            const audioPlayers = document.querySelectorAll('.audio-player');
-            const progressContainers = document.querySelectorAll('.audio-progress-container');
-            const progressBars = document.querySelectorAll('.audio-progress');
 
-            let selectedAudioIndex = null; // 当前选中的音频索引
-            let currentPlayingAudioIndex = null; // 当前正在播放的音频索引
-
-            // 播放/暂停按钮点击事件
-            playPauseButtons.forEach((btn, index) => {
-                btn.addEventListener('click', function () {
-                    const audio = audioElements[index];
-                    const progressBar = progressBars[index];
-
-                    if (audio.paused) {
-                        // 播放当前音频
-                        audio.play();
-                        btn.querySelector('img').src = "images/btn_pause.png"; // 切换为暂停图标
-
-                        // 如果有其他音频在播放，暂停它
-                        if (currentPlayingAudioIndex !== null && currentPlayingAudioIndex !== index) {
-                            const otherAudio = audioElements[currentPlayingAudioIndex];
-                            const otherButton = playPauseButtons[currentPlayingAudioIndex];
-                            otherAudio.pause();
-                            otherButton.querySelector('img').src = "images/btn_play.png"; // 恢复播放图标
-                        }
-
-                        currentPlayingAudioIndex = index; // 更新当前播放的音频索引
-                    } else {
-                        // 暂停当前音频
-                        audio.pause();
-                        btn.querySelector('img').src = "images/btn_play.png"; // 切换为播放图标
-                        currentPlayingAudioIndex = null; // 清除当前播放的音频索引
-                    }
-
-                    // 自动选择当前音频
-                    selectAudio(index);
-                });
-            });
-
-            // 进度条点击事件
-            progressContainers.forEach((container, index) => {
-                container.addEventListener('click', function (event) {
-                    const audio = audioElements[index];
-                    const progressBar = progressBars[index];
-                    const progressWidth = container.offsetWidth;
-                    const clickPosition = event.offsetX; 
-                    const newTime = (clickPosition / progressWidth) * audio.duration;
-                    audio.currentTime = newTime;
-                    progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
-                    selectAudio(index);
-                });
-            });
-
-            // 音频播放事件：动态更新进度条
-            audioElements.forEach((audio, index) => {
-                audio.addEventListener('timeupdate', function () {
-                    const progressBar = progressBars[index];
-                    progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`; // 更新进度条宽度
-                });
-
-                audio.addEventListener('ended', function () {
-                    // 音频结束后恢复播放按钮图标
-                    playPauseButtons[index].querySelector('img').src = "images/btn_play.png";
-                    currentPlayingAudioIndex = null; // 清除播放索引
-                });
-            });
-
-            // 选择音频的方法
-            function selectAudio(index) {
-                if (selectedAudioIndex !== null && selectedAudioIndex !== index) {
-                    const previousPlayer = audioPlayers[selectedAudioIndex];
-                    const previousProgressBar = progressBars[selectedAudioIndex];
-                    previousPlayer.style.border = ''; // 移除描边
-                    previousProgressBar.style.backgroundColor = '#8785FF'; // 恢复原来的颜色
-                }
-                selectedAudioIndex = index;
-                const currentPlayer = audioPlayers[index];
-                const currentProgressBar = progressBars[index];
-                currentPlayer.style.border = '3px solid #6366f1'; // 增加描边
-                currentProgressBar.style.backgroundColor = '#6366f1'; // 修改进度条颜色
-            }
             // 口型匹配滑块
             const slider = document.getElementById('slider'); // 滑块
             const tooltip = document.getElementById('tooltip'); // Tooltip

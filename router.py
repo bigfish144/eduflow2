@@ -104,5 +104,5 @@ async def process_texttospeech(data):
             prompt["3"]["inputs"]["text"] = "他似乎没沮丧，斗志反而更高了。"
             prompt["4"]["inputs"]["audio"] = "voice2_confused.wav"
         await get_audiooutputs(client_id, prompt)
-
+        return {"outputname": data.output_name}
         

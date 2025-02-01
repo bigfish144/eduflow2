@@ -772,6 +772,7 @@ body {
 #audio-del-btn{
   color: red;
   background-color: #4F4C64;
+  cursor: pointer;
 }
 #audio-replace-btn{
   color: #fff;

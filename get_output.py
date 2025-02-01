@@ -132,6 +132,7 @@ async def get_audiooutputs(client_id,prompt):
                         break
     history = get_history(prompt_id)[prompt_id]
     print(f"prompt_id:{prompt_id}")
+    
 
 # async def get_outputs(client_id, prompt):
 #     prompt_id = queue_prompt(prompt, client_id)['prompt_id']
