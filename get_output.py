@@ -118,8 +118,20 @@ async def get_emotionoutputs(client_id,prompt):
             print("No text found in node_output")
             return None  
  
-
-
+#文本生成语音
+async def get_audiooutputs(client_id,prompt):
+    prompt_id = queue_prompt(prompt, client_id)['prompt_id']
+    async with websockets.connect(f"ws://{server_address}/ws?clientId={client_id}") as websocket:        
+        while True:
+            out = await websocket.recv()
+            if isinstance(out, str):
+                message= json.loads(out)
+                if message['type'] == 'executing':
+                    data = message['data']
+                    if data['node'] is None and data['prompt_id'] == prompt_id:
+                        break
+    history = get_history(prompt_id)[prompt_id]
+    print(f"prompt_id:{prompt_id}")
 
 # async def get_outputs(client_id, prompt):
 #     prompt_id = queue_prompt(prompt, client_id)['prompt_id']

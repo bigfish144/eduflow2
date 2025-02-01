@@ -7,6 +7,64 @@
     <link rel="stylesheet" href="css/mainboard.css">
 </head>
 <body>
+    <!-- 遮罩-->
+    <div id="overlay" class="overlay"></div>
+    <!-- 语音设置面板-->
+    <div id="video-setting-panel" class="video-setting-panel">
+        <div class="video-setting-head"> 
+            <button id="voice-set-close-btn" class="close-btn">
+                <img src="images/btn_back.png" alt="返回" class="close-icon">
+            </button>
+            <label>语音设置</label>
+        </div>
+        <div class="select-container">
+            <label for="lang-select">语言选择</label>
+            <select name="lang" id="lang-select" class="select">
+                <option value="Chinese">中文</option>
+                <option value="English">英文</option>
+                <option value="Chinese-English Mixed">中英混合</option>
+                <option value="Japanese">日语</option>
+                <option value="Korean">韩语</option>
+                <option value="Yue">粤语</option>
+            </select>
+        </div>
+        <div class="select-container">
+            <label for="lang-select">语言切分</label>
+            <select name="lang" id="cut-select" class="select">
+                <option value="Slice once every 4 sentences">凑四句一切</option>
+                <option value="Slice per 50 characters">50字符一切</option>
+                <option value="Slice by Chinese punct">按中文标点切分</option>
+                <option value="Slice by English punct">按英文标点切分</option>
+                <option value="Slice by every punct">按每个标点符号切分</option>
+                <option value="No slice">不切分</option>
+            </select>
+        </div>
+        <div class="select-container">
+            <div class="slider-all-wrapper">
+                <label >语速</label>
+                <div class="slider-wrapper">
+                    <span>0.6</span>
+                    <input id="voice-speed-slider" type="range" min="0.6" max="1.6" step="0.1" value="1" class="slider">
+                    <div id="voice-speed-tooltip" class="tooltip">1</div>
+                    <span>1.6</span>
+                </div>
+            </div>
+        </div>
+        <div class="select-container">
+            <div class="slider-all-wrapper">
+                <label >温度</label>
+                <div class="slider-wrapper">
+                    <span>0</span>
+                    <input id="voice-temp-slider" type="range" min="0" max="1" step="0.1" value="1" class="slider">
+                    <div id="voice-temp-tooltip" class="tooltip">1</div>
+                    <span>1</span>
+                </div>
+            </div>
+        </div>
+        <div class="button-container">
+            <button class="process-main-btn" id="save-voice-setting-btn">确定</button>
+        </div>
+    </div>
     <!-- 新增的顶部导航栏 -->
     <nav class="top-nav">
       <div class="left-section">
@@ -89,7 +147,7 @@
                         <button id="wav2lip-gen-btn">口型匹配</button>
                     </div>
                     <div>
-                        <button class="video-gen-setting">设置</button>
+                        <button class="video-gen-setting" id="video-gen-setting">设置</button>
                     </div>
                 </div>
                 <div class="process-tab-container" id="voice-tab-container">
@@ -193,7 +251,7 @@
                                 <div class="slider-label">嘴部开合</div>
                                 <div class="slider-wrapper">
                                     <span>-9</span>
-                                    <input id="slider" type="range" min="-9" max="9" step="0.1" value="0" class="lip-slider">
+                                    <input id="slider" type="range" min="-9" max="9" step="0.1" value="0" class="slider">
                                     <div id="tooltip" class="tooltip">0</div>
                                     <span>9</span>
                                 </div>
@@ -202,7 +260,7 @@
                                 <div class="slider-label">嘴部开合</div>
                                 <div class="slider-wrapper">
                                     <span>-9</span>
-                                    <input id="slider" type="range" min="-9" max="9" step="0.1" value="0" class="lip-slider">
+                                    <input id="slider" type="range" min="-9" max="9" step="0.1" value="0" class="slider">
                                     <div id="tooltip" class="tooltip">0</div>
                                     <span>9</span>
                                 </div>
@@ -523,25 +581,23 @@
 
             // 更新情绪的函数
             function updateEmotion(sentence, newEmotion) {
-                const inputpanel = document.getElementById('show-emo-panel');
-                if (!inputpanel) {
+                const inputPanel = document.getElementById('show-emo-panel');
+                if (!inputPanel) {
                     console.error('Element with id "show-emo-panel" not found');
                     return;
                 }
-                // 通过 data-sentence 属性找到对应的 sentenceContainer
-                const sentenceContainer = inputpanel.querySelector(`.sentence-container[data-sentence="${sentence}"]`);
+                const sentenceContainer = inputPanel.querySelector(`.sentence-container[data-sentence="${sentence}"]`);
                 if (!sentenceContainer) {
                     console.error('Sentence container not found for sentence:', sentence);
                     return;
                 }
                 const select = sentenceContainer.querySelector('select');
-                if (select) {
-                    select.value = newEmotion;
-                    // 保存更新后的情绪
-                    saveUpdatedEmotion(selectedSceneIndex);
-                } else {
+                if (!select) {
                     console.error('Select element not found in sentence container');
+                    return;
                 }
+                select.value = newEmotion;
+                saveUpdatedEmotion(selectedSceneIndex);
             }
             // 保存更新后的情绪
             async function saveUpdatedEmotion(sceneIndex) {
@@ -565,13 +621,11 @@
                             console.error('Select element not found in sentence container');
                         }
                     }
-
                     // 构建请求数据
                     const requestData = {
                         sceneIndex: sceneIndex.toString(),
                         text: data
                     };
-
                     // 发送请求到后端 API
                     const response = await fetch('/save-emotion-analysis', {
                         method: 'POST',
@@ -580,7 +634,6 @@
                         },
                         body: JSON.stringify(requestData)
                     });
-
                     if (!response.ok) {
                         throw new Error('保存分析结果失败: ' + response.statusText);
                     }
@@ -616,6 +669,87 @@
             }
               
             // 语音转文字
+            // 语音设置面板和遮罩
+            const langSelect = document.getElementById('lang-select'); 
+            const cutSelect = document.getElementById('cut-select'); 
+            const voicespeedslider = document.getElementById('voice-speed-slider'); // 滑块
+            const voicetempslider = document.getElementById('voice-temp-slider');
+            const voicespeedtooltip = document.getElementById('voice-speed-tooltip'); // Tooltip
+            const voicetemptooltip = document.getElementById('voice-temp-tooltip');
+            const settingButton = document.getElementById('video-gen-setting');
+            const overlay = document.getElementById('overlay');
+            const panel = document.getElementById('video-setting-panel');
+            const closePanelButton = document.getElementById('voice-set-close-btn');
+            const saveButton = document.getElementById('save-voice-setting-btn');
+            // 保存当前的值
+            let savedLangValue = langSelect.value;
+            let savedCutValue = cutSelect.value;
+            let savedVoiceSpeedValue = voicespeedslider.value;
+            let savedVoiceTempValue = voicetempslider.value;
+            function updatespeedTooltip() {
+                const sliderRect = voicespeedslider.getBoundingClientRect();
+                const sliderWidth = voicespeedslider.offsetWidth;
+                const position = ((voicespeedslider.value - voicespeedslider.min) / (voicespeedslider.max - voicespeedslider.min)) * sliderWidth;
+                voicespeedtooltip.style.left = `${position - voicespeedtooltip.offsetWidth / 2}px`; // 调整为 Tooltip 居中
+                voicespeedtooltip.textContent = voicespeedslider.value; 
+            }
+            function updatetempTooltip() {
+                const sliderRect = voicetempslider.getBoundingClientRect();
+                const sliderWidth = voicetempslider.offsetWidth;
+                const position = ((voicetempslider.value - voicetempslider.min) / (voicetempslider.max - voicetempslider.min)) * sliderWidth;
+                voicetemptooltip.style.left = `${position - voicetemptooltip.offsetWidth / 2}px`; // 调整为 Tooltip 居中
+                voicetemptooltip.textContent = voicetempslider.value; 
+            }
+            updatespeedTooltip();
+            updatetempTooltip();
+            voicespeedtooltip.style.opacity = 0;
+            voicetemptooltip.style.opacity = 0;
+            voicespeedslider.addEventListener('input', updatespeedTooltip);
+            voicetempslider.addEventListener('input', updatetempTooltip);
+            voicespeedslider.addEventListener('mouseenter', () => {
+                updatespeedTooltip();
+                voicespeedtooltip.style.opacity = 1;
+            });
+            voicespeedslider.addEventListener('mouseleave', () => voicespeedtooltip.style.opacity = 0);
+            voicetempslider.addEventListener('mouseenter', () => {
+                updatetempTooltip();
+                voicetemptooltip.style.opacity = 1;
+            });
+            voicetempslider.addEventListener('mouseleave', () => voicetemptooltip.style.opacity = 0);
+            // 打开面板和遮罩
+            settingButton.addEventListener('click', function() {
+                overlay.style.display = 'block';
+                panel.style.display = 'block';
+                // 保存当前的值
+                savedLangValue = langSelect.value;
+                savedCutValue = cutSelect.value;
+                savedVoiceSpeedValue = voicespeedslider.value;
+                savedVoiceTempValue = voicetempslider.value;
+            });
+            // 不更新值
+            closePanelButton.addEventListener('click', function() {
+                overlay.style.display = 'none';
+                panel.style.display = 'none';
+                langSelect.value = savedLangValue;
+                cutSelect.value = savedCutValue;
+                voicespeedslider.value = savedVoiceSpeedValue;
+                voicetempslider.value = savedVoiceTempValue;
+                updatespeedTooltip();
+                updatetempTooltip();
+            });
+            //更新值
+            saveButton.addEventListener('click', function() {
+                overlay.style.display = 'none';
+                panel.style.display = 'none';
+                savedLangValue = langSelect.value;
+                savedCutValue = cutSelect.value;
+                savedVoiceSpeedValue = voicespeedslider.value;
+                savedVoiceTempValue = voicetempslider.value;
+                updatespeedTooltip();
+                updatetempTooltip();
+            });
+
+            //点击语音生成按钮
             const textToAudioBtn = document.getElementById('text-to-audio-btn');
             textToAudioBtn.addEventListener('click', async function() {
                 console.log('生成语音按钮被点击');
@@ -641,7 +775,7 @@
                             const tts_char = document.getElementById('choose-voice').value;
                             const output_name = selectedSceneIndex.toString()+'_'+index.toString()
                             // 发送数据到后端
-                            sendToBackend(text, emotion, tts_char,output_name)
+                            sendToBackend(text, emotion, tts_char,output_name,savedLangValue,savedCutValue,savedVoiceSpeedValue,savedVoiceTempValue)
                                 .then(response => {
                                     console.log('数据发送成功:', response);
                                 })
@@ -658,14 +792,14 @@
             });
 
             // 发送文本生成语音数据到后端
-            async function sendToBackend(text, emotion,tts_char,output_name) {
+            async function sendToBackend(text, emotion,tts_char,output_name,savedLangValue,savedCutValue,savedVoiceSpeedValue,savedVoiceTempValue) {
                 try {
                     const response = await fetch('/text-to-speech', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ text, emotion, tts_char, output_name})
+                        body: JSON.stringify({ text, emotion, tts_char, output_name,savedLangValue,savedCutValue,savedVoiceSpeedValue,savedVoiceTempValue})
                     });
                     if (!response.ok) {
                         throw new Error('后端响应失败');
@@ -840,7 +974,7 @@
                 currentPlayer.style.border = '3px solid #6366f1'; // 增加描边
                 currentProgressBar.style.backgroundColor = '#6366f1'; // 修改进度条颜色
             }
-            // 口型匹配
+            // 口型匹配滑块
             const slider = document.getElementById('slider'); // 滑块
             const tooltip = document.getElementById('tooltip'); // Tooltip
             function updateTooltip() {
@@ -850,12 +984,14 @@
                 tooltip.style.left = `${position - tooltip.offsetWidth / 2}px`; // 调整为 Tooltip 居中
                 tooltip.textContent = slider.value; 
             }
-            slider.value = 0; // 初始化 Tooltip
             updateTooltip(); // 调用此函数以初始化 Tooltip 的位置和内容
             tooltip.style.opacity = 0; // 默认隐藏提示框
             slider.addEventListener('input', updateTooltip);// 监听滑块的拖动事件
-            // 悬停时显示 Tooltip
-            slider.addEventListener('mouseenter', () => tooltip.style.opacity = 1);
+            // 悬停时显示 Tooltip 并更新位置
+            slider.addEventListener('mouseenter', () => {
+                updateTooltip(); // 更新 Tooltip 的位置和内容
+                tooltip.style.opacity = 1;
+            });
             slider.addEventListener('mouseleave', () => tooltip.style.opacity = 0);
 
             //跳转

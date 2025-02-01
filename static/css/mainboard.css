@@ -3,7 +3,72 @@
   padding: 0;
   box-sizing: border-box;
 }
-
+/* 遮罩层样式 */
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+/* 新面板-生成语音设置 */
+.close-btn{
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+}
+.close-icon{
+  width: 24px;
+  height: 24px;
+}
+.video-setting-head{
+  display: flex;
+  height: 40px;
+  align-items: center;
+  border-bottom: solid 1px rgba(255, 255, 255, 0.5);
+  padding: 8px 20px;
+  margin-bottom: 32px;
+  gap: 12px;
+}
+.video-setting-panel {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 40%;
+  transform: translate(-50%, -50%);
+  background-color: #393953;
+  z-index: 1001;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.select{
+  width: 100%;
+  height: 36px;
+  background-color: #4F4C64;
+  border-radius: 8px;
+  padding: 4px 8px;
+  border: none;
+  color: #fff;
+}
+.select-container{
+  display: flex;
+  flex-direction: row;
+  margin: 12px 0;
+  padding: 0 40px;
+}
+.button-container{
+  display: flex;
+  flex-direction: row;
+  margin: 32px 0;
+  padding: 0 40px;
+}
+.select-container label{
+  width: 120px;
+}
 body {
   font-family: Arial, sans-serif;
   background-color: #1C1C28;
@@ -781,7 +846,13 @@ body {
   padding: 16px;
   border-radius: 8px;
 }
-/* lip-滑块 */
+/* 滑块 */
+.slider-all-wrapper{
+  width: 100%;
+  display: flex;
+  flex-direction: row;  
+  margin-top: 16px;
+}
 .slider-container {
   position: relative;
   width:50%;
@@ -792,13 +863,13 @@ body {
   margin-bottom: 8px;
 }
 .slider-wrapper {
+  width: 100%;
   display: flex;
   align-items: center;
   position: relative; /* 确保tooltip相对于这个元素进行定位 */
   gap: 8px;
-  margin-top: 20px;
 }
-.lip-slider {
+.slider {
   width: 100%;
   -webkit-appearance: none; 
   appearance: none;
@@ -809,7 +880,7 @@ body {
   margin: 0;
   position: relative;
 }
-.lip-slider::-webkit-slider-thumb {
+.slider::-webkit-slider-thumb { 
   -webkit-appearance: none;
   appearance: none;
   width: 16px;
@@ -829,7 +900,7 @@ body {
   padding: 4px 8px;
   border-radius: 4px;
   white-space: nowrap;
-  transform: translate(50%, -120%); /* 调整为相对于自身宽度居中 */
+  transform: translate(60%, -120%); 
   pointer-events: none;
   opacity: 0; /* 默认隐藏 */
   transition: opacity 0.2s ease-in-out;

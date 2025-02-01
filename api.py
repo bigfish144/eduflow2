@@ -121,6 +121,12 @@ class TexttoSpeech(BaseModel):
     emotion:str
     tts_char:str
     output_name:str
+    savedLangValue:str
+    savedCutValue:str
+    savedVoiceSpeedValue:str
+    savedVoiceTempValue:str
+
+    
 @app.post("/text-to-speech")
 async def text_to_speech(data: TexttoSpeech):
     return await process_texttospeech(data)

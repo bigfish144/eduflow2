@@ -76,29 +76,33 @@ async def process_getemotion_text(data):
 async def process_texttospeech(data):
     client_id = str(uuid.uuid4())
     prompt = load_json_template('./workfolows/gsv_tts_workflow.json')
-    prompt["2"]["inputs"]["input_text"] = data.text
-    prompt["9"]["inputs"]["filename_prefix"] = data.output_name
+    prompt["2"]["inputs"]["text"] = data.text
+    prompt["2"]["inputs"]["language"] = data.savedLangValue
+    prompt["8"]["inputs"]["how_to_cut"] = data.savedCutValue
+    prompt["8"]["inputs"]["speed"] = data.savedVoiceSpeedValue
+    prompt["8"]["inputs"]["temperature"] = data.savedVoiceTempValue
+    prompt["9"]["inputs"]["filename_prefix"] = "audio/"+data.output_name
     if data.tts_char == "voice1":
         if data.emotion == "平静":
             prompt["8"]["inputs"]["SoVITS_weight"] = "paimeng-0_e25_s11925.pth"
             prompt["8"]["inputs"]["GPT_weight"] = "paimeng-0-e10.ckpt"
-            prompt["3"]["inputs"]["text"] = ""
-            prompt["4"]["inputs"]["audio"] = ""
+            prompt["3"]["inputs"]["text"] = "说起来，我有一个疑问。那个种子发芽以后，会长出什么东西吗？"
+            prompt["4"]["inputs"]["audio"] = "voice2_calm.wav"
         elif data.emotion == "兴奋":
             prompt["8"]["inputs"]["SoVITS_weight"] = "paimeng-3_e25_s2150.pth"
             prompt["8"]["inputs"]["GPT_weight"] = "paimeng-3-e10.ckpt"
-            prompt["3"]["inputs"]["text"] = ""
-            prompt["4"]["inputs"]["audio"] = ""
+            prompt["3"]["inputs"]["text"] = "真的吗？太好啦！"
+            prompt["4"]["inputs"]["audio"] = "voice2_happy.wav"
         elif data.emotion == "悲伤":
             prompt["8"]["inputs"]["SoVITS_weight"] = "paimeng-4_e25_s300.pth"
             prompt["8"]["inputs"]["GPT_weight"] = "paimeng-4-e10.ckpt"
-            prompt["3"]["inputs"]["text"] = ""
-            prompt["4"]["inputs"]["audio"] = ""
+            prompt["3"]["inputs"]["text"] = "嗯，好吧。一头雾水。"
+            prompt["4"]["inputs"]["audio"] = "voice2_sad.wav"
         else:
             prompt["8"]["inputs"]["SoVITS_weight"] = "paimeng-0_e25_s11925.pth"
             prompt["8"]["inputs"]["GPT_weight"] = "paimeng-0-e10.ckpt"
-            prompt["3"]["inputs"]["text"] = ""
-            prompt["4"]["inputs"]["audio"] = ""
+            prompt["3"]["inputs"]["text"] = "他似乎没沮丧，斗志反而更高了。"
+            prompt["4"]["inputs"]["audio"] = "voice2_confused.wav"
         await get_audiooutputs(client_id, prompt)
 
         
