@@ -65,6 +65,18 @@
             <button class="process-main-btn" id="save-voice-setting-btn">确定</button>
         </div>
     </div>
+    <!-- 动作设置面板-->
+    <div id="motion-setting-panel" class="video-setting-panel">
+        <div class="video-setting-head"> 
+            <button id="motion-set-close-btn" class="close-btn">
+                <img src="images/btn_back.png" alt="返回" class="close-icon">
+            </button>
+            <label>动作自定义</label>
+        </div>
+        <div class="button-container">
+            <button class="process-main-btn" id="save-motion-setting-btn">确定</button>
+        </div>
+    </div>
     <!-- 新增的顶部导航栏 -->
     <nav class="top-nav">
       <div class="left-section">
@@ -150,6 +162,7 @@
                         <button class="video-gen-setting" id="video-gen-setting">设置</button>
                     </div>
                 </div>
+                <!-- 音频列表 -->
                 <div class="process-tab-container" id="voice-tab-container">
                     <div class="process-tab-content">
                         <div class="process-input-container">
@@ -166,7 +179,6 @@
                             <p>录音编辑</p>
                         </div>
                         <div class="wav-range-container">
-                            <!-- 音频列表 -->
                             <div class="audio-container">
                                 <div class="audio-material">
                                     <div class="audio-player">
@@ -185,17 +197,17 @@
                             </div>
                             <div class="audio-controls">
                                 <button id="audio-del-btn">删除</button>
-                                <button id="audio-replace-btn">录音替换</button>
+                                <button id="audio-replace-btn">重生片段</button>
                                 <button id="audio-apply-btn">应用</button>
                             </div>
                         </div>      
                     </div>
                 </div>
+                <!-- 动作列表 -->
                 <div class="process-tab-container" id="motion-tab-container">
                     <div class="process-tab-content">
-                        <textarea placeholder="请输入生成文本" id="show-motion-panel"></textarea>
+                        <div id="show-motion-panel" class="show-text-panel"></div>
                         <div class="motion-preview-panel">
-                            
                         </div>
                         <div class="process-btn-container">
                             <button class="process-grey-btn">姿态预览</button>
@@ -204,6 +216,7 @@
                     </div>
 
                 </div>
+                <!-- 口型列表 -->
                 <div class="process-tab-container" id="wav2lip-tab-container">
                     <div class="process-tab-content">
                         <div class="lip-text-choose-panel">
@@ -449,8 +462,37 @@
                     document.getElementById(targetTab).classList.add('active');
                 });
             });
-            
-            //文字处理面板
+            //处理文本处理面板的tab
+            const voiceGenBtn = document.getElementById('voice-gen-btn');
+            const motionGenBtn = document.getElementById('motion-gen-btn');
+            const wav2lipGenBtn = document.getElementById('wav2lip-gen-btn');
+            const voiceTabContainer = document.getElementById('voice-tab-container');
+            const motionTabContainer = document.getElementById('motion-tab-container');
+            const wav2lipTabContainer = document.getElementById('wav2lip-tab-container');
+            function hideAllTabs() {
+                voiceTabContainer.style.display = 'none';
+                motionTabContainer.style.display = 'none';
+                wav2lipTabContainer.style.display = 'none';
+            }
+            function showTab(tabId, activeBtn) {
+                hideAllTabs();
+                document.getElementById(tabId).style.display = 'block';
+                voiceGenBtn.classList.remove('active');
+                motionGenBtn.classList.remove('active');
+                wav2lipGenBtn.classList.remove('active');
+                activeBtn.classList.add('active');
+            }
+            voiceGenBtn.addEventListener('click', function() {
+                showTab('voice-tab-container', voiceGenBtn);
+            });
+            motionGenBtn.addEventListener('click', function() {
+                showTab('motion-tab-container', motionGenBtn);
+            });
+            wav2lipGenBtn.addEventListener('click', function() {
+                showTab('wav2lip-tab-container', wav2lipGenBtn);
+            });
+            showTab('voice-tab-container', voiceGenBtn);
+            //语音生成面板
             //语音生成tab
             const emoAnalysisBtn = document.getElementById('emo-analysis-btn');
             emoAnalysisBtn.addEventListener('click', function() {
@@ -639,8 +681,7 @@
                     console.error('保存分析结果失败:', error);
                 }
             }
-              
-            // 语音转文字
+            
             // 语音设置面板和遮罩
             const langSelect = document.getElementById('lang-select'); 
             const cutSelect = document.getElementById('cut-select'); 
@@ -727,8 +768,7 @@
             audioMaterials.forEach(material => material.remove());
 
             //点击语音生成按钮
-            const textToAudioBtn = document.getElementById('text-to-audio-btn');
-            textToAudioBtn.addEventListener('click', async function() {
+            voiceGenBtn.addEventListener('click', async function() {
                 console.log('生成语音按钮被点击');
                 try {
                     const response = await fetch('data/emotion_analysis.json');
@@ -762,7 +802,6 @@
                     console.error('读取文件时出错:', error);
                 }
             });
-
             // 发送文本生成语音数据到后端
             async function sendToBackend(text, emotion,tts_char,output_name,savedLangValue,savedCutValue,savedVoiceSpeedValue,savedVoiceTempValue) {
                 try {
@@ -778,8 +817,8 @@
                     }
                     const data = await response.json();
                     console.log('后端响应:', data.output_name);
-                    // 获取文件名
-                    const fileNameResponse = await fetch('/get-audio-file', {
+                    // 重命名
+                    const fileNameResponse = await fetch('/rename-audio-file', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -791,15 +830,47 @@
                     }
                     const fileNameData = await fileNameResponse.json();
                     console.log('文件名:', fileNameData.fileName);
-                    // 创建音频播放器
-                    createAudioPlayer(fileNameData.fileName);
+                    // 更新播放器
+                    await updateAudioPlayers();
                 } catch (error) {
                     console.error('发送数据到后端时出错:', error);
                 }
             }
+
+            // 更新播放器函数
+            async function updateAudioPlayers() {
+                const audioContainer = document.querySelector('.audio-container');
+                if (!audioContainer) {
+                    console.error('未找到音频容器');
+                    return;
+                }
+                audioContainer.innerHTML = '';
+                try {
+                    const audioFiles = await fetchAudioFiles();
+                    audioFiles.forEach(fileName => createAudioPlayer(fileName));
+                } catch (error) {
+                    console.error('获取音频文件时出错:', error);
+                }
+            }
+            // 获取音频文件列表
+            async function fetchAudioFiles() {
+                const response = await fetch('/get-audio-files', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ selectedSceneIndex: selectedSceneIndex.toString() })
+                });
+                if (!response.ok) {
+                    throw new Error('获取音频文件列表失败');
+                }
+                const data = await response.json();
+                console.log('获取到的音频文件列表:', data.audio_files);
+                return data.audio_files;
+            }
+
             // 创建音频播放器函数
             function createAudioPlayer(fileName) {
-                // 创建音频播放器的 HTML 结构
                 const audioMaterial = document.createElement('div');
                 audioMaterial.className = 'audio-material';
                 const audioPlayer = document.createElement('div');
@@ -878,23 +949,21 @@
                     progressBar.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
                     selectAudio(newIndex);
                 });
-
                 // 动态更新进度条
                 newAudioElements[newIndex].addEventListener('timeupdate', function () {
                     const progressBar = newProgressBars[newIndex];
                     progressBar.style.width = `${(newAudioElements[newIndex].currentTime / newAudioElements[newIndex].duration) * 100}%`; // 更新进度条宽度
                 });
-
                 newAudioElements[newIndex].addEventListener('ended', function () {
                     // 音频结束后恢复播放按钮图标
                     newPlayPauseButtons[newIndex].querySelector('img').src = "images/btn_play.png";
                     currentPlayingAudioIndex = null; // 清除播放索引
                 });
             }
-            
-            let selectedAudioIndex = null; // 当前选中的音频索引
-            let currentPlayingAudioIndex = null; // 当前正在播放的音频索引
-            let selectedAudioFileName = null; // 存储所选音频文件的文件名
+
+            let selectedAudioIndex = null; 
+            let currentPlayingAudioIndex = null; 
+            let selectedAudioFileName = null; 
             // 选择音频的方法
             function selectAudio(index) {
                 // 重新获取所有音频播放器和进度条
@@ -939,10 +1008,11 @@
                     selectedAudioFileName = null; 
                 }
             }
+
             // 删除按钮点击事件
             const audioDelBtn = document.getElementById('audio-del-btn');
             audioDelBtn.addEventListener('click', async function() {
-                console.log('删除按钮被点击:'+selectedAudioFileName);
+                console.log('删除按钮被点击:' + selectedAudioFileName);
                 if (selectedAudioFileName) {
                     try {
                         const response = await fetch('/delete-audio-file', {
@@ -957,15 +1027,23 @@
                         }
                         const data = await response.json();
                         console.log('文件删除成功:', data.message);
-                        // 从页面中移除所选的音频播放器
+                        // 页面根据本机的文件名，更新播放器数量
+                        const audioMaterialToRemove = document.querySelector(`.audio-material audio source[src*="${selectedAudioFileName}"]`);
+                        if (audioMaterialToRemove) {
+                            audioMaterialToRemove.closest('.audio-material').remove();
+                        } else {
+                            console.error('未找到对应的音频播放器');
+                        }
                         const audioContainer = document.querySelector('.audio-container');
                         const audioMaterials = audioContainer.querySelectorAll('.audio-material');
-                        if (audioMaterials[selectedAudioIndex]) {
-                            audioMaterials[selectedAudioIndex].remove();
+                        if (audioMaterials.length > 0) {
+                            selectedAudioIndex = audioMaterials.length - 1;
+                            selectAudio(selectedAudioIndex);
+                        } else {
+                            selectedAudioIndex = null;
+                            selectedAudioFileName = null;
+                            console.log('所有音频已删除');
                         }
-                        // 重置选中的音频索引和文件名
-                        selectedAudioIndex = null;
-                        selectedAudioFileName = null;
                     } catch (error) {
                         console.error('删除文件时出错:', error);
                     }
@@ -974,37 +1052,137 @@
                 }
             });
 
+            // 重新生成片段
+            const audioReplaceBtn = document.getElementById('audio-replace-btn');
+            audioReplaceBtn.addEventListener('click', async function() {
+                console.log('重新生成片段按钮被点击:' + selectedAudioFileName);
+                if (selectedAudioFileName) {
+                    try {
+                        const response = await fetch('data/emotion_analysis.json');
+                        if (!response.ok) {
+                            throw new Error('网络响应失败');
+                        }
+                        const data = await response.json();
+                        const [key, index] = selectedAudioFileName.split('_');
+                        const keyIndex = parseInt(key, 10);
+                        const fileIndex = parseInt(index.split('.')[0], 10);
+                        // 检查 key 和 index 是否有效
+                        if (data.hasOwnProperty(keyIndex) && Array.isArray(data[keyIndex]) && fileIndex < data[keyIndex].length) {
+                            const selectedData = data[keyIndex][fileIndex];
+                            console.log('找到的数据:', selectedData);
+                            const match = selectedData.match(/^(.+)\((.+)\)$/);
+                            if (match) {
+                                const text = match[1].trim();
+                                const emotion = match[2].trim();
+                                const tts_char = document.getElementById('choose-voice').value;
+                                const output_name = keyIndex.toString() + '_' + fileIndex.toString();
+                                // 发送数据到后端
+                                sendToBackend(text, emotion, tts_char, output_name, savedLangValue, savedCutValue, savedVoiceSpeedValue, savedVoiceTempValue);
+                            } else {
+                                console.error('无法拆分文本和情绪:', selectedData);
+                            }
+                        } else {
+                            console.error('未找到对应的数据');
+                        }
+                    } catch (error) {
+                        console.error('重新生成片段时出错:', error);
+                    }
+                }
+            });
 
-            //处理文本处理面板的tab
-            const voiceGenBtn = document.getElementById('voice-gen-btn');
-            const motionGenBtn = document.getElementById('motion-gen-btn');
-            const wav2lipGenBtn = document.getElementById('wav2lip-gen-btn');
-            const voiceTabContainer = document.getElementById('voice-tab-container');
-            const motionTabContainer = document.getElementById('motion-tab-container');
-            const wav2lipTabContainer = document.getElementById('wav2lip-tab-container');
-            function hideAllTabs() {
-                voiceTabContainer.style.display = 'none';
-                motionTabContainer.style.display = 'none';
-                wav2lipTabContainer.style.display = 'none';
+            // 语音片段合成
+            const audioApplyBtn = document.getElementById('audio-apply-btn');
+            audioApplyBtn.addEventListener('click', async function() {
+                console.log('合成按钮被点击:');
+                selectedSceneIndex_str = selectedSceneIndex.toString();
+                try {
+                    const response = await fetch('/apply-audio-file', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ fileName: selectedSceneIndex_str })
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json(); // 获取错误信息
+                        throw new Error(`合成失败: ${errorData.detail || '未知错误'}`);
+                    }
+                    const data = await response.json();
+                    audioContainer.innerHTML = '';
+                    const fileName = data.fileName;
+                    console.log('合成的文件名:', data.audio_files);
+                    createAudioPlayer(fileName);
+                } catch (error) {
+                    console.error('合成时出错:', error);
+                }
+            });
+            //动作生成面板
+            //面板与遮罩
+            const motionSettingPanel = document.getElementById('motion-setting-panel');
+            motionGenBtn.addEventListener('click', async function() {
+                console.log('动作生成按钮被点击:');
+                const VoiceSelect = document.getElementById('choose-voice');
+                VoiceSelect.style.display = 'none';
+                try {
+                        const response = await fetch('data/emotion_analysis.json');
+                        if (!response.ok) {
+                            throw new Error('网络响应失败');
+                        }
+                        const data = await response.json();
+                        console.log('读取到的数据:', data);
+                        // 提取 selectedSceneIndex 对应的值
+                        const selectedSceneData = data[selectedSceneIndex.toString()];
+                        if (!selectedSceneData) {
+                            console.error('未找到对应的 selectedSceneIndex 数据');
+                            return;
+                        }
+                        // 遍历每个 selectedSceneData 的值
+                        selectedSceneData.forEach((item, index) => {
+                        const match = item.match(/^(.+)\((.+)\)$/);
+                        if (match) {
+                            const text = match[1].trim();
+                            const emotion = match[2].trim();
+                            const MotionContainer = document.getElementById('show-motion-panel');
+                            MotionContainer.className = 'show-text-panel'
+                            const MotionItem = document.createElement('div');
+                            const textElement = document.createElement('span')
+                            textElement.textContent = text;
+                            MotionItem.appendChild(textElement);
+                            const selectElement = document.createElement('select');
+                            selectElement.className = 'motion-select';
+                            // 创建默认选项
+                            const defaultOption = document.createElement('option');
+                            defaultOption.value = 'default';
+                            defaultOption.textContent = '默认';
+                            defaultOption.selected = true; // 设置默认选项为选中状态
+                            selectElement.appendChild(defaultOption);                        
+                            // 创建自定义选项
+                            const customOption = document.createElement('option');
+                            customOption.value = 'custom';
+                            customOption.textContent = '自定义';
+                            selectElement.appendChild(customOption);
+                            // 添加事件监听器
+                            selectElement.addEventListener('change', function() {
+                                if (this.value === 'custom') {
+                                    handleCustomSelection(MotionItem, text);
+                                }
+                            });
+                            MotionItem.appendChild(selectElement);
+                            MotionContainer.appendChild(MotionItem);
+                        } else {
+                            console.error('无法拆分文本和情绪:', item);
+                        }
+                    });
+                } catch (error) {
+                    console.error('读取数据时出错:', error);
+                }
+            });
+            // 处理自定义选择的函数
+            function handleCustomSelection(MotionItem, text) {
+                overlay.style.display = 'block';
+                motionSettingPanel.style.display = 'block';
+                
             }
-            function showTab(tabId, activeBtn) {
-                hideAllTabs();
-                document.getElementById(tabId).style.display = 'block';
-                voiceGenBtn.classList.remove('active');
-                motionGenBtn.classList.remove('active');
-                wav2lipGenBtn.classList.remove('active');
-                activeBtn.classList.add('active');
-            }
-            voiceGenBtn.addEventListener('click', function() {
-                showTab('voice-tab-container', voiceGenBtn);
-            });
-            motionGenBtn.addEventListener('click', function() {
-                showTab('motion-tab-container', motionGenBtn);
-            });
-            wav2lipGenBtn.addEventListener('click', function() {
-                showTab('wav2lip-tab-container', wav2lipGenBtn);
-            });
-            showTab('voice-tab-container', voiceGenBtn);
 
             //处理视频播放进度条
             const video = document.getElementById('thispape-video');

@@ -11,6 +11,7 @@ from router import *
 import base64
 from io import BytesIO
 from PIL import Image
+import pydub
 from pydub import AudioSegment
 # 配置日志记录
 logging.basicConfig(level=logging.INFO)
@@ -129,10 +130,10 @@ class TexttoSpeech(BaseModel):
 async def text_to_speech(data: TexttoSpeech):
     return await process_texttospeech(data)
 
-# 获取语音文件
+# 移动并重命名音乐文件
 class AudioFileRequest(BaseModel):
     output_name: str# 获取语音文件
-@app.post("/get-audio-file")
+@app.post("/rename-audio-file")
 async def get_audio_file(data: AudioFileRequest):
     output_name = data.output_name
     directory = '/root/autodl-tmp/ComfyUI/output/audio'
@@ -162,6 +163,78 @@ async def get_audio_file(data: AudioFileRequest):
         logger.info(f"复制文件: {new_file_path_full} -> {destination_path}")
         return {"fileName": new_filename}
     raise HTTPException(status_code=404, detail="文件未找到")
+
+# 获取符合条件的音乐文件
+class SelectedSceneIndex(BaseModel):
+    selectedSceneIndex: str
+@app.post("/get-audio-files")
+async def get_audio_files(data: SelectedSceneIndex):
+    selected_scene_index = data.selectedSceneIndex
+    logger.info(f"获取音乐文件: {selected_scene_index}")
+    AUDIO_FOLDER = './static/data/audio'
+    if not os.path.exists(AUDIO_FOLDER):
+        raise HTTPException(status_code=404, detail="音频文件夹未找到")
+    try:
+        audio_files = [
+            file for file in os.listdir(AUDIO_FOLDER)
+            if file.startswith(selected_scene_index + "_") and file.endswith('.flac')  # 可根据需要添加其他扩展名
+        ]
+        if not audio_files:
+            raise HTTPException(status_code=404, detail="未找到符合条件的音频文件")
+        # 自定义排序函数，按下划线后面的数字排序
+        def sort_key(file_name):
+            # 提取下划线后面的部分，并去掉 .flac 后缀
+            number_part = file_name.split('_')[1].split('.')[0]
+            return int(number_part)
+        audio_files.sort(key=sort_key)
+        return JSONResponse(content={"audio_files": audio_files})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+#拼合音乐
+class AudioFileRequest(BaseModel):
+    fileName: str
+@app.post("/apply-audio-file")
+async def apply_audio_file(data: AudioFileRequest):
+    fileName = data.fileName
+    base_dir = "./static/data/audio"
+    output_dir = "./static/data/audio"
+    output_file_name = f"{output_dir}/{fileName}.flac"
+    if not os.path.exists(base_dir):
+        raise HTTPException(status_code=404, detail="音频文件夹未找到")
+    try:
+        audio_files = [
+            file for file in os.listdir(base_dir)
+            if file.startswith(fileName + "_") and file.endswith('.flac')  # 可根据需要添加其他扩展名
+        ]
+        if not audio_files:
+            raise HTTPException(status_code=404, detail="未找到符合条件的音频文件")
+        def sort_key(file_name):
+            number_part = file_name.split('_')[1].split('.')[0]
+            return int(number_part)
+        # 按自定义排序函数排序
+        audio_files.sort(key=sort_key)
+        # 初始化一个空的音频段
+        combined_audio = AudioSegment.empty()
+        for audio_file in audio_files:
+            audio_segment = AudioSegment.from_file(os.path.join(base_dir, audio_file))
+            combined_audio += audio_segment
+        # 保存拼接后的音频文件
+        combined_audio.export(output_file_name, format="flac")
+        # 删除参与拼合的音频文件
+        for audio_file in audio_files:
+            file_path = os.path.join(base_dir, audio_file)
+            try:
+                os.remove(file_path)
+                logger.info(f"删除文件: {file_path}")
+            except Exception as e:
+                logger.error(f"删除文件 {file_path} 时出错: {str(e)}")
+        return JSONResponse(content={"message": f"音频文件已成功合成并保存为 {output_file_name}", "fileName": fileName + ".flac","audio_files": audio_files})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 #删除语音文件
 class DeleteAudioFileRequest(BaseModel):
     fileName: str

@@ -627,16 +627,18 @@ body {
   line-height: 1.5;
   font-family: Arial, Helvetica, sans-serif;
 }
-.emo-select{
+.emo-select,
+.motion-select{
   background-color: #16B57F;
   border-radius: 10px;
   height: 20px;
   color: #fff;
   border: none;
   appearance: none;
-  padding: 2px 12px;
-  
+  text-align: center;
+  padding: 2px 12px; 
 }
+
 .sentence-container{
   font-size: 14px;
   font-family: Arial, sans-serif;
@@ -777,10 +779,12 @@ body {
 #audio-replace-btn{
   color: #fff;
   background-color: #4F4C64;
+  cursor: pointer;
 }
 #audio-apply-btn{
   color: #fff;
   background-color: #6966FF;
+  cursor: pointer;
 }
 /*动作处理区*/
 .motion-preview-panel{
@@ -788,6 +792,7 @@ body {
   border-radius: 8px;
   height: 14vh;
   width: 100%;
+  margin-top: 4px;
 }
 .motion-preview-panel image{
   height: 40px;
