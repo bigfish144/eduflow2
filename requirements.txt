@@ -5,4 +5,5 @@ beautifulsoup4
 websockets
 python-multipart
 openai
-python-multipart
+pydub
+gradio_client
