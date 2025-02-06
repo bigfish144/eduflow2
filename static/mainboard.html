@@ -9,6 +9,11 @@
 <body>
     <!-- 遮罩-->
     <div id="overlay" class="overlay"></div>
+    <!-- 加载动画-->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>生成中，请稍候...</p>
+    </div>
     <!-- 语音设置面板-->
     <div id="video-setting-panel" class="video-setting-panel">
         <div class="video-setting-head"> 
@@ -73,7 +78,22 @@
             </button>
             <label>动作自定义</label>
         </div>
+        <div class="motion-set-container">
+            <p>输入动作描述词</p>
+            <textarea placeholder="一个男人，演讲，比划手势" id="motion-gen-prompt" class="show-text-panel"></textarea>
+            <p>选择模型</p>
+            <select name="motion-style" id="motion-select" class="select">
+                <option value="fantasticmix_v10">动漫卡通风格</option>
+                <option value="majicmixRealv6Fp16">真人写实风格</option>
+            </select>
+            <div class="checkbox-container">
+                <p>视频补帧</p>
+                <input type="checkbox" class="lip-choose-box" id="motion-lerp">
+                <label for="motion-lerp"></label>
+            </div>
+        </div>
         <div class="button-container">
+            <p id="motion-time">视频时长：4.56s</p>
             <button class="process-main-btn" id="save-motion-setting-btn">确定</button>
         </div>
     </div>
@@ -211,10 +231,10 @@
                         </div>
                         <div class="process-btn-container">
                             <button class="process-grey-btn">姿态预览</button>
+                            <button class="process-grey-btn">角色渲染预览</button>
                             <button class="process-main-btn">应用</button>
                         </div>
                     </div>
-
                 </div>
                 <!-- 口型列表 -->
                 <div class="process-tab-container" id="wav2lip-tab-container">
@@ -336,7 +356,8 @@
     </div> 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-
+            const overlay = document.getElementById('overlay');
+            const loadingOverlay = document.getElementById('loading-overlay');
             let selectedCameraItem = null; // 用于存储当前选中的 camera-item
             let selectedSceneIndex = -1; // 用于存储当前选中的 sceneIndex
             // 镜头列表面板
@@ -379,6 +400,7 @@
                             selectedCameraItem = cameraItem;
                             selectedSceneIndex = parseInt(cameraItem.getAttribute('data-index'), 10); // 获取索引
                             saveStoryboardData();
+                            UpdateMotiontext();
                         });
                     }
                     // 默认选择第一个 camera-item
@@ -509,6 +531,8 @@
             });
             // 分析文本内容
             async function analyzeText(text) {
+                loadingOverlay.style.display = 'flex'; // 显示加载图标
+                console.log('分析文本内容:', text);
                 try {
                     const response = await fetch('/analyze-text', {
                         method: 'POST',
@@ -525,6 +549,9 @@
                     saveAnalyzedText(selectedSceneIndex,data.text);
                 } catch (error) {
                     console.error('文本分析失败:', error);
+                }
+                finally {
+                    loadingOverlay.style.display = 'none'; // 隐藏加载图标
                 }
             }
 
@@ -690,7 +717,6 @@
             const voicespeedtooltip = document.getElementById('voice-speed-tooltip'); // Tooltip
             const voicetemptooltip = document.getElementById('voice-temp-tooltip');
             const settingButton = document.getElementById('video-gen-setting');
-            const overlay = document.getElementById('overlay');
             const panel = document.getElementById('video-setting-panel');
             const closePanelButton = document.getElementById('voice-set-close-btn');
             const saveButton = document.getElementById('save-voice-setting-btn');
@@ -766,9 +792,9 @@
             const audioContainer = document.querySelector('.audio-container');
             const audioMaterials = audioContainer.querySelectorAll('.audio-material');
             audioMaterials.forEach(material => material.remove());
-
+            const texttoaudiobtn = document.getElementById('text-to-audio-btn');
             //点击语音生成按钮
-            voiceGenBtn.addEventListener('click', async function() {
+            texttoaudiobtn.addEventListener('click', async function() {
                 console.log('生成语音按钮被点击');
                 try {
                     const response = await fetch('data/emotion_analysis.json');
@@ -793,7 +819,6 @@
                             const output_name = selectedSceneIndex.toString()+'_'+index.toString()
                             // 发送数据到后端
                             sendToBackend(text, emotion, tts_char,output_name,savedLangValue,savedCutValue,savedVoiceSpeedValue,savedVoiceTempValue)
-
                         } else {
                             console.error('无法拆分文本和情绪:', item);
                         }
@@ -804,6 +829,7 @@
             });
             // 发送文本生成语音数据到后端
             async function sendToBackend(text, emotion,tts_char,output_name,savedLangValue,savedCutValue,savedVoiceSpeedValue,savedVoiceTempValue) {
+                loadingOverlay.style.display = 'flex'; // 显示加载图标
                 try {
                     const response = await fetch('/text-to-speech', {
                         method: 'POST',
@@ -832,9 +858,11 @@
                     console.log('文件名:', fileNameData.fileName);
                     // 更新播放器
                     await updateAudioPlayers();
+                    loadingOverlay.style.display = 'none'; // 隐藏加载图标
                 } catch (error) {
                     console.error('发送数据到后端时出错:', error);
                 }
+
             }
 
             // 更新播放器函数
@@ -1027,13 +1055,7 @@
                         }
                         const data = await response.json();
                         console.log('文件删除成功:', data.message);
-                        // 页面根据本机的文件名，更新播放器数量
-                        const audioMaterialToRemove = document.querySelector(`.audio-material audio source[src*="${selectedAudioFileName}"]`);
-                        if (audioMaterialToRemove) {
-                            audioMaterialToRemove.closest('.audio-material').remove();
-                        } else {
-                            console.error('未找到对应的音频播放器');
-                        }
+                        updateAudioPlayers()
                         const audioContainer = document.querySelector('.audio-container');
                         const audioMaterials = audioContainer.querySelectorAll('.audio-material');
                         if (audioMaterials.length > 0) {
@@ -1116,36 +1138,47 @@
                     console.error('合成时出错:', error);
                 }
             });
-            //动作生成面板
-            //面板与遮罩
+            // 动作生成面板
+            // 面板与遮罩
             const motionSettingPanel = document.getElementById('motion-setting-panel');
             motionGenBtn.addEventListener('click', async function() {
+                UpdateMotiontext();
+            });
+            
+            async function UpdateMotiontext()
+            {
                 console.log('动作生成按钮被点击:');
+                //隐藏声音选择
                 const VoiceSelect = document.getElementById('choose-voice');
                 VoiceSelect.style.display = 'none';
                 try {
-                        const response = await fetch('data/emotion_analysis.json');
-                        if (!response.ok) {
-                            throw new Error('网络响应失败');
-                        }
-                        const data = await response.json();
-                        console.log('读取到的数据:', data);
-                        // 提取 selectedSceneIndex 对应的值
-                        const selectedSceneData = data[selectedSceneIndex.toString()];
-                        if (!selectedSceneData) {
-                            console.error('未找到对应的 selectedSceneIndex 数据');
-                            return;
-                        }
-                        // 遍历每个 selectedSceneData 的值
-                        selectedSceneData.forEach((item, index) => {
+                    const response = await fetch('data/emotion_analysis.json');
+                    if (!response.ok) {
+                        throw new Error('网络响应失败');
+                    }
+                    const data = await response.json();
+                    console.log('读取到的数据:', data);
+                    // 提取 selectedSceneIndex 对应的值
+                    const selectedSceneData = data[selectedSceneIndex.toString()];
+                    console.log('selectedSceneIndex 对应的值:', selectedSceneData);
+                    if (!selectedSceneData) {
+                        console.error('未找到对应的 selectedSceneIndex 数据');
+                        return;
+                    }
+                    // 清空 MotionContainer 的内容
+                    const MotionContainer = document.getElementById('show-motion-panel');
+                    MotionContainer.innerHTML = '';
+                    // 遍历每个 selectedSceneData 的值
+                    selectedSceneData.forEach((item, index) => {
                         const match = item.match(/^(.+)\((.+)\)$/);
                         if (match) {
                             const text = match[1].trim();
                             const emotion = match[2].trim();
                             const MotionContainer = document.getElementById('show-motion-panel');
-                            MotionContainer.className = 'show-text-panel'
+                            MotionContainer.className = 'show-text-panel';
                             const MotionItem = document.createElement('div');
-                            const textElement = document.createElement('span')
+                            MotionItem.className = 'motion-item';
+                            const textElement = document.createElement('span');
                             textElement.textContent = text;
                             MotionItem.appendChild(textElement);
                             const selectElement = document.createElement('select');
@@ -1155,7 +1188,7 @@
                             defaultOption.value = 'default';
                             defaultOption.textContent = '默认';
                             defaultOption.selected = true; // 设置默认选项为选中状态
-                            selectElement.appendChild(defaultOption);                        
+                            selectElement.appendChild(defaultOption);
                             // 创建自定义选项
                             const customOption = document.createElement('option');
                             customOption.value = 'custom';
@@ -1164,9 +1197,11 @@
                             // 添加事件监听器
                             selectElement.addEventListener('change', function() {
                                 if (this.value === 'custom') {
-                                    handleCustomSelection(MotionItem, text);
+                                    handleCustomSelection(MotionItem, text, this.dataset.index,selectElement);
                                 }
                             });
+                            // 设置自定义属性存储索引
+                            selectElement.dataset.index = index;
                             MotionItem.appendChild(selectElement);
                             MotionContainer.appendChild(MotionItem);
                         } else {
@@ -1176,13 +1211,113 @@
                 } catch (error) {
                     console.error('读取数据时出错:', error);
                 }
-            });
-            // 处理自定义选择的函数
-            function handleCustomSelection(MotionItem, text) {
-                overlay.style.display = 'block';
-                motionSettingPanel.style.display = 'block';
-                
             }
+            // 动作面板参数
+            // 打开动作设置面板
+            async function handleCustomSelection(MotionItem, text, selectedIndex,selectElement) {
+                overlay.style.display = 'block'; 
+                motionSettingPanel.style.display = 'block';
+                const motionTime = document.getElementById('motion-time');
+                const duration = await getAudioDuration(selectedSceneIndex, selectedIndex);
+                console.log('音频时长:', duration);
+                motionTime.textContent = '视频时长：' + duration.toString() + 's';
+                const motionindex = selectedIndex
+                console.log('motionindex:', motionindex);
+                // 将 motionindex 传递给 handleMotionGeneration 函数
+                const motioncustomegenbtn = document.getElementById('save-motion-setting-btn');
+                motioncustomegenbtn.addEventListener('click', async function() {
+                    console.log('生成自定义动作');
+                    const motionGenPrompt = document.getElementById('motion-gen-prompt').value;
+                    const motionmodelSelect = document.getElementById('motion-select').value;
+                    const motionLerpCheckbox = document.getElementById('motion-lerp');
+                    const motionLerp = motionLerpCheckbox.checked ? 2 : 1;
+                    const motionframe = Math.ceil(12 * duration)
+                    handleMotionGeneration(selectedSceneIndex.toString(), motionindex, motionGenPrompt, motionmodelSelect, motionLerp, motionframe);
+                });
+                const closemotionsetpanelbtn = document.getElementById('motion-set-close-btn');
+                closemotionsetpanelbtn.addEventListener('click', function() {
+                    overlay.style.display = 'none';
+                    motionSettingPanel.style.display = 'none';
+                    // 找到相应的 selectElement 并将其值设置为 'default'
+                    if (selectElement) {
+                        selectElement.value = 'default';
+                    } 
+                });
+            }
+
+            // 获取音频的时长作为动作时长
+            async function getAudioDuration(selectedSceneIndex, selectedIndex) {
+                const fileName = selectedSceneIndex.toString() + '_' + selectedIndex.toString() + '.flac';
+                try {
+                    const response = await fetch('/get-audio-length', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ fileName: fileName })
+                    });
+                    if (!response.ok) {
+                        throw new Error('网络响应失败');
+                    }
+                    const data = await response.json();
+                    const duration = data.length;
+                    return duration;
+                } catch (error) {
+                    console.error('读取数据时出错:', error);
+                }
+            }
+
+            // 自定义动作生成
+            async function handleMotionGeneration(selectedSceneIndex, motionindex, motionGenPrompt, motionmodelSelect, motionLerp, motionframe) {
+                loadingOverlay.style.display = 'flex'; // 显示加载图标
+                const motionoutputname = selectedSceneIndex.toString() + '_' + motionindex.toString()
+                console.log('motionoutputname:', motionoutputname);
+                try {
+                    const response = await fetch('/generate-custommotion', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ motionoutputname, motionGenPrompt, motionmodelSelect, motionLerp, motionframe})
+                    });
+                    if (response.ok) {
+                        console.log('动作生成成功');
+                        const data = await response.json();
+                        //重命名并移动文件
+                        const fileNameResponse = await fetch('/rename-motion-file', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ motionoutputname })
+                        });
+                        if (!fileNameResponse.ok) {
+                            throw new Error('获取文件名失败');
+                        }
+                        const fileNameData = await fileNameResponse.json();
+                        console.log('文件名:', fileNameData.fileName);
+                        // 更新播放器
+                        await UpdateMotionVideo();
+                        }
+                
+                } catch (error) {
+                    console.error('生成动作时出错:', error);
+                }
+                finally {
+                    loadingOverlay.style.display = 'none'; // 隐藏加载图标
+                    overlay.style.display = 'none';
+                    motionSettingPanel.style.display = 'none';
+                }
+            }
+            async function UpdateMotionVideo()
+            {
+                try {
+                }
+                catch (error) {
+                    console.error('生成动作时出错:', error);
+                }
+            }
+
 
             //处理视频播放进度条
             const video = document.getElementById('thispape-video');

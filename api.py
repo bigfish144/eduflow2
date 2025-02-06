@@ -222,18 +222,16 @@ async def apply_audio_file(data: AudioFileRequest):
         # 保存拼接后的音频文件
         combined_audio.export(output_file_name, format="flac")
         # 删除参与拼合的音频文件
-        for audio_file in audio_files:
-            file_path = os.path.join(base_dir, audio_file)
-            try:
-                os.remove(file_path)
-                logger.info(f"删除文件: {file_path}")
-            except Exception as e:
-                logger.error(f"删除文件 {file_path} 时出错: {str(e)}")
+        # for audio_file in audio_files:
+        #     file_path = os.path.join(base_dir, audio_file)
+        #     try:
+        #         os.remove(file_path)
+        #         logger.info(f"删除文件: {file_path}")
+        #     except Exception as e:
+        #         logger.error(f"删除文件 {file_path} 时出错: {str(e)}")
         return JSONResponse(content={"message": f"音频文件已成功合成并保存为 {output_file_name}", "fileName": fileName + ".flac","audio_files": audio_files})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
 #删除语音文件
 class DeleteAudioFileRequest(BaseModel):
@@ -247,6 +245,68 @@ async def delete_audio_file(data: DeleteAudioFileRequest):
         return {"message": f"文件 {data.fileName} 已删除"}
     else:
         raise HTTPException(status_code=404, detail=f"文件 {data.fileName} 未找到")
+
+#获取音乐长度
+class GetAudioLengthRequest(BaseModel):
+    fileName: str
+@app.post("/get-audio-length")
+async def get_audio_length(data: GetAudioLengthRequest):
+    file_path = os.path.join('./static/data/audio', data.fileName)
+    logger.info(f"获取文件长度: {file_path}")
+    if os.path.exists(file_path):
+        audio = AudioSegment.from_file(file_path)
+        length = len(audio) / 1000  # 将毫秒转换为秒
+        return {"length": length}
+    else:
+        raise HTTPException(status_code=404, detail="文件未找到")
+
+#生成自定义动作
+class CustomMotionModel(BaseModel):
+    motionoutputname: str
+    motionGenPrompt: str
+    motionmodelSelect: str
+    motionLerp: int
+    motionframe: int
+@app.post("/generate-custommotion")
+async def customMotion(data:CustomMotionModel):
+    return await process_custommotion(data)
+
+# 移动并重命名动作文件
+class AudioFileRequest(BaseModel):
+    motionoutputname: str
+@app.post("/rename-motion-file")
+async def get_audio_file(data: AudioFileRequest):
+    motionoutputname = data.motionoutputname
+    directory = '/root/autodl-tmp/ComfyUI/output/motion'
+    new_file_path = './static/data/motion'
+    if not os.path.exists(new_file_path):
+        os.makedirs(new_file_path)
+    files = os.listdir(directory)
+    target_file = None
+    for filename in files:
+        if filename.endswith(".png"):
+            os.remove(os.path.join(directory, filename))
+        else:
+            basename = os.path.splitext(filename)[0]
+            if basename == motionoutputname:
+                file_path = os.path.join(directory, filename)
+                os.remove(file_path)
+                logger.info(f"删除文件: {file_path}")
+            else:
+                target_file = filename
+    if target_file:
+        target_basename, target_ext = os.path.splitext(target_file)
+        new_filename = f"{motionoutputname}{target_ext}"
+        old_file_path = os.path.join(directory, target_file)
+        new_file_path_full = os.path.join(directory, new_filename)
+        os.rename(old_file_path, new_file_path_full)
+        logger.info(f"重命名文件: {old_file_path} -> {new_file_path_full}")
+        # 复制文件到 new_file_path
+        destination_path = os.path.join(new_file_path, new_filename)
+        shutil.copy(new_file_path_full, destination_path)
+        logger.info(f"复制文件: {new_file_path_full} -> {destination_path}")
+        return {"fileName": new_filename}
+    raise HTTPException(status_code=404, detail="文件未找到")
 
 #文生图
 class TextToImageModel(BaseModel):

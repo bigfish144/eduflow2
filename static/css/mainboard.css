@@ -14,6 +14,35 @@
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 1000;
 }
+/* 加载中动画 */
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1005;
+}
+.loading-spinner {
+  border: 8px solid rgba(255, 255, 255, 1);
+  border-top: 8px solid #6966FF;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* 新面板-生成语音设置 */
 .close-btn{
   background-color: transparent;
@@ -41,9 +70,9 @@
   width: 40%;
   transform: translate(-50%, -50%);
   background-color: #393953;
-  z-index: 1001;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.5);
+  z-index: 1001;
 }
 .select{
   width: 100%;
@@ -60,11 +89,35 @@
   margin: 12px 0;
   padding: 0 40px;
 }
-.button-container{
+.motion-set-container{
+  padding: 0 20px;
+  gap: 12px;
+}
+.motion-set-container p{
+  color: rgba(255, 255, 255, 0.75);
+  margin-bottom: 8px;
+  margin-top: 12px;
+}
+.checkbox-container{
+  color: #fff;
+  margin-top: 12px;
   display: flex;
   flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.button-container{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   margin: 32px 0;
   padding: 0 40px;
+}
+.button-container p{
+  color: rgba(255, 255, 255, 0.75);
 }
 .select-container label{
   width: 120px;
@@ -587,7 +640,7 @@ body {
   color: #fff;
   border: none;
   border-radius: 5px;
-  font: 14px;
+  font-size: 14px;;
   font-family: Arial, sans-serif;
   line-height: 2;
 }
@@ -796,6 +849,9 @@ body {
 }
 .motion-preview-panel image{
   height: 40px;
+}
+.motion-item{
+  padding: 4px 0;
 }
 /*口型匹配区*/
 .lip-text-choose-panel{

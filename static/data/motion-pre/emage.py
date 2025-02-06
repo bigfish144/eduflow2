@@ -5,7 +5,7 @@ client = Client("H-Liu1997/EMAGE")
 
 # 调用 API，传入所需的参数
 result = client.predict(
-    audio=handle_file('/root/autodl-tmp/ComfyUI/demo/static/data/motion/2.flac'),  # 输入音频文件的 URL
+    audio=handle_file('/root/autodl-tmp/ComfyUI/demo/static/data/motion-pre/2.flac'),  # 输入音频文件的 URL
     model_type="EMAGE (Full body + Face)",  # 选择模型类型，可能的值有 "DisCo (Upper only)", "CaMN (Upper only)", "EMAGE (Full body + Face)"
     render_mesh=True,  # 是否渲染网格模型
     render_face=False,  # 是否渲染2D人脸标志
@@ -18,7 +18,7 @@ print(result)
 import shutil
 import os
 # 目标文件夹
-output_dir = '/root/autodl-tmp/ComfyUI/demo/motion'
+output_dir = '/root/autodl-tmp/ComfyUI/demo/static/data/motion-pre'
 
 # 如果目标文件夹不存在，创建它
 if not os.path.exists(output_dir):

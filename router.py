@@ -72,7 +72,7 @@ async def process_getemotion_text(data):
     generate_emo_text =await get_emotionoutputs(client_id,prompt)
     # print(generate_emo_text)
     return {"text": generate_emo_text}
-
+#文本生成语音
 async def process_texttospeech(data):
     client_id = str(uuid.uuid4())
     prompt = load_json_template('./workfolows/gsv_tts_workflow.json')
@@ -105,4 +105,14 @@ async def process_texttospeech(data):
             prompt["4"]["inputs"]["audio"] = "voice2_confused.wav"
         await get_audiooutputs(client_id, prompt)
         return {"outputname": data.output_name}
-        
+#自定义生成动作-museV
+async def process_custommotion(data):
+    client_id = str(uuid.uuid4())
+    prompt = load_json_template('./workfolows/musev_base.json')
+    prompt["44"]["inputs"]["text"] = data.motionGenPrompt
+    prompt["1"]["inputs"]["sd_model_name"] = data.motionmodelSelect
+    prompt["1"]["inputs"]["video_len"] = data.motionframe
+    prompt["27"]["inputs"]["select"] = data.motionLerp
+    prompt["4"]["inputs"]["filename_prefix"] = "motion/"+data.motionoutputname
+    await get_custommotionoutputs(client_id, prompt)
+    return {"outputname": data.motionoutputname}
