@@ -88,7 +88,7 @@
             </select>
             <div class="checkbox-container">
                 <p>视频补帧</p>
-                <input type="checkbox" class="lip-choose-box" id="motion-lerp">
+                <input type="checkbox" class="lip-choose-box" id="motion-lerp" checked>
                 <label for="motion-lerp"></label>
             </div>
         </div>
@@ -171,7 +171,10 @@
                             <option value="voice2">男声</option>
                             <!-- 可以根据需要添加更多选项 -->
                         </select>
-                        <div class="select-icon"></div>
+                        <select id="choose-char">
+                            <option value="char1">牛顿</option>
+                            <option value="char2">女孩</option>
+                        </select>
                     </div>
                     <div class="voice-gen-btn-container">
                         <button id="voice-gen-btn">语音生成</button>
@@ -226,11 +229,13 @@
                 <!-- 动作列表 -->
                 <div class="process-tab-container" id="motion-tab-container">
                     <div class="process-tab-content">
-                        <div id="show-motion-panel" class="show-text-panel"></div>
-                        <div class="motion-preview-panel">
+                        <div id="show-motion-panel" class="show-text-panel">
+                        </div>
+                        <div class="motion-preview-panel" id="motion-preview-panel">
+                            <p style="color: rgba(255,255,255,0.75);font-size: 14px;">暂无数据，点击姿态预览按钮进行预览</p>
                         </div>
                         <div class="process-btn-container">
-                            <button class="process-grey-btn">姿态预览</button>
+                            <button class="process-grey-btn" id="motion-pose-pre">姿态预览</button>
                             <button class="process-grey-btn">角色渲染预览</button>
                             <button class="process-main-btn">应用</button>
                         </div>
@@ -284,7 +289,7 @@
             <!-- 当前素材列表面板 --> 
             <div class="part-material-panel">
                 <div class="part-list-head">
-                    <p>当前分镜素材-01</p>
+                    <p id="part-scene-index">当前分镜素材-01</p>
                 </div>
                 <div class="part-tabs">
                     <button class="part-tab-button active" data-tab="part-images">图片</button>
@@ -294,26 +299,27 @@
                     <div class="apply-img-material">
                         <p>01</p>
                         <p class="part-img-name">背景</p>
+                        <button class="edit-all-img-btn">编辑</button>
                         <button class="del-part-img-btn">删除</button>
                     </div>
                     <div class="apply-img-material">
                         <p>02</p>
                         <p class="part-img-name">星球</p>
+                        <button class="edit-all-img-btn">编辑</button>
                         <button class="del-part-img-btn">删除</button>
                     </div>
-
                 </div>
                 <div class="part-tab-content" id="part-characters">
                     <div class="apply-cha-material">
                         <p>01</p>
                         <p class="part-cha-name">一个角色素材</p>
+                        <button class="edit-all-img-btn">编辑</button>
                         <button class="del-part-cha-btn">删除</button>
                     </div>
                 </div>
                 <div class="part-blender-btn-container">
                     <button class="blend-part-img-btn">A I融合</button>
                 </div>
-
             </div>
             <!-- 素材库面板 --> 
             <div class="all-material-panel">
@@ -329,7 +335,7 @@
                         <div class="ori-img-material">
                             <p>01</p>
                             <p class="all-img-name">背景</p>
-                            <button class="edit-all-img-btn">编辑</button>
+                            <button class="edit-all-img-btn" id="addtopart-mat-btn">添加</button>
                             <button class="del-all-img-btn">删除</button>
                         </div>
                     </div>
@@ -342,7 +348,7 @@
                         <div class="ori-cha-material">
                             <p>01</p>
                             <p class="all-cha-name">一个角色素材</p>
-                            <button class="edit-all-cha-btn">编辑</button>
+                            <button class="edit-all-cha-btn" id="addtopart-char-btn">添加</button>
                             <button class="del-all-cha-btn">删除</button>
                         </div>
                     </div>
@@ -360,6 +366,11 @@
             const loadingOverlay = document.getElementById('loading-overlay');
             let selectedCameraItem = null; // 用于存储当前选中的 camera-item
             let selectedSceneIndex = -1; // 用于存储当前选中的 sceneIndex
+
+            // 在页面加载时删除 audio-container 下的所有 audio-material
+            const audioContainer = document.querySelector('.audio-container');
+            const audioMaterials = audioContainer.querySelectorAll('.audio-material');
+            audioMaterials.forEach(material => material.remove());
             // 镜头列表面板
             async function loadStoryboardData() { // 获取并加载分镜数据
                 const leftPanel = document.querySelector('.left-panel');
@@ -392,13 +403,15 @@
                         leftPanel.appendChild(cameraItem);
                         // 切换/选择分镜
                         cameraItem.addEventListener('click', function() {
+                            const partsceneindex = document.getElementById('part-scene-index');
                             const allCameraItems = document.querySelectorAll('.camera-item');
+                            const showTextPanel = document.getElementById('show-text-panel');
                             allCameraItems.forEach(item => item.classList.remove('selected'));
                             cameraItem.classList.add('selected');
-                            const showTextPanel = document.getElementById('show-text-panel');
                             showTextPanel.value = description.textContent; 
                             selectedCameraItem = cameraItem;
                             selectedSceneIndex = parseInt(cameraItem.getAttribute('data-index'), 10); // 获取索引
+                            partsceneindex.textContent = "当前分镜素材-"+(selectedSceneIndex + 1).toString().padStart(2, '0');
                             saveStoryboardData();
                             UpdateMotiontext();
                         });
@@ -486,11 +499,15 @@
             });
             //处理文本处理面板的tab
             const voiceGenBtn = document.getElementById('voice-gen-btn');
+            const VoiceSelect = document.getElementById('choose-voice');
             const motionGenBtn = document.getElementById('motion-gen-btn');
+            const selectChar = document.getElementById('choose-char');
             const wav2lipGenBtn = document.getElementById('wav2lip-gen-btn');
             const voiceTabContainer = document.getElementById('voice-tab-container');
             const motionTabContainer = document.getElementById('motion-tab-container');
             const wav2lipTabContainer = document.getElementById('wav2lip-tab-container');
+            //初始化操作
+            selectChar.style.display = 'none';
             function hideAllTabs() {
                 voiceTabContainer.style.display = 'none';
                 motionTabContainer.style.display = 'none';
@@ -505,12 +522,19 @@
                 activeBtn.classList.add('active');
             }
             voiceGenBtn.addEventListener('click', function() {
+                VoiceSelect.style.display = 'block';
+                selectChar.style.display = 'none';
                 showTab('voice-tab-container', voiceGenBtn);
+
             });
             motionGenBtn.addEventListener('click', function() {
+                VoiceSelect.style.display = 'none';
+                selectChar.style.display = 'block';
                 showTab('motion-tab-container', motionGenBtn);
+
             });
             wav2lipGenBtn.addEventListener('click', function() {
+                selectChar.style.display = 'none';
                 showTab('wav2lip-tab-container', wav2lipGenBtn);
             });
             showTab('voice-tab-container', voiceGenBtn);
@@ -534,6 +558,9 @@
                 loadingOverlay.style.display = 'flex'; // 显示加载图标
                 console.log('分析文本内容:', text);
                 try {
+                    if (!text) {
+                        throw new Error('文本内容为空');
+                    }
                     const response = await fetch('/analyze-text', {
                         method: 'POST',
                         headers: {
@@ -684,7 +711,6 @@
                     console.error('保存分析结果失败:', error);
                 }
             }            
-
             // 将分析结果保存到后端
             async function saveAnalyzedText(sceneIndex,text) {
                 const sceneIndexStr = sceneIndex.toString();
@@ -788,10 +814,7 @@
                 updatetempTooltip();
             });
             
-            // 在页面加载时删除 audio-container 下的所有 audio-material
-            const audioContainer = document.querySelector('.audio-container');
-            const audioMaterials = audioContainer.querySelectorAll('.audio-material');
-            audioMaterials.forEach(material => material.remove());
+
             const texttoaudiobtn = document.getElementById('text-to-audio-btn');
             //点击语音生成按钮
             texttoaudiobtn.addEventListener('click', async function() {
@@ -829,6 +852,7 @@
             });
             // 发送文本生成语音数据到后端
             async function sendToBackend(text, emotion,tts_char,output_name,savedLangValue,savedCutValue,savedVoiceSpeedValue,savedVoiceTempValue) {
+                console.log('发送数据到后端:', text, emotion,tts_char,output_name,savedLangValue,savedCutValue,savedVoiceSpeedValue,savedVoiceTempValue);
                 loadingOverlay.style.display = 'flex'; // 显示加载图标
                 try {
                     const response = await fetch('/text-to-speech', {
@@ -1147,10 +1171,7 @@
             
             async function UpdateMotiontext()
             {
-                console.log('动作生成按钮被点击:');
-                //隐藏声音选择
-                const VoiceSelect = document.getElementById('choose-voice');
-                VoiceSelect.style.display = 'none';
+                console.log('读取文字数据:');
                 try {
                     const response = await fetch('data/emotion_analysis.json');
                     if (!response.ok) {
@@ -1187,7 +1208,7 @@
                             const defaultOption = document.createElement('option');
                             defaultOption.value = 'default';
                             defaultOption.textContent = '默认';
-                            defaultOption.selected = true; // 设置默认选项为选中状态
+                            defaultOption.selected = true; 
                             selectElement.appendChild(defaultOption);
                             // 创建自定义选项
                             const customOption = document.createElement('option');
@@ -1196,9 +1217,24 @@
                             selectElement.appendChild(customOption);
                             // 添加事件监听器
                             selectElement.addEventListener('change', function() {
-                                if (this.value === 'custom') {
-                                    handleCustomSelection(MotionItem, text, this.dataset.index,selectElement);
-                                }
+                                const fileName = `${selectedSceneIndex}_${this.dataset.index}.flac`;
+                                const filePath = `data/audio/${fileName}`;
+                                fetch(filePath, { method: 'HEAD' })
+                                    .then(response => {
+                                        if (response.ok) {
+                                            // 文件存在，调用生成预览动作的函数
+                                            if (this.value === 'custom') {
+                                                handleCustomSelection(MotionItem, text, this.dataset.index,selectElement);
+                                            }
+                                        } else {
+                                            alert('请先生成音乐文件！');
+                                            console.error(`文件 ${fileName} 不存在`);
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error(`检查文件 ${fileName} 时出错:`, error);
+                                    });
+
                             });
                             // 设置自定义属性存储索引
                             selectElement.dataset.index = index;
@@ -1212,7 +1248,100 @@
                     console.error('读取数据时出错:', error);
                 }
             }
-            // 动作面板参数
+            //点击姿态预览按钮
+            const motionpreviewbtn = document.getElementById('motion-pose-pre');
+            motionpreviewbtn.addEventListener('click', async function() {
+                let alertShown = false;
+                console.log('预览动作');
+                const MotionContainer = document.getElementById('show-motion-panel');
+                const MotionItems = MotionContainer.getElementsByClassName('motion-item');
+                for (let i = 0; i < MotionItems.length; i++) {
+                    const fileName = `${selectedSceneIndex}_${i}.flac`;
+                    const filePath = `data/audio/${fileName}`;
+                    const selectElement = MotionItems[i].querySelector('.motion-select');
+                    fetch(filePath, { method: 'HEAD' })
+                        .then(response => {
+                            if (!response.ok) {
+                                if (!alertShown) {
+                                    alert('请先生成音乐文件！');
+                                    alertShown = true; // 设置标志变量为 true，表示 alert 已经显示
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error(`检查文件 ${fileName} 时出错:`, error);
+                        });
+                    if (selectElement.value !== 'custom' && !alertShown) {
+                        await handleMotionPreview(selectedSceneIndex.toString(),i.toString());
+                        UpdateMotionVideo(selectedSceneIndex.toString(),"motion-pre");
+                    }
+                }
+            });
+            // 生成预览动作
+            async function handleMotionPreview(selectedSceneIndex,selectedIndex) {
+                fileName = selectedSceneIndex + '_' + selectedIndex;
+                loadingOverlay.style.display = 'flex'; // 显示加载图标
+                console.log(fileName)
+                try {
+                    const response = await fetch('/generate-defaultmotion', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ fileName: fileName })
+                    });
+                    if (!response.ok) {
+                        throw new Error('网络响应失败');
+                    }
+                    const data = await response.json();
+                    console.log('读取到的数据:', data);
+                }
+                catch (error) {
+                    console.error('读取数据时出错:', error);
+                }
+                finally {
+                    loadingOverlay.style.display = 'none'; // 隐藏加载图标
+                }
+            }
+            //更新预览
+            async function UpdateMotionVideo(selectedSceneIndex, folderName)
+            {
+                const MotionPreviewPanel = document.getElementById('motion-preview-panel');
+                MotionPreviewPanel.innerHTML = '';
+                console.log('更新预览');
+                try {
+                    const response = await fetch('/get-motion-files', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ selectedSceneIndex, folderName})
+                    });
+                    if (!response.ok) {
+                        throw new Error('网络响应失败');
+                    }
+                    const data = await response.json();
+                    //创建视频播放器
+                    const motion_files = data.motion_files;
+                    console.log('动作文件选择:', motion_files);
+                    motion_files.forEach(fileName => createMotionPreviewPlayer(fileName));
+
+                }
+                catch (error) {
+                    console.error('生成动作时出错:', error);
+                }
+            }
+            //创建动作预览播放器
+            async function createMotionPreviewPlayer(fileName) {
+                const videoContainer = document.getElementById('motion-preview-panel');
+                const videoElement = document.createElement('video');
+                videoElement.src = `data/motion-pre/${fileName}`;
+                videoElement.controls = true;
+                videoElement.className='motion-pre-video';
+                videoElement.muted = true;
+                videoContainer.appendChild(videoElement);
+            }
+
             // 打开动作设置面板
             async function handleCustomSelection(MotionItem, text, selectedIndex,selectElement) {
                 overlay.style.display = 'block'; 
@@ -1226,7 +1355,6 @@
                 // 将 motionindex 传递给 handleMotionGeneration 函数
                 const motioncustomegenbtn = document.getElementById('save-motion-setting-btn');
                 motioncustomegenbtn.addEventListener('click', async function() {
-                    console.log('生成自定义动作');
                     const motionGenPrompt = document.getElementById('motion-gen-prompt').value;
                     const motionmodelSelect = document.getElementById('motion-select').value;
                     const motionLerpCheckbox = document.getElementById('motion-lerp');
@@ -1296,8 +1424,6 @@
                         }
                         const fileNameData = await fileNameResponse.json();
                         console.log('文件名:', fileNameData.fileName);
-                        // 更新播放器
-                        await UpdateMotionVideo();
                         }
                 
                 } catch (error) {
@@ -1309,14 +1435,7 @@
                     motionSettingPanel.style.display = 'none';
                 }
             }
-            async function UpdateMotionVideo()
-            {
-                try {
-                }
-                catch (error) {
-                    console.error('生成动作时出错:', error);
-                }
-            }
+
 
 
             //处理视频播放进度条

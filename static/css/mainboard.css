@@ -841,14 +841,20 @@ body {
 }
 /*动作处理区*/
 .motion-preview-panel{
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
   background-color: #4F4C64;
   border-radius: 8px;
-  height: 14vh;
+  height: 110px;
   width: 100%;
   margin-top: 4px;
+  flex-direction: row;
+  gap: 8px;
 }
-.motion-preview-panel image{
-  height: 40px;
+.motion-pre-video{
+  max-height:110px;
+  border-radius: 4px; 
 }
 .motion-item{
   padding: 4px 0;

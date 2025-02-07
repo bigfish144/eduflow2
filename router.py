@@ -13,6 +13,8 @@ from fastapi.responses import JSONResponse
 from fastapi.responses import HTMLResponse
 from fastapi import FastAPI, HTTPException
 import asyncio
+from gradio_client import Client, handle_file
+import shutil
 
 # 配置日志记录
 logging.basicConfig(level=logging.INFO)
@@ -77,6 +79,7 @@ async def process_texttospeech(data):
     client_id = str(uuid.uuid4())
     prompt = load_json_template('./workfolows/gsv_tts_workflow.json')
     prompt["2"]["inputs"]["text"] = data.text
+    print("文本生成语音："+data.text)
     prompt["2"]["inputs"]["language"] = data.savedLangValue
     prompt["8"]["inputs"]["how_to_cut"] = data.savedCutValue
     prompt["8"]["inputs"]["speed"] = data.savedVoiceSpeedValue
@@ -116,3 +119,47 @@ async def process_custommotion(data):
     prompt["4"]["inputs"]["filename_prefix"] = "motion/"+data.motionoutputname
     await get_custommotionoutputs(client_id, prompt)
     return {"outputname": data.motionoutputname}
+#默认生成动作-EMAGE
+async def process_defaultmotion(fileName):
+    client = Client("H-Liu1997/EMAGE")
+    audiopath = "./static/data/audio/"+ fileName +".flac"
+    logger.info("默认生成动作:"+audiopath)
+    try:
+        result = client.predict(
+            audio=handle_file(audiopath),  # 输入音频文件的 URL
+            model_type="EMAGE (Full body + Face)",  # 选择模型类型，可能的值有 "DisCo (Upper only)", "CaMN (Upper only)", "EMAGE (Full body + Face)"
+            render_mesh=True,  # 是否渲染网格模型
+            render_face=False,  # 是否渲染2D人脸标志
+            render_mesh_face=False,  # 是否渲染网格人脸模型
+            api_name="/inference_app"  # API 名称
+        )
+        # logger.info(f"Prediction result: {result}")
+        output_dir = './static/data/motion-pre'
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        # 处理视频文件并重命名
+        for idx, item in enumerate(result[:-1]):  # 不处理最后的 .npz 文件
+            if item is None:
+                continue
+            video_path = item.get('video')
+            if video_path:
+                basename = os.path.basename(video_path)
+                if basename == "emage_output_2dbody_audio.mp4":
+                    os.remove(video_path)
+                    logger.info(f"Deleted video: {video_path}")
+                elif basename == "emage_output.mp4":
+                    new_video_name = fileName + ".mp4"
+                    new_video_path = os.path.join(output_dir, new_video_name)
+                    shutil.move(video_path, new_video_path)
+                    logger.info(f"Renamed video: {video_path} to {new_video_path}")
+        # 处理 .npz 文件
+        npz_file = result[-1]
+        if npz_file:
+            os.remove(npz_file)
+            logger.info(f"Deleted .npz file: {npz_file}")
+        return {"outputname": fileName + ".mp4"}
+
+    except Exception as e:
+        logger.error(f"Error in process_defaultmotion: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

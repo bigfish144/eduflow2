@@ -136,7 +136,7 @@ class AudioFileRequest(BaseModel):
 @app.post("/rename-audio-file")
 async def get_audio_file(data: AudioFileRequest):
     output_name = data.output_name
-    directory = '/root/autodl-tmp/ComfyUI/output/audio'
+    directory = '../output/audio'
     new_file_path = './static/data/audio'
     if not os.path.exists(new_file_path):
         os.makedirs(new_file_path)
@@ -271,6 +271,15 @@ class CustomMotionModel(BaseModel):
 async def customMotion(data:CustomMotionModel):
     return await process_custommotion(data)
 
+#生成默认动作
+class DefaultMotionModel(BaseModel):
+    fileName: str
+@app.post("/generate-defaultmotion")
+async def defaultmotion(data:DefaultMotionModel):
+    fileName = data.fileName
+    logger.info(f"生成默认动作: {fileName}")
+    return await process_defaultmotion(fileName)
+
 # 移动并重命名动作文件
 class AudioFileRequest(BaseModel):
     motionoutputname: str
@@ -307,6 +316,34 @@ async def get_audio_file(data: AudioFileRequest):
         logger.info(f"复制文件: {new_file_path_full} -> {destination_path}")
         return {"fileName": new_filename}
     raise HTTPException(status_code=404, detail="文件未找到")
+
+# 获取符合条件的动作文件
+class SelectedSceneIndex(BaseModel):
+    selectedSceneIndex: str
+    folderName: str
+@app.post("/get-motion-files")
+async def get_motion_files(data: SelectedSceneIndex):
+    selected_scene_index = data.selectedSceneIndex
+    MOTION_FOLDER = './static/data/'+data.folderName
+    logger.info(f"MOTION_FOLDER: {MOTION_FOLDER}")
+    if not os.path.exists(MOTION_FOLDER):
+        raise HTTPException(status_code=404, detail="动作文件夹未找到")
+    try:
+        motion_files = [
+            motion for motion in os.listdir(MOTION_FOLDER)
+            if motion.startswith(selected_scene_index + "_") and motion.endswith('.mp4')  # 可根据需要添加其他扩展名
+        ]
+        if not motion_files:
+            raise HTTPException(status_code=404, detail="未找到符合条件的动作文件")
+        # 自定义排序函数，按下划线后面的数字排序
+        def sort_key(file_name):
+            # 提取下划线后面的部分，并去掉 .flac 后缀
+            number_part = file_name.split('_')[1].split('.')[0]
+            return int(number_part)
+        motion_files.sort(key=sort_key)
+        return JSONResponse(content={"motion_files": motion_files})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 #文生图
 class TextToImageModel(BaseModel):
