@@ -345,29 +345,45 @@ async def get_motion_files(data: SelectedSceneIndex):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-#文生图
+#获取Lora模型列表
+@app.get("/get_lora_list", response_class=JSONResponse)
+async def get_lora_list():
+    directory_path = "../models/loras"
+    if not os.path.exists(directory_path):
+        raise HTTPException(status_code=404, detail=f"Directory {directory_path} not found")
+    try:
+        all_files = os.listdir(directory_path)
+        # 筛选出以 .safetensors 结尾的文件
+        lora_models = [file for file in all_files if file.endswith('.safetensors')]
+        return {"lora_models": lora_models}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+#文本生成图片-flux
 class TextToImageModel(BaseModel):
     prompt: str
     selectedFileName: str
-    queuesize: int
-    batchsize:int
-@app.post("/generate_img", tags=["perfume bottle"])
+    baseStyle: str
+    loraModel: str
+    width: int
+    height: int
+    removebgornot: int
+@app.post("/generate_img")
 async def generate_img(data:TextToImageModel):
-    logger.info(f"批次为：{data.queuesize}")
     # logger.info(await process_generateimg(data,batch_size))
-    return await process_generateimg(data,data.queuesize)
+    return await process_generateimgflux(data)
 
-#获取模型文件列表
-@app.get("/get_file_list", response_class=JSONResponse)
-async def get_file_list():
-    directory_path = "../models/checkpoints"
-    if not os.path.exists(directory_path):
-        return {"detail": f"Directory {directory_path} not found"}
-    try:
-        files = os.listdir(directory_path)
-        return {"files": files}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+#文生图
+# class TextToImageModel(BaseModel):
+#     prompt: str
+#     selectedFileName: str
+#     queuesize: int
+#     batchsize:int
+# @app.post("/generate_img", tags=["perfume bottle"])
+# async def generate_img(data:TextToImageModel):
+#     logger.info(f"批次为：{data.queuesize}")
+#     # logger.info(await process_generateimg(data,batch_size))
+#     return await process_generateimg(data,data.queuesize)
 
 # 图生图
 class ImgToImgModel(BaseModel):
@@ -403,6 +419,17 @@ async def imgGenerateImg(
     )
     return await process_imggenerateimg(data,data.queuesize)
 
+#获取模型文件列表
+@app.get("/get_file_list", response_class=JSONResponse)
+async def get_file_list():
+    directory_path = "../models/checkpoints"
+    if not os.path.exists(directory_path):
+        return {"detail": f"Directory {directory_path} not found"}
+    try:
+        files = os.listdir(directory_path)
+        return {"files": files}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == '__main__':    
     import uvicorn

@@ -21,43 +21,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 server_address = "127.0.0.1:8188"
 url = f"http://{server_address}/prompt"
-#文生图
-async def process_generateimg(data, request_count=1):
-    imagesurls = []  # 存储所有生成的图像
-    for _ in range(request_count):
-        client_id = str(uuid.uuid4()) 
-        prompt = load_json_template('./workfolows/workflow_api.json')
-        prompt["3"]["inputs"]["seed"] = random.randrange(10**14, 10**15)
-        prompt["6"]["inputs"]["text"] = data.prompt
-        prompt["4"]["inputs"]["ckpt_name"] = data.selectedFileName
-        prompt["5"]["inputs"]["batch_size"] = data.batchsize       
-        generated_images = await get_imgoutputs(client_id, prompt)
-        imagesurls.append(generated_images['image'])  # 收集所有生成的图像的url值
-    # logger.info(imagesurls)
-    return {"images": imagesurls}
-async def process_videogenerateimg(data, request_count=1):
-    videos = []
-    for _ in range(request_count):
-        client_id = str(uuid.uuid4()) 
-        prompt = load_json_template('./workfolows/workflow_api_video.json')
-        generated_images = await get_videooutputs(client_id, prompt)
-        videos.extend(generated_images['videos'])
-    return {"video": videos}
-
-#图生图
-async def process_imggenerateimg(data, request_count=1):
-    logger.info("图生图")
-    imagesurls = []  # 存储所有生成的图像
-    for _ in range(request_count):
-        client_id = str(uuid.uuid4()) 
-        prompt = load_json_template('./workfolows/workflow_api_i2i.json')
-        prompt["3"]["inputs"]["seed"] = random.randrange(10**14, 10**15) 
-        prompt["6"]["inputs"]["text"] = data.prompt
-        prompt["4"]["inputs"]["ckpt_name"] = data.selectedFileName
-        prompt["10"]["inputs"]["image"] = data.imagename
-        generated_images =await get_imgoutputs(client_id,prompt)
-        imagesurls.append(generated_images['image'])
-    return {"images": imagesurls}
 #切分文本
 async def process_split_text(text_content,data):
     client_id = str(uuid.uuid4()) 
@@ -137,7 +100,6 @@ async def process_defaultmotion(fileName):
         output_dir = './static/data/motion-pre'
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-
         # 处理视频文件并重命名
         for idx, item in enumerate(result[:-1]):  # 不处理最后的 .npz 文件
             if item is None:
@@ -159,7 +121,62 @@ async def process_defaultmotion(fileName):
             os.remove(npz_file)
             logger.info(f"Deleted .npz file: {npz_file}")
         return {"outputname": fileName + ".mp4"}
-
     except Exception as e:
         logger.error(f"Error in process_defaultmotion: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+#生成角色-无参考
+async def process_generateimgflux(data, request_count=4):
+    imagesurls = []  # 存储所有生成的图像
+    add_text = data.baseStyle
+    for _ in range(request_count):
+        client_id = str(uuid.uuid4()) 
+        prompt = load_json_template('./workfolows/t2i_flux.json')
+        prompt["6"]["inputs"]["text"] = data.prompt + add_text
+        prompt["4"]["inputs"]["ckpt_name"] = data.selectedFileName
+        prompt["5"]["inputs"]["batch_size"] = data.width
+        prompt["5"]["inputs"]["batch_size"] = data.height
+        prompt["5"]["inputs"]["batch_size"] = data.removebgornot
+        generated_images = await get_imgoutputs(client_id, prompt)
+        imagesurls.append(generated_images['image'])  # 收集所有生成的图像的url值
+    logger.info(imagesurls)
+    return {"images": imagesurls}
+
+
+# #文生图
+# async def process_generateimg(data, request_count=1):
+#     imagesurls = []  # 存储所有生成的图像
+#     for _ in range(request_count):
+#         client_id = str(uuid.uuid4()) 
+#         prompt = load_json_template('./workfolows/workflow_api.json')
+#         prompt["3"]["inputs"]["seed"] = random.randrange(10**14, 10**15)
+#         prompt["6"]["inputs"]["text"] = data.prompt
+#         prompt["4"]["inputs"]["ckpt_name"] = data.selectedFileName
+#         prompt["5"]["inputs"]["batch_size"] = data.batchsize       
+#         generated_images = await get_imgoutputs(client_id, prompt)
+#         imagesurls.append(generated_images['image'])  # 收集所有生成的图像的url值
+#     # logger.info(imagesurls)
+#     return {"images": imagesurls}
+# async def process_videogenerateimg(data, request_count=1):
+#     videos = []
+#     for _ in range(request_count):
+#         client_id = str(uuid.uuid4()) 
+#         prompt = load_json_template('./workfolows/workflow_api_video.json')
+#         generated_images = await get_videooutputs(client_id, prompt)
+#         videos.extend(generated_images['videos'])
+#     return {"video": videos}
+
+# #图生图
+# async def process_imggenerateimg(data, request_count=1):
+#     logger.info("图生图")
+#     imagesurls = []  # 存储所有生成的图像
+#     for _ in range(request_count):
+#         client_id = str(uuid.uuid4()) 
+#         prompt = load_json_template('./workfolows/workflow_api_i2i.json')
+#         prompt["3"]["inputs"]["seed"] = random.randrange(10**14, 10**15) 
+#         prompt["6"]["inputs"]["text"] = data.prompt
+#         prompt["4"]["inputs"]["ckpt_name"] = data.selectedFileName
+#         prompt["10"]["inputs"]["image"] = data.imagename
+#         generated_images =await get_imgoutputs(client_id,prompt)
+#         imagesurls.append(generated_images['image'])
+#     return {"images": imagesurls}

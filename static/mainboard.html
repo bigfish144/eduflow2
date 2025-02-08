@@ -340,7 +340,7 @@
                         </div>
                     </div>
                     <div >
-                        <button class="add-all-img-btn">新建图片</button>
+                        <button class="add-all-img-btn" id="add-all-img-btn">新建图片</button>
                     </div>
                 </div>
                 <div class="all-tab-content" id="all-characters">
@@ -353,7 +353,7 @@
                         </div>
                     </div>
                     <div>
-                        <button class="add-all-cha-btn">新建角色</button>
+                        <button class="add-all-cha-btn" id="add-all-cha-btn">新建角色</button>
                     </div>
                 </div>
 
@@ -1506,15 +1506,27 @@
             });
             slider.addEventListener('mouseleave', () => tooltip.style.opacity = 0);
 
-            //跳转
-            const createcharbtn = document.querySelector('.add-all-cha-btn');// 创建角色跳转
-            createcharbtn.addEventListener('click', function() {
-                window.location.href = 'create_char.html';
-            });
-            const creatematbtn = document.querySelector('.add-all-img-btn');// 创建图片跳转
-            creatematbtn.addEventListener('click', function() {
-                window.location.href = 'create_material.html';
-            });
+            // 跳转
+            const createcharbtn = document.getElementById('add-all-cha-btn');
+            if (createcharbtn) {
+                createcharbtn.addEventListener('click', function() {
+                    window.location.href = 'create_char.html';
+                });
+            } else {
+                console.error('Element with ID add-all-cha-btn not found');
+            }
+
+            const creatematbtn = document.querySelector('.add-all-img-btn'); // 注意这里需要加上类选择器的点号
+            if (creatematbtn) {
+                creatematbtn.addEventListener('click', function() {
+                    const description = selectedCameraItem.querySelector('.camera-description').textContent;
+                    console.log("传输到角色界面的文案:" + description);
+                    const data = encodeURIComponent(JSON.stringify({ text: description }));
+                    window.location.href = `create_material.html?data=${data}`;
+                });
+            } else {
+                console.error('Element with class .add-all-img-btn not found');
+            }
 
         });
 </script>

@@ -23,20 +23,26 @@
         <!-- 左侧功能区 -->
         <div class="left-section">
             <div class="form-section">
+                <label>角色命名</label>
+                <input type="text" id="char-name" placeholder="请输入角色名，例如：牛顿"></input>
                 <label>素材描述</label>
-                <textarea id="material-description" placeholder="请输入描述，例如：一个慈祥的穿着西装的牛顿，卷发"></textarea>
-                <label>选择基础风格</label>
+                <textarea id="char-description" placeholder="请输入描述，例如：一个慈祥的穿着西装的牛顿，卷发"></textarea>
                 <div class="select-models">
-                    <select id="base-style">
-                        <option value="3d-cartoon">3D卡通</option>
-                        <option value="realistic">写实风格</option>
-                        <option value="anime">动漫风格</option>
-                    </select>
-                    <select id="tweak-model">
-                        <option value="default">微调模型 (可选)</option>
-                        <option value="model1">模型1</option>
-                        <option value="model2">模型2</option>
-                    </select>
+                    <div class="select-item">
+                        <label>选择基础风格</label>
+                        <select id="base-style">
+                            <option value="3d-cartoon">3D卡通</option>
+                            <option value="realistic">写实风格</option>
+                            <option value="anime">动漫风格</option>
+                            <option value="2.5D">2.5D风格</option>
+                        </select>
+                    </div>
+                    <div class="select-item">
+                        <label>选择Lora模型(可选)</label>
+                        <select id="lora-model">
+                            <option value="default">无</option>
+                        </select>
+                    </div>
                 </div>
                 <label>图片尺寸</label>
                 <div class="select-size-container">
@@ -125,6 +131,32 @@
 
     <!-- 脚本 -->
     <script>
+        window.onload = function() {
+            //获取lora列表
+            const selectElement = document.getElementById('lora-model');
+            fetch('/get_lora_list')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.lora_models) {
+                        data.lora_models.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            selectElement.appendChild(option);
+                        });
+                    } else {
+                        console.error('No lora models found in the response');
+                    }
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                });
+        };
         document.addEventListener('DOMContentLoaded', function() {
             // 开启参考
             const importRefImgCheckbox = document.getElementById('import-refimg');
@@ -143,8 +175,8 @@
             // 上传参考图
             document.querySelector('.file-upload').addEventListener('click', function() {
                 document.getElementById('file-input').click();
-
             });
+
             document.getElementById('file-input').addEventListener('change', function() {
                 if (this.files.length > 0) {
                     // 处理文件选择后的逻辑
@@ -174,7 +206,8 @@
                 weightValue.style.left = (valuePosition+180) + 'px';
             }
             slider.addEventListener('input', updateSliderTrack);
-            updateSliderTrack(); 
+            updateSliderTrack();
+
             //选择维度
             const dimensionButtons = document.querySelectorAll('.dimension-btn');
             dimensionButtons.forEach(button => {
@@ -185,6 +218,7 @@
                     this.classList.add('active');
                 });
             });
+
             //选择图片
             const previewImages = document.querySelectorAll('.preview-image-img');
             previewImages.forEach(image => {
@@ -196,10 +230,66 @@
                     this.classList.add('selected');
                 });
             });
+
             // 应用并返回按钮逻辑
             const backToMainBtn = document.getElementById('back-to-main-btn');
             backToMainBtn.addEventListener('click', function() {
                 window.location.href = 'mainboard.html';
+            });
+
+            //点击生成按钮
+            document.getElementById('generate-btn').addEventListener('click', function() {
+                console.log('生成按钮被点击'); 
+                // 收集表单数据
+                const prompt = document.getElementById('char-description').value;
+                const selectedFileName = document.getElementById('char-name').value;
+                const baseStyle = document.getElementById('base-style').value;
+                const loraModel = document.getElementById('lora-model').value;
+                const width = parseInt(document.getElementById('width').value, 10);
+                const height = parseInt(document.getElementById('height').value, 10);
+                const removebgornot = document.getElementById('transparent-background').checked ? 1 : 2;
+                const controlnetornot = document.getElementById('import-refimg').checked ? 2 : 1;
+                console.log(prompt,baseStyle,loraModel,width,height,removebgornot,controlnetornot,selectedFileName);
+                // 验证所有字段是否为空
+                if (!prompt || !baseStyle || !loraModel || !width || !height || !selectedFileName) {
+                    alert('请填写全部数据');
+                    return; // 停止进一步执行
+                }
+                // 创建请求体
+                const data = {
+                    prompt: prompt,
+                    selectedFileName: selectedFileName,
+                    width: width,
+                    height: height,
+                    removebgornot: removebgornot
+                };
+                //不开启cn
+                if (controlnetornot == 1){    
+                    console.log('生成图片');           
+                    fetch('/generate_img', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('生成的图片信息:', data);
+                    })
+                    .catch(error => {
+                        console.error('There was a problem with the fetch operation:', error);
+                    });
+                }
+                else{
+                    console.log('生成图片cn');
+                }
+
             });
         });
     </script>

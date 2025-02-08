@@ -92,6 +92,11 @@ textarea {
   display: flex;
   flex-direction: row;
   gap: 8px;
+  margin-top: 8px;
+}
+.select-item
+{
+  width: 100%;
 }
 select{
   width: 100%;

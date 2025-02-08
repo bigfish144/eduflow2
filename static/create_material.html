@@ -211,6 +211,25 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const url = new URL(window.location.href);
+            const urlParams = new URLSearchParams(url.search);
+            const dataParam = urlParams.get('data');
+
+            if (dataParam) {
+                try {
+                    // 解码并解析 JSON 数据
+                    const data = JSON.parse(decodeURIComponent(dataParam));
+                    console.log("获取到的描述文案:", data.text);
+
+                    // 将描述文案显示在页面上
+                    const descriptionDiv = document.getElementById('tip-text');
+                    descriptionDiv.textContent = data.text;
+                } catch (error) {
+                    console.error("解析数据时出错:", error);
+                }
+            } else {
+                console.error("未找到 data 参数");
+            }
             // 返回mainboard
             const backToMainBtn = document.getElementById('back-to-main-btn');
             backToMainBtn.addEventListener('click', function() {
