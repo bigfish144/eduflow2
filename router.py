@@ -75,12 +75,15 @@ async def process_texttospeech(data):
 async def process_custommotion(data):
     client_id = str(uuid.uuid4())
     prompt = load_json_template('./workfolows/musev_base.json')
+    prompt["46"]["inputs"]["image"] = "demo/static/data/character/"+data.selectedCharValue
+    print("demo/static/data/character/"+data.selectedCharValue)
     prompt["44"]["inputs"]["text"] = data.motionGenPrompt
     prompt["1"]["inputs"]["sd_model_name"] = data.motionmodelSelect
     prompt["1"]["inputs"]["video_len"] = data.motionframe
     prompt["27"]["inputs"]["select"] = data.motionLerp
     prompt["4"]["inputs"]["filename_prefix"] = "motion/"+data.motionoutputname
     await get_custommotionoutputs(client_id, prompt)
+    print("自定义生成动作成功："+data.motionoutputname)
     return {"outputname": data.motionoutputname}
 #默认生成动作-EMAGE
 async def process_defaultmotion(fileName):
@@ -124,23 +127,40 @@ async def process_defaultmotion(fileName):
     except Exception as e:
         logger.error(f"Error in process_defaultmotion: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
+#角色动作渲染-Musepose
+async def process_charrender(data):
+    client_id = str(uuid.uuid4())
+    prompt = load_json_template('./workfolows/musepose-workflow-demo.json')
+    prompt["29"]["inputs"]["video"] = "demo/static/data/motion-pre/"+ data.fileName +".mp4"
+    prompt["28"]["inputs"]["image"] = "demo/static/data/character/"+ data.selectedCharValue
+    prompt["19"]["inputs"]["filename_prefix"] = "motion/"+ data.fileName
+    await get_custommotionoutputs(client_id, prompt)
+    print("自定义生成动作成功："+data.fileName)
+    return {"outputname": data.fileName}
 #生成角色-无参考
-async def process_generateimgflux(data, request_count=4):
+async def process_generateimgflux(data):
     imagesurls = []  # 存储所有生成的图像
-    add_text = data.baseStyle
-    for _ in range(request_count):
-        client_id = str(uuid.uuid4()) 
+    request_count = 4
+    for i in range(request_count):
+        print("生成角色无参考_第"+ str(i+1)+"次")
+        client_id = str(uuid.uuid4())
         prompt = load_json_template('./workfolows/t2i_flux.json')
-        prompt["6"]["inputs"]["text"] = data.prompt + add_text
-        prompt["4"]["inputs"]["ckpt_name"] = data.selectedFileName
-        prompt["5"]["inputs"]["batch_size"] = data.width
-        prompt["5"]["inputs"]["batch_size"] = data.height
-        prompt["5"]["inputs"]["batch_size"] = data.removebgornot
+        prompt["25"]["inputs"]["noise_seed"] = random.randrange(10**14, 10**15)
+        add_text = data.baseStyle
+        lora_name = data.loraModel
+        if lora_name != "null": #启用lora
+            prompt["39"]["inputs"]["select"] = 2
+            prompt["38"]["inputs"]["lora_name"] = lora_name
+        prompt["47"]["inputs"]["text"] = data.prompt
+        prompt["51"]["inputs"]["text"] = add_text
+        # prompt["41"]["inputs"]["filename_prefix"] = data.selectedFileName
+        prompt["67"]["inputs"]["value"] = data.width
+        prompt["68"]["inputs"]["value"] = data.height
+        prompt["54"]["inputs"]["select"] = data.removebgornot
         generated_images = await get_imgoutputs(client_id, prompt)
-        imagesurls.append(generated_images['image'])  # 收集所有生成的图像的url值
+        imagesurls.append(generated_images['image_url'])  # 收集所有生成的图像的url值
     logger.info(imagesurls)
-    return {"images": imagesurls}
+    return {"image_url": imagesurls}
 
 
 # #文生图

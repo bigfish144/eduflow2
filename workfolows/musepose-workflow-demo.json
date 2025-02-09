@@ -1,0 +1,226 @@
+{
+  "4": {
+    "inputs": {
+      "video": [
+        "5",
+        0
+      ],
+      "detect_resolution": 768,
+      "image_resolution": 768,
+      "max_frame": 50000,
+      "align_frame": 0,
+      "image": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "museposealign",
+    "_meta": {
+      "title": "muse_pose_align"
+    }
+  },
+  "5": {
+    "inputs": {
+      "filenames": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "filenamestring",
+    "_meta": {
+      "title": "muse_pose_filenamestring"
+    }
+  },
+  "10": {
+    "inputs": {
+      "frame_rate": 30,
+      "loop_count": 0,
+      "filename_prefix": "AnimateDiff",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": false,
+      "images": [
+        "29",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "11": {
+    "inputs": {
+      "frame_rate": 30,
+      "loop_count": 0,
+      "filename_prefix": "AnimateDiff",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": false,
+      "images": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "12": {
+    "inputs": {
+      "video": [
+        "13",
+        0
+      ],
+      "Width": 512,
+      "Height": 512,
+      "frame_length": 300,
+      "slice_frame_number": 48,
+      "slice_overlap_frame_number": 4,
+      "cfg": 3.5,
+      "sampling_steps": 20,
+      "fps": 12,
+      "image": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "musepose",
+    "_meta": {
+      "title": "muse_pose"
+    }
+  },
+  "13": {
+    "inputs": {
+      "filenames": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "filenamestring",
+    "_meta": {
+      "title": "muse_pose_filenamestring"
+    }
+  },
+  "18": {
+    "inputs": {
+      "ckpt_name": "film_net_fp32.pt",
+      "clear_cache_after_n_frames": 10,
+      "multiplier": 2,
+      "frames": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "FILM VFI",
+    "_meta": {
+      "title": "FILM VFI"
+    }
+  },
+  "19": {
+    "inputs": {
+      "frame_rate": [
+        "22",
+        0
+      ],
+      "loop_count": 0,
+      "filename_prefix": "AnimateDiff",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "20",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "20": {
+    "inputs": {
+      "select": 1,
+      "sel_mode": false,
+      "input1": [
+        "12",
+        0
+      ],
+      "input2": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "ImpactSwitch",
+    "_meta": {
+      "title": "Switch (Any)"
+    }
+  },
+  "22": {
+    "inputs": {
+      "a": [
+        "23",
+        0
+      ],
+      "b": 12,
+      "operation": "multiply"
+    },
+    "class_type": "easy mathFloat",
+    "_meta": {
+      "title": "Math Float"
+    }
+  },
+  "23": {
+    "inputs": {
+      "Value": [
+        "20",
+        2
+      ]
+    },
+    "class_type": "DF_Int_to_Float",
+    "_meta": {
+      "title": "Int to Float"
+    }
+  },
+  "28": {
+    "inputs": {
+      "image": "demo/static/data/character/牛顿.png",
+      "force_size": "Disabled",
+      "custom_width": 512,
+      "custom_height": 512
+    },
+    "class_type": "VHS_LoadImagePath",
+    "_meta": {
+      "title": "Load Image (Path) 🎥🅥🅗🅢"
+    }
+  },
+  "29": {
+    "inputs": {
+      "video": "demo/static/data/motion-pre/0_0.mp4",
+      "force_rate": 0,
+      "force_size": "Disabled",
+      "custom_width": 512,
+      "custom_height": 512,
+      "frame_load_cap": 0,
+      "skip_first_frames": 0,
+      "select_every_nth": 1
+    },
+    "class_type": "VHS_LoadVideoPath",
+    "_meta": {
+      "title": "Load Video (Path) 🎥🅥🅗🅢"
+    }
+  }
+}

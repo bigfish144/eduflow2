@@ -31,16 +31,16 @@
                     <div class="select-item">
                         <label>选择基础风格</label>
                         <select id="base-style">
-                            <option value="3d-cartoon">3D卡通</option>
-                            <option value="realistic">写实风格</option>
-                            <option value="anime">动漫风格</option>
-                            <option value="2.5D">2.5D风格</option>
+                            <option value="3D cartoon style">3D卡通</option>
+                            <option value="realistic style">写实风格</option>
+                            <option value="anime style">动漫风格</option>
+                            <option value="2.5D style">2.5D风格</option>
                         </select>
                     </div>
                     <div class="select-item">
                         <label>选择Lora模型(可选)</label>
                         <select id="lora-model">
-                            <option value="default">无</option>
+                            <option value="null">无</option>
                         </select>
                     </div>
                 </div>
@@ -111,21 +111,9 @@
         <!-- 右侧预览区 -->
         <div class="right-section">
             <label>效果图预览</label>
-            <div class="preview-grid">
-                <div class="preview-image">
-                    <img src="images/gen-image.png" alt="效果图" class="preview-image-img">
-                </div>
-                <div class="preview-image">
-                    <img src="images/gen-image.png" alt="效果图" class="preview-image-img">
-                </div>
-                <div class="preview-image">
-                    <img src="images/gen-image.png" alt="效果图" class="preview-image-img">
-                </div>
-                <div class="preview-image">
-                    <img src="images/gen-image.png" alt="效果图" class="preview-image-img">
-                </div>
+            <div class="preview-grid" id="preview-grid">
             </div>
-            <button id="apply-and-return-btn" class="secondary-btn">应用并返回</button>
+            <button id="apply-and-return-btn" class="secondary-btn" style="display: none;">应用并返回</button>
         </div>
     </div>
 
@@ -159,6 +147,7 @@
         };
         document.addEventListener('DOMContentLoaded', function() {
             // 开启参考
+            const applyandbackToMainBtn = document.getElementById('apply-and-return-btn');
             const importRefImgCheckbox = document.getElementById('import-refimg');
             const advancedContent = document.getElementById('advanced-content');
             importRefImgCheckbox.checked = false;
@@ -218,25 +207,6 @@
                     this.classList.add('active');
                 });
             });
-
-            //选择图片
-            const previewImages = document.querySelectorAll('.preview-image-img');
-            previewImages.forEach(image => {
-                image.addEventListener('click', function() {
-                    // 移除其他图片的选中状态
-                    previewImages.forEach(img => img.classList.remove('selected'));
-
-                    // 为当前点击的图片添加选中状态
-                    this.classList.add('selected');
-                });
-            });
-
-            // 应用并返回按钮逻辑
-            const backToMainBtn = document.getElementById('back-to-main-btn');
-            backToMainBtn.addEventListener('click', function() {
-                window.location.href = 'mainboard.html';
-            });
-
             //点击生成按钮
             document.getElementById('generate-btn').addEventListener('click', function() {
                 console.log('生成按钮被点击'); 
@@ -247,7 +217,7 @@
                 const loraModel = document.getElementById('lora-model').value;
                 const width = parseInt(document.getElementById('width').value, 10);
                 const height = parseInt(document.getElementById('height').value, 10);
-                const removebgornot = document.getElementById('transparent-background').checked ? 1 : 2;
+                const removebgornot = document.getElementById('transparent-background').checked ? 2 : 1;
                 const controlnetornot = document.getElementById('import-refimg').checked ? 2 : 1;
                 console.log(prompt,baseStyle,loraModel,width,height,removebgornot,controlnetornot,selectedFileName);
                 // 验证所有字段是否为空
@@ -259,6 +229,8 @@
                 const data = {
                     prompt: prompt,
                     selectedFileName: selectedFileName,
+                    baseStyle: baseStyle,
+                    loraModel: loraModel,
                     width: width,
                     height: height,
                     removebgornot: removebgornot
@@ -280,7 +252,10 @@
                         return response.json();
                     })
                     .then(data => {
-                        console.log('生成的图片信息:', data);
+                        if (data.image_url && Array.isArray(data.image_url)) {
+                            console.log('Image URLs:', data.image_url);
+                            updatePreviewGrid(data.image_url);
+                        }
                     })
                     .catch(error => {
                         console.error('There was a problem with the fetch operation:', error);
@@ -289,7 +264,67 @@
                 else{
                     console.log('生成图片cn');
                 }
+            });
+            // 更新预览网格
+            function updatePreviewGrid(imageUrls) {
+                const previewGrid = document.getElementById('preview-grid');
+                previewGrid.innerHTML = '';  // 清除现有的预览内容
+                applyandbackToMainBtn.style.display = 'block';
+                imageUrls.forEach(url => {
+                    const previewImageDiv = document.createElement('div');
+                    previewImageDiv.className = 'preview-image';
+                    const imgElement = document.createElement('img');
+                    imgElement.src = url;
+                    imgElement.alt = "效果图";
+                    imgElement.className = 'preview-image-img';
 
+                    // 为新创建的图片元素添加点击事件监听器
+                    imgElement.addEventListener('click', function() {
+                        const allPreviewImages = document.querySelectorAll('.preview-image-img');
+                        allPreviewImages.forEach(img => img.classList.remove('selected'));
+                        this.classList.add('selected');
+                    });
+                    previewImageDiv.appendChild(imgElement);
+                    previewGrid.appendChild(previewImageDiv);
+                });
+            }
+            // 应用并返回按钮逻辑
+            
+            applyandbackToMainBtn.addEventListener('click', function() {
+                // 获取选中的图片
+                const selectedImage = document.querySelector('.preview-image-img.selected');
+                if (!selectedImage) {
+                    alert('请先选择一张图片');
+                    return;
+                }
+                const imageUrl = selectedImage.src;
+                const charName = document.getElementById('char-name').value;
+                if (!charName) {
+                    alert('请输入角色名称');
+                    return;
+                }
+                // 发送数据到后端 API
+                fetch('/save_gen_image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ imageUrl: imageUrl, charName: charName })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Image saved successfully:', data.save_filename);
+                    window.location.href = 'mainboard.html';
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                    alert('保存图片失败，请重试');
+                });
             });
         });
     </script>

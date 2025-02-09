@@ -131,10 +131,10 @@ async def text_to_speech(data: TexttoSpeech):
     return await process_texttospeech(data)
 
 # 移动并重命名音乐文件
-class AudioFileRequest(BaseModel):
+class AudioFileRenameRequest(BaseModel):
     output_name: str# 获取语音文件
 @app.post("/rename-audio-file")
-async def get_audio_file(data: AudioFileRequest):
+async def get_audio_file(data: AudioFileRenameRequest):
     output_name = data.output_name
     directory = '../output/audio'
     new_file_path = './static/data/audio'
@@ -192,10 +192,10 @@ async def get_audio_files(data: SelectedSceneIndex):
         raise HTTPException(status_code=500, detail=str(e))
 
 #拼合音乐
-class AudioFileRequest(BaseModel):
+class AudioFileCombineRequest(BaseModel):
     fileName: str
 @app.post("/apply-audio-file")
-async def apply_audio_file(data: AudioFileRequest):
+async def apply_audio_file(data: AudioFileCombineRequest):
     fileName = data.fileName
     base_dir = "./static/data/audio"
     output_dir = "./static/data/audio"
@@ -262,6 +262,7 @@ async def get_audio_length(data: GetAudioLengthRequest):
 
 #生成自定义动作
 class CustomMotionModel(BaseModel):
+    selectedCharValue: str
     motionoutputname: str
     motionGenPrompt: str
     motionmodelSelect: str
@@ -269,24 +270,16 @@ class CustomMotionModel(BaseModel):
     motionframe: int
 @app.post("/generate-custommotion")
 async def customMotion(data:CustomMotionModel):
+    logger.info(f"生成自定义动作: {data.selectedCharValue}")
     return await process_custommotion(data)
 
-#生成默认动作
-class DefaultMotionModel(BaseModel):
-    fileName: str
-@app.post("/generate-defaultmotion")
-async def defaultmotion(data:DefaultMotionModel):
-    fileName = data.fileName
-    logger.info(f"生成默认动作: {fileName}")
-    return await process_defaultmotion(fileName)
-
 # 移动并重命名动作文件
-class AudioFileRequest(BaseModel):
+class MotionFileRenameRequest(BaseModel):
     motionoutputname: str
-@app.post("/rename-motion-file")
-async def get_audio_file(data: AudioFileRequest):
+@app.post("/renameandmove-motion-file")
+async def rename_motion_file(data: MotionFileRenameRequest):
     motionoutputname = data.motionoutputname
-    directory = '/root/autodl-tmp/ComfyUI/output/motion'
+    directory = '../output/motion'
     new_file_path = './static/data/motion'
     if not os.path.exists(new_file_path):
         os.makedirs(new_file_path)
@@ -316,6 +309,27 @@ async def get_audio_file(data: AudioFileRequest):
         logger.info(f"复制文件: {new_file_path_full} -> {destination_path}")
         return {"fileName": new_filename}
     raise HTTPException(status_code=404, detail="文件未找到")
+
+#生成默认动作-EMAGE
+class DefaultMotionModel(BaseModel):
+    fileName: str
+@app.post("/generate-defaultmotion")
+async def defaultmotion(data:DefaultMotionModel):
+    fileName = data.fileName
+    logger.info(f"生成默认动作: {fileName}")
+    return await process_defaultmotion(fileName)
+
+# 生成角色渲染动作-Musepose
+class CharRenderModel(BaseModel):
+    fileName: str
+    selectedCharValue: str
+@app.post("/generate-charrender")
+async def charrender(data: CharRenderModel):
+    fileName = data.fileName
+    selectedCharValue = data.selectedCharValue
+    logger.info(f"生成角色渲染动作: {fileName}")
+    return await process_charrender(data)
+
 
 # 获取符合条件的动作文件
 class SelectedSceneIndex(BaseModel):
@@ -369,9 +383,67 @@ class TextToImageModel(BaseModel):
     height: int
     removebgornot: int
 @app.post("/generate_img")
-async def generate_img(data:TextToImageModel):
-    # logger.info(await process_generateimg(data,batch_size))
-    return await process_generateimgflux(data)
+async def generate_img(data: TextToImageModel):
+    try:
+        data = await process_generateimgflux(data)
+        return data
+    except Exception as e:
+        logger.error(f"Error generating image: {e}")
+        return {"error": str(e)}
+
+#保存生成的图片
+class SaveImageRequest(BaseModel):
+    imageUrl: str
+    charName: str
+@app.post("/save_gen_image")
+async def save_gen_image(request: SaveImageRequest):
+    save_path = "./static/data/character"
+    try:
+        # 下载图片
+        response = requests.get(request.imageUrl)
+        if response.status_code != 200:
+            raise HTTPException(status_code=400, detail="Failed to download image")
+        file_extension = ".png"  # 默认使用 .png 扩展名
+        # 构建保存路径
+        save_filename = f"{request.charName}{file_extension}"
+        save_full_path = os.path.join(save_path, save_filename)
+        with open(save_full_path, 'wb') as file:
+            file.write(response.content)
+        return {"message": "Image saved successfully", "filename": save_filename}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+#获取生成的图片
+class GetImageRequest(BaseModel):
+    FloderName: str
+@app.post("/get_gen_image")
+async def get_gen_image(request: GetImageRequest):
+    FloderName = request.FloderName
+    directory = './static/data/' + FloderName
+    if not os.path.exists(directory):
+        raise HTTPException(status_code=404, detail="文件夹未找到")
+    try:
+        image_files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+        return {"files": image_files}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+#删除生成的图片
+class DeleteImageFileRequest(BaseModel):
+    FloderName: str
+    fileName: str
+@app.post("/delete-image-file")
+async def delete_audio_file(data: DeleteImageFileRequest):
+    FloderName = data.FloderName
+    fileName = data.fileName
+    directory = './static/data/' + FloderName
+    file_path = os.path.join(directory, fileName)
+    logger.info(f"删除文件: {file_path}")
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        return {"message": f"文件 {data.fileName} 已删除"}
+    else:
+        raise HTTPException(status_code=404, detail=f"文件 {data.fileName} 未找到")
 
 #文生图
 # class TextToImageModel(BaseModel):

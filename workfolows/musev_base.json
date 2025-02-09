@@ -7,7 +7,7 @@
       ],
       "img_edge_ratio": 1,
       "video_len": 120,
-      "seed": 913,
+      "seed": 1698,
       "width": [
         "12",
         0
@@ -30,16 +30,6 @@
     "class_type": "MuseVRun",
     "_meta": {
       "title": "MuseVRun"
-    }
-  },
-  "2": {
-    "inputs": {
-      "image": "牛顿.png",
-      "upload": "image"
-    },
-    "class_type": "LoadImage",
-    "_meta": {
-      "title": "加载图像"
     }
   },
   "4": {
@@ -100,7 +90,7 @@
       "condition": "always",
       "multiple_of": 0,
       "image": [
-        "2",
+        "46",
         0
       ]
     },
@@ -209,6 +199,18 @@
     "class_type": "ShowText|pysssss",
     "_meta": {
       "title": "Show Text 🐍"
+    }
+  },
+  "46": {
+    "inputs": {
+      "image": "demo/static/data/character/牛顿.png",
+      "force_size": "Disabled",
+      "custom_width": 512,
+      "custom_height": 512
+    },
+    "class_type": "VHS_LoadImagePath",
+    "_meta": {
+      "title": "Load Image (Path) 🎥🅥🅗🅢"
     }
   }
 }

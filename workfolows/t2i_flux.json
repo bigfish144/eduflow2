@@ -1,7 +1,10 @@
 {
   "6": {
     "inputs": {
-      "text": "1 girl, Black T-shirt with LOGO, jeans, 3D cartoon style,solo,white background",
+      "text": [
+        "48",
+        0
+      ],
       "clip": [
         "11",
         0
@@ -129,7 +132,7 @@
   },
   "25": {
     "inputs": {
-      "noise_seed": 991779728473778
+      "noise_seed": 16705139024923
     },
     "class_type": "RandomNoise",
     "_meta": {
@@ -151,8 +154,14 @@
   },
   "27": {
     "inputs": {
-      "width": 1024,
-      "height": 1024,
+      "width": [
+        "67",
+        0
+      ],
+      "height": [
+        "68",
+        0
+      ],
       "batch_size": 1
     },
     "class_type": "EmptySD3LatentImage",
@@ -164,8 +173,14 @@
     "inputs": {
       "max_shift": 1.15,
       "base_shift": 0.5,
-      "width": 1024,
-      "height": 1024,
+      "width": [
+        "67",
+        0
+      ],
+      "height": [
+        "68",
+        0
+      ],
       "model": [
         "39",
         0
@@ -205,20 +220,146 @@
     },
     "class_type": "ImpactSwitch",
     "_meta": {
-      "title": "Switch (Any)"
+      "title": "LoadLoraorNot"
     }
   },
-  "41": {
+  "47": {
     "inputs": {
-      "filename_prefix": "ComfyUI",
+      "from_translate": "auto",
+      "to_translate": "en",
+      "manual_translate": false,
+      "Manual Trasnlate": "Manual Trasnlate",
+      "text": "cute anime girl with massive fluffy fennec ears and a big fluffy tail blonde messy long hair blue eyes wearing a maid outfit with a long black gold leaf pattern dress"
+    },
+    "class_type": "GoogleTranslateTextNode",
+    "_meta": {
+      "title": "Google Translate Text Node"
+    }
+  },
+  "48": {
+    "inputs": {
+      "action": "append",
+      "tidy_tags": "yes",
+      "text_a": [
+        "47",
+        0
+      ],
+      "text_b": [
+        "51",
+        0
+      ],
+      "result": "cute anime girl with massive fluffy fennec ears and a big fluffy tail blonde messy long hair blue eyes wearing a maid outfit with a long black gold leaf pattern dress, anime style"
+    },
+    "class_type": "StringFunction|pysssss",
+    "_meta": {
+      "title": "String Function 🐍"
+    }
+  },
+  "51": {
+    "inputs": {
+      "text": "anime style"
+    },
+    "class_type": "JjkText",
+    "_meta": {
+      "title": "Choose Style"
+    }
+  },
+  "52": {
+    "inputs": {
+      "text": [
+        "48",
+        0
+      ],
+      "text2": "cute anime girl with massive fluffy fennec ears and a big fluffy tail blonde messy long hair blue eyes wearing a maid outfit with a long black gold leaf pattern dress, anime style"
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "Show Text 🐍"
+    }
+  },
+  "53": {
+    "inputs": {
+      "rem_mode": "RMBG-1.4",
+      "image_output": "Preview",
+      "save_prefix": "ComfyUI",
+      "torchscript_jit": false,
       "images": [
         "8",
         0
       ]
     },
-    "class_type": "SaveImage",
+    "class_type": "easy imageRemBg",
     "_meta": {
-      "title": "保存图像"
+      "title": "Image Remove Bg"
+    }
+  },
+  "54": {
+    "inputs": {
+      "select": 2,
+      "sel_mode": false,
+      "input1": [
+        "8",
+        0
+      ],
+      "input2": [
+        "64",
+        0
+      ]
+    },
+    "class_type": "ImpactSwitch",
+    "_meta": {
+      "title": "removebgornot"
+    }
+  },
+  "64": {
+    "inputs": {
+      "transparency": false,
+      "model": "u2net",
+      "post_processing": false,
+      "only_mask": false,
+      "alpha_matting": false,
+      "alpha_matting_foreground_threshold": 240,
+      "alpha_matting_background_threshold": 10,
+      "alpha_matting_erode_size": 10,
+      "background_color": "white",
+      "images": [
+        "53",
+        0
+      ]
+    },
+    "class_type": "Image Rembg (Remove Background)",
+    "_meta": {
+      "title": "Image Rembg (Remove Background)"
+    }
+  },
+  "67": {
+    "inputs": {
+      "value": 1024
+    },
+    "class_type": "easy int",
+    "_meta": {
+      "title": "Width"
+    }
+  },
+  "68": {
+    "inputs": {
+      "value": 1024
+    },
+    "class_type": "easy int",
+    "_meta": {
+      "title": "Height"
+    }
+  },
+  "69": {
+    "inputs": {
+      "images": [
+        "54",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "预览图像"
     }
   }
 }

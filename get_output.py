@@ -37,10 +37,10 @@ def get_history(prompt_id):
         return json.loads(response.read())
 
 
-#获取图片输出
+# 获取图片输出
 async def get_imgoutputs(client_id, prompt):
     prompt_id = queue_prompt(prompt, client_id)['prompt_id']
-    output_imagesurl=[]
+    output_imagesurl = []
     async with websockets.connect(f"ws://{server_address}/ws?clientId={client_id}") as websocket:        
         while True:
             out = await websocket.recv()
@@ -55,10 +55,10 @@ async def get_imgoutputs(client_id, prompt):
     for node_id, node_output in history['outputs'].items():
         if 'images' in node_output:
             for image in node_output['images']:
-                image_url=get_image_url(image['filename'], image['filename'], image['type'])
+                image_url = get_image_url(image['filename'], image['filename'], image['type'])
                 output_imagesurl.append(image_url)
-        print(f"image_url:{image_url}")
-        return  {"image":output_imagesurl}
+    print(f"image_url:{image_url}")  # 移动到循环内部
+    return {"image_url": image_url}  # 确保在所有情况下返回有效的列表
 #获取视频输出
 async def get_videooutputs(client_id, prompt):
     prompt_id = queue_prompt(prompt, client_id)['prompt_id']
