@@ -74,14 +74,11 @@ async def process_texttospeech(data):
 #自定义生成动作-museV
 async def process_custommotion(data):
     client_id = str(uuid.uuid4())
-    prompt = load_json_template('./workfolows/musev_base.json')
-    prompt["46"]["inputs"]["image"] = "demo/static/data/character/"+data.selectedCharValue
-    print("demo/static/data/character/"+data.selectedCharValue)
-    prompt["44"]["inputs"]["text"] = data.motionGenPrompt
-    prompt["1"]["inputs"]["sd_model_name"] = data.motionmodelSelect
-    prompt["1"]["inputs"]["video_len"] = data.motionframe
-    prompt["27"]["inputs"]["select"] = data.motionLerp
-    prompt["4"]["inputs"]["filename_prefix"] = "motion/"+data.motionoutputname
+    prompt = load_json_template('./workfolows/moiondiffuser.json')
+    prompt["75"]["inputs"]["text"] = data.motionGenPrompt
+    prompt["3"]["inputs"]["frames"] = data.motionframe
+    prompt["77"]["inputs"]["select"] = data.motionLerp
+    prompt["32"]["inputs"]["filename_prefix"] = "motion-pre/"+data.motionoutputname
     await get_custommotionoutputs(client_id, prompt)
     print("自定义生成动作成功："+data.motionoutputname)
     return {"outputname": data.motionoutputname}
@@ -93,36 +90,40 @@ async def process_defaultmotion(fileName):
     try:
         result = client.predict(
             audio=handle_file(audiopath),  # 输入音频文件的 URL
-            model_type="EMAGE (Full body + Face)",  # 选择模型类型，可能的值有 "DisCo (Upper only)", "CaMN (Upper only)", "EMAGE (Full body + Face)"
+            model_type="CaMN (Upper only)",  # 选择模型类型，可能的值有 "DisCo (Upper only)", "CaMN (Upper only)", "EMAGE (Full body + Face)"
             render_mesh=True,  # 是否渲染网格模型
             render_face=False,  # 是否渲染2D人脸标志
             render_mesh_face=False,  # 是否渲染网格人脸模型
             api_name="/inference_app"  # API 名称
         )
+        print(result)
         # logger.info(f"Prediction result: {result}")
         output_dir = './static/data/motion-pre'
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         # 处理视频文件并重命名
-        for idx, item in enumerate(result[:-1]):  # 不处理最后的 .npz 文件
-            if item is None:
-                continue
-            video_path = item.get('video')
-            if video_path:
-                basename = os.path.basename(video_path)
-                if basename == "emage_output_2dbody_audio.mp4":
-                    os.remove(video_path)
-                    logger.info(f"Deleted video: {video_path}")
-                elif basename == "emage_output.mp4":
-                    new_video_name = fileName + ".mp4"
-                    new_video_path = os.path.join(output_dir, new_video_name)
-                    shutil.move(video_path, new_video_path)
-                    logger.info(f"Renamed video: {video_path} to {new_video_path}")
+        for item in result:
+            if isinstance(item, dict) and 'video' in item:
+                video_path = item['video']
+                if video_path:
+                    basename = os.path.basename(video_path)
+                    if basename == "camn_output_2dbody_audio.mp4":
+                        os.remove(video_path)
+                        logger.info(f"Deleted video: {video_path}")
+                    elif basename == "camn_output.mp4":
+                        new_video_name = fileName + ".mp4"
+                        new_video_path = os.path.join(output_dir, new_video_name)
+                        shutil.move(video_path, new_video_path)
+                        logger.info(f"Renamed video: {video_path} to {new_video_path}")
+        
         # 处理 .npz 文件
-        npz_file = result[-1]
-        if npz_file:
-            os.remove(npz_file)
-            logger.info(f"Deleted .npz file: {npz_file}")
+        for item in result:
+            if isinstance(item, str) and item.endswith('.npz'):
+                npz_file = item
+                if npz_file:
+                    os.remove(npz_file)
+                    logger.info(f"Deleted .npz file: {npz_file}")
+        
         return {"outputname": fileName + ".mp4"}
     except Exception as e:
         logger.error(f"Error in process_defaultmotion: {e}")
@@ -145,6 +146,19 @@ async def interpolate_frames(outputname):
     prompt = load_json_template('./workfolows/Lerp_Inter.json')
     prompt["6"]["inputs"]["filename_prefix"] = "motion/"+ outputname
     await get_custommotionoutputs(client_id, prompt)
+    return {"outputname": outputname}
+
+#口型匹配
+async def process_wavtolip(data):
+    client_id = str(uuid.uuid4())
+    outputname = data.selectedSceneIndex
+    prompt = load_json_template('./workfolows/musetalk.json')
+    prompt["5"]["inputs"]["bbox_shift"] = data.bbox_shift
+    prompt["5"]["inputs"]["batch_size"] = data.batchsize
+    prompt["17"]["inputs"]["video"] = "demo/static/data/motion/"+ data.selectedSceneIndex +".mp4"
+    prompt["15"]["inputs"]["audio_path"] = "demo/static/data/audio/"+ data.selectedSceneIndex +".flac"
+    prompt["13"]["inputs"]["filename_prefix"] = "char_video/"+ outputname
+    await get_audiooutputs(client_id, prompt)
     return {"outputname": outputname}
 
 #生成角色-无参考

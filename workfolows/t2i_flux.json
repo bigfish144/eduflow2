@@ -247,8 +247,7 @@
       "text_b": [
         "51",
         0
-      ],
-      "result": "cute anime girl with massive fluffy fennec ears and a big fluffy tail blonde messy long hair blue eyes wearing a maid outfit with a long black gold leaf pattern dress, anime style"
+      ]
     },
     "class_type": "StringFunction|pysssss",
     "_meta": {
@@ -277,25 +276,9 @@
       "title": "Show Text 🐍"
     }
   },
-  "53": {
-    "inputs": {
-      "rem_mode": "RMBG-1.4",
-      "image_output": "Preview",
-      "save_prefix": "ComfyUI",
-      "torchscript_jit": false,
-      "images": [
-        "8",
-        0
-      ]
-    },
-    "class_type": "easy imageRemBg",
-    "_meta": {
-      "title": "Image Remove Bg"
-    }
-  },
   "54": {
     "inputs": {
-      "select": 2,
+      "select": 1,
       "sel_mode": false,
       "input1": [
         "8",
@@ -323,7 +306,7 @@
       "alpha_matting_erode_size": 10,
       "background_color": "white",
       "images": [
-        "53",
+        "8",
         0
       ]
     },

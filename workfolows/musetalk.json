@@ -1,0 +1,120 @@
+{
+  "5": {
+    "inputs": {
+      "video_path": [
+        "14",
+        0
+      ],
+      "audio_path": [
+        "15",
+        0
+      ],
+      "bbox_shift": 0,
+      "batch_size": 8
+    },
+    "class_type": "MuseTalkRun",
+    "_meta": {
+      "title": "MuseTalkRun"
+    }
+  },
+  "11": {
+    "inputs": {
+      "frame_rate": 24,
+      "loop_count": 0,
+      "filename_prefix": "AnimateDiff",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": false,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": false,
+      "images": [
+        "17",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "13": {
+    "inputs": {
+      "frame_rate": 24,
+      "loop_count": 0,
+      "filename_prefix": "char_video/0",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": true,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "5",
+        0
+      ],
+      "audio": [
+        "16",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "14": {
+    "inputs": {
+      "filenames": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "VHS_FILENAMES_STRING_MuseTalk",
+    "_meta": {
+      "title": "VHS_FILENAMES_STRING_MuseTalk"
+    }
+  },
+  "15": {
+    "inputs": {
+      "audio_path": "demo/static/data/audio/0.flac",
+      "start": 0,
+      "end": 3600000
+    },
+    "class_type": "MuseTalkCupAudio",
+    "_meta": {
+      "title": "MuseTalkCupAudio"
+    }
+  },
+  "16": {
+    "inputs": {
+      "audio_file": [
+        "15",
+        0
+      ],
+      "seek_seconds": 0
+    },
+    "class_type": "VHS_LoadAudio",
+    "_meta": {
+      "title": "Load Audio (Path)🎥🅥🅗🅢"
+    }
+  },
+  "17": {
+    "inputs": {
+      "video": "demo/static/data/motion/0.mp4",
+      "force_rate": 0,
+      "force_size": "Disabled",
+      "custom_width": 512,
+      "custom_height": 512,
+      "frame_load_cap": 0,
+      "skip_first_frames": 0,
+      "select_every_nth": 1
+    },
+    "class_type": "VHS_LoadVideoPath",
+    "_meta": {
+      "title": "Load Video (Path) 🎥🅥🅗🅢"
+    }
+  }
+}

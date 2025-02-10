@@ -257,29 +257,30 @@ async def get_audio_length(data: GetAudioLengthRequest):
 
 #生成自定义动作
 class CustomMotionModel(BaseModel):
-    selectedCharValue: str
     motionoutputname: str
     motionGenPrompt: str
-    motionmodelSelect: str
     motionLerp: int
     motionframe: int
 @app.post("/generate-custommotion")
 async def customMotion(data:CustomMotionModel):
-    logger.info(f"生成自定义动作: {data.selectedCharValue}")
+    logger.info(f"生成自定义动作: {data.motionGenPrompt}")
     return await process_custommotion(data)
 
 # 移动并重命名动作文件
 class MotionFileRenameRequest(BaseModel):
     motionoutputname: str
+    FloderName: str
 @app.post("/renameandmove-motion-file")
 async def rename_motion_file(data: MotionFileRenameRequest):
     motionoutputname = data.motionoutputname
-    directory = '../output/motion'
-    new_file_path = './static/data/motion'
+    FloderName = data.FloderName
+    directory = '../output/' + FloderName
+    new_file_path = './static/data/' + FloderName
     if not os.path.exists(new_file_path):
         os.makedirs(new_file_path)
     files = os.listdir(directory)
     target_file = None
+    audio_file = None
     for filename in files:
         if filename.endswith(".png"):
             os.remove(os.path.join(directory, filename))
@@ -290,7 +291,13 @@ async def rename_motion_file(data: MotionFileRenameRequest):
                 os.remove(file_path)
                 logger.info(f"删除文件: {file_path}")
             else:
-                target_file = filename
+                if filename.endswith('-audio.mp4'):
+                    audio_file = filename
+                else:
+                    target_file = filename
+    # 如果同时存在带有 -audio.mp4 和不带 -audio.mp4 的文件，优先选择带有 -audio.mp4 的文件
+    if audio_file:
+        target_file = audio_file
     if target_file:
         target_basename, target_ext = os.path.splitext(target_file)
         new_filename = f"{motionoutputname}{target_ext}"
@@ -303,7 +310,6 @@ async def rename_motion_file(data: MotionFileRenameRequest):
         shutil.copy(new_file_path_full, destination_path)
         logger.info(f"复制文件: {new_file_path_full} -> {destination_path}")
         return {"fileName": new_filename}
-    raise HTTPException(status_code=404, detail="文件未找到")
 
 #生成默认动作-EMAGE
 class DefaultMotionModel(BaseModel):
@@ -409,7 +415,7 @@ async def motion_merge(data: MotionMergeModel):
         if result:
             logger.info(f"{outputname} 帧插值完成")
             # 调用 rename_motion_file 函数
-            rename_request = MotionFileRenameRequest(motionoutputname=outputname)
+            rename_request = MotionFileRenameRequest(motionoutputname=outputname,FloderName="motion")
             rename_response = await rename_motion_file(rename_request)
             if rename_response:
                 logger.info(f"{outputname} 重命名完成")
@@ -445,7 +451,43 @@ async def motion_merge(data: MotionMergeModel):
             logger.info(f"删除文件: {file_path}")
         except Exception as e:
             logger.error(f"Failed to delete {file_path}. Reason: {e}")
+    #删除motion-pre对应的文件
+    MOTION_PRE_FOLDER = './static/data/motion-pre'
+    motionpre_files=[
+        motion for motion in os.listdir(MOTION_PRE_FOLDER)
+        if motion.startswith(selectedSceneIndex + "_") and motion.endswith('.mp4')
+    ]
+    for file in motionpre_files:
+        file_path = os.path.join(MOTION_PRE_FOLDER, file)
+        try:
+            os.unlink(file_path)
+            logger.info(f"删除文件: {file_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete {file_path}. Reason: {e}")
+    #删除audio对应的文件
+    AUDIO_FOLDER = './static/data/audio'
+    audio_files=[
+        audio for audio in os.listdir(AUDIO_FOLDER)
+        if audio.startswith(selectedSceneIndex + "_") and audio.endswith('.flac')
+    ]
+    for file in audio_files:
+        file_path = os.path.join(AUDIO_FOLDER, file)
+        try:
+            os.unlink(file_path)
+            logger.info(f"删除文件: {file_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete {file_path}. Reason: {e}")
     return JSONResponse(content={"status": "success", "message": "视频拼合完成", "fileName": f"{selectedSceneIndex}.mp4"})
+
+#口型匹配
+class WavtoLipModel(BaseModel):
+    selectedSceneIndex: str
+    bbox_shift:int
+    batchsize:int
+@app.post("/wavtolip")
+async def wavtolip(data: WavtoLipModel):
+    return await process_wavtolip(data)
+
 #获取Lora模型列表
 @app.get("/get_lora_list", response_class=JSONResponse)
 async def get_lora_list():

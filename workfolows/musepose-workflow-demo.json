@@ -83,7 +83,10 @@
       ],
       "Width": 512,
       "Height": 512,
-      "frame_length": 300,
+      "frame_length": [
+        "29",
+        1
+      ],
       "slice_frame_number": 48,
       "slice_overlap_frame_number": 4,
       "cfg": 3.5,
@@ -197,7 +200,7 @@
   },
   "28": {
     "inputs": {
-      "image": "demo/static/data/character/牛顿.png",
+      "image": "demo/static/data/character/真人.png",
       "force_size": "Disabled",
       "custom_width": 512,
       "custom_height": 512
@@ -209,7 +212,7 @@
   },
   "29": {
     "inputs": {
-      "video": "demo/static/data/motion-pre/0_0.mp4",
+      "video": "demo/static/data/motion-pre/0_1.mp4",
       "force_rate": 0,
       "force_size": "Disabled",
       "custom_width": 512,

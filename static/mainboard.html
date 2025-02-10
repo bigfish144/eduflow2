@@ -81,11 +81,6 @@
         <div class="motion-set-container">
             <p>输入动作描述词</p>
             <textarea placeholder="一个男人，演讲，比划手势" id="motion-gen-prompt" class="show-text-panel"></textarea>
-            <p>选择模型</p>
-            <select name="motion-style" id="motion-select" class="select">
-                <option value="fantasticmix_v10">动漫卡通风格</option>
-                <option value="majicmixRealv6Fp16">真人写实风格</option>
-            </select>
             <div class="checkbox-container">
                 <p>视频补帧</p>
                 <input type="checkbox" class="lip-choose-box" id="motion-lerp" checked>
@@ -250,24 +245,24 @@
                                 <div class="slider-label">嘴部开合</div>
                                 <div class="slider-wrapper">
                                     <span>-9</span>
-                                    <input id="slider" type="range" min="-9" max="9" step="0.1" value="0" class="slider">
-                                    <div id="tooltip" class="tooltip">0</div>
+                                    <input id="slider1" type="range" min="-9" max="9" step="1" value="0" class="slider">
+                                    <div id="tooltip1" class="tooltip">0</div>
                                     <span>9</span>
                                 </div>
                             </div>
-                            <div class="slider-container" id="slider-container1">
+                            <div class="slider-container" id="slider-container2">
                                 <div class="slider-label">处理批次(默认不变)</div>
                                 <div class="slider-wrapper">
                                     <span>1</span>
-                                    <input id="slider" type="range" min="-9" max="9" step="0.1" value="0" class="slider">
-                                    <div id="tooltip" class="tooltip">0</div>
+                                    <input id="slider2" type="range" min="1" max="8" step="1" value="8" class="slider">
+                                    <div id="tooltip2" class="tooltip">1</div>
                                     <span>8</span>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="process-btn-container">
-                            <button class="process-main-btn">应用</button>
+                            <button class="process-main-btn" id="wavtolip-apply-btn">应用</button>
                         </div>
                     </div>    
                 </div>
@@ -1410,13 +1405,14 @@
                             console.error(`检查文件 ${fileName} 时出错:`, error);
                         });
                     if (!alertShown) {
+                        console.log(selectedCharValue);
                         await handleMotionRender(selectedSceneIndex.toString(),i.toString(),selectedCharValue);
                         UpdateMotionVideo(selectedSceneIndex.toString(),"motion");
                     }
                 }
             });
 
-            // 生成姿态预览动作-EMAGE
+            // 生成默认动作-姿态预览动作-EMAGE
             async function handleMotionPreview(selectedSceneIndex,selectedIndex) {
                 fileName = selectedSceneIndex + '_' + selectedIndex;
                 loadingOverlay.style.display = 'flex'; // 显示加载图标
@@ -1460,13 +1456,14 @@
                     const data = await response.json();
                     console.log('成功生成文件:', data.outputname);
                     const motionoutputname = data.outputname;
+                    const FloderName = "motion"
                     //重命名并移动文件
                     const fileNameResponse = await fetch('/renameandmove-motion-file', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ motionoutputname })
+                        body: JSON.stringify({ motionoutputname, FloderName})
                     });
                     if (!fileNameResponse.ok) {
                         throw new Error('网络响应失败');
@@ -1536,11 +1533,10 @@
                 const motioncustomegenbtn = document.getElementById('save-motion-setting-btn');
                 motioncustomegenbtn.addEventListener('click', async function() {
                     const motionGenPrompt = document.getElementById('motion-gen-prompt').value;
-                    const motionmodelSelect = document.getElementById('motion-select').value;
                     const motionLerpCheckbox = document.getElementById('motion-lerp');
                     const motionLerp = motionLerpCheckbox.checked ? 2 : 1;
                     const motionframe = Math.ceil(12 * duration)
-                    handleMotionGeneration(selectedCharValue, selectedSceneIndex.toString(), motionindex, motionGenPrompt, motionmodelSelect, motionLerp, motionframe);
+                    handleMotionGeneration(selectedSceneIndex.toString(), motionindex, motionGenPrompt, motionLerp, motionframe);
                 });
                 const closemotionsetpanelbtn = document.getElementById('motion-set-close-btn');
                 closemotionsetpanelbtn.addEventListener('click', function() {
@@ -1575,8 +1571,8 @@
                 }
             }
 
-            // 自定义动作生成
-            async function handleMotionGeneration(selectedCharValue,selectedSceneIndex, motionindex, motionGenPrompt, motionmodelSelect, motionLerp, motionframe) {
+            // 生成自定义动作
+            async function handleMotionGeneration(selectedSceneIndex, motionindex, motionGenPrompt, motionLerp, motionframe) {
                 loadingOverlay.style.display = 'flex'; // 显示加载图标
                 const motionoutputname = selectedSceneIndex.toString() + '_' + motionindex.toString()
                 try {
@@ -1585,18 +1581,19 @@
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ selectedCharValue, motionoutputname, motionGenPrompt, motionmodelSelect, motionLerp, motionframe})
+                        body: JSON.stringify({ motionoutputname, motionGenPrompt, motionLerp, motionframe})
                     });
                     if (response.ok) {
                         const data = await response.json();
                         console.log('动作生成成功',data.outputname);
                         //重命名并移动文件
+                        const FloderName = "motion-pre";
                         const fileNameResponse = await fetch('/renameandmove-motion-file', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ motionoutputname })
+                            body: JSON.stringify({ motionoutputname,FloderName })
                         });
                         if (!fileNameResponse.ok) {
                             throw new Error('获取文件名失败');
@@ -1604,7 +1601,8 @@
                         const fileNameData = await fileNameResponse.json();
                         console.log('移动并重命名文件名:', fileNameData.fileName);
                         }
-                
+                        UpdateMotionVideo(selectedSceneIndex.toString(),"motion-pre");
+                        
                 } catch (error) {
                     console.error('生成动作时出错:', error);
                 }
@@ -1612,6 +1610,7 @@
                     loadingOverlay.style.display = 'none'; // 隐藏加载图标
                     overlay.style.display = 'none';
                     motionSettingPanel.style.display = 'none';
+                    
                 }
             }
             //动作拼合与帧插值
@@ -1619,6 +1618,7 @@
             motionapplybtn.addEventListener('click', async function() {
                 loadingOverlay.style.display = 'flex';
                 selectedSceneIndex = selectedSceneIndex.toString();
+                const MotionPreviewPanel = document.getElementById('motion-preview-panel');
                 try {
                     const response = await fetch('/motion-apply', {
                         method: 'POST',
@@ -1630,7 +1630,12 @@
                     if (response.ok) {
                         const data = await response.json();
                         console.log('动作拼合成功',data.fileName);
+                        MotionPreviewPanel.innerHTML = '';
+                        const fileName = data.fileName;
+                        const folderName = "motion";
+                        createMotionPreviewPlayer(fileName,folderName)
                     }
+
                 }
                 catch (error) {
                     console.error('生成动作时出错:', error);
@@ -1688,26 +1693,82 @@
                 playIcon.src = "images/btn_play.png";
             });  
 
+            //口型匹配模块
 
             // 口型匹配滑块
-            const slider = document.getElementById('slider'); // 滑块
-            const tooltip = document.getElementById('tooltip'); // Tooltip
-            function updateTooltip() {
+            const slider1 = document.getElementById('slider1'); // 滑块1
+            const tooltip1 = document.getElementById('tooltip1'); // Tooltip1
+
+            const slider2 = document.getElementById('slider2'); // 滑块2
+            const tooltip2 = document.getElementById('tooltip2'); // Tooltip2
+
+            function updateTooltip(slider, tooltip) {
                 const sliderRect = slider.getBoundingClientRect();
                 const sliderWidth = slider.offsetWidth;
                 const position = ((slider.value - slider.min) / (slider.max - slider.min)) * sliderWidth;
                 tooltip.style.left = `${position - tooltip.offsetWidth / 2}px`; // 调整为 Tooltip 居中
                 tooltip.textContent = slider.value; 
             }
-            updateTooltip(); // 调用此函数以初始化 Tooltip 的位置和内容
-            tooltip.style.opacity = 0; // 默认隐藏提示框
-            slider.addEventListener('input', updateTooltip);// 监听滑块的拖动事件
+            // 初始化 Tooltip 的位置和内容
+            updateTooltip(slider1, tooltip1);
+            updateTooltip(slider2, tooltip2);
+            // 默认隐藏提示框
+            tooltip1.style.opacity = 0;
+            tooltip2.style.opacity = 0;
+            // 监听滑块的拖动事件
+            slider1.addEventListener('input', () => updateTooltip(slider1, tooltip1));
+            slider2.addEventListener('input', () => updateTooltip(slider2, tooltip2));
             // 悬停时显示 Tooltip 并更新位置
-            slider.addEventListener('mouseenter', () => {
-                updateTooltip(); // 更新 Tooltip 的位置和内容
-                tooltip.style.opacity = 1;
+            slider1.addEventListener('mouseenter', () => {
+                updateTooltip(slider1, tooltip1);
+                tooltip1.style.opacity = 1;
             });
-            slider.addEventListener('mouseleave', () => tooltip.style.opacity = 0);
+            slider1.addEventListener('mouseleave', () => tooltip1.style.opacity = 0);
+
+            slider2.addEventListener('mouseenter', () => {
+                updateTooltip(slider2, tooltip2);
+                tooltip2.style.opacity = 1;
+            });
+            slider2.addEventListener('mouseleave', () => tooltip2.style.opacity = 0);
+            //点击口型匹配按钮
+            const WavtoLipApplyBtn = document.getElementById('wavtolip-apply-btn');
+            WavtoLipApplyBtn.addEventListener('click', async function() {
+                const bbox_shift = slider1.value;
+                const batchsize = slider2.value;
+                selectedSceneIndex = selectedSceneIndex.toString();
+                console.log('口型匹配模块');
+                try {
+                    const response = await fetch('/wavtolip', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ selectedSceneIndex,bbox_shift,batchsize})
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        const motionoutputname =data.outputname;
+                        const FloderName ="char_video";
+                        //重命名并移动文件
+                        const fileNameResponse = await fetch('/renameandmove-motion-file', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ motionoutputname, FloderName})
+                        });
+                        if (!fileNameResponse.ok) {
+                            throw new Error('网络响应失败');
+                        }
+                        const fileNameData = await fileNameResponse.json();
+                        console.log('重命名后的文件名:', fileNameData.fileName);
+                        }
+                }
+                catch (error) {
+                    console.error('生成动作时出错:', error);
+                }
+            });
+
 
             // 跳转
             const createcharbtn = document.getElementById('add-all-cha-btn');
@@ -1718,8 +1779,7 @@
             } else {
                 console.error('Element with ID add-all-cha-btn not found');
             }
-
-            const creatematbtn = document.querySelector('.add-all-img-btn'); // 注意这里需要加上类选择器的点号
+            const creatematbtn = document.querySelector('.add-all-img-btn');
             if (creatematbtn) {
                 creatematbtn.addEventListener('click', function() {
                     const description = selectedCameraItem.querySelector('.camera-description').textContent;
@@ -1730,6 +1790,7 @@
             } else {
                 console.error('Element with class .add-all-img-btn not found');
             }
+            
 
         });
 </script>
