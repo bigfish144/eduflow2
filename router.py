@@ -137,6 +137,16 @@ async def process_charrender(data):
     await get_custommotionoutputs(client_id, prompt)
     print("自定义生成动作成功："+data.fileName)
     return {"outputname": data.fileName}
+
+#动作帧插值
+async def interpolate_frames(outputname):
+    print(outputname)
+    client_id = str(uuid.uuid4())
+    prompt = load_json_template('./workfolows/Lerp_Inter.json')
+    prompt["6"]["inputs"]["filename_prefix"] = "motion/"+ outputname
+    await get_custommotionoutputs(client_id, prompt)
+    return {"outputname": outputname}
+
 #生成角色-无参考
 async def process_generateimgflux(data):
     imagesurls = []  # 存储所有生成的图像

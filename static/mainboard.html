@@ -235,7 +235,7 @@
                         <div class="process-btn-container">
                             <button class="process-grey-btn" id="motion-pose-pre">姿态预览</button>
                             <button class="process-grey-btn" id ="motion-render-pre">角色渲染预览</button>
-                            <button class="process-main-btn">应用</button>
+                            <button class="process-main-btn" id="motion-apply-btn">应用</button>
                         </div>
                     </div>
                 </div>
@@ -243,16 +243,7 @@
                 <div class="process-tab-container" id="wav2lip-tab-container">
                     <div class="process-tab-content">
                         <div class="lip-text-choose-panel">
-                            <div class="lip-text-item" id="lip-item-1">
-                                <p>想象一下，如果没有重力会是什么样子？</p>
-                                <input type="checkbox" name="example" value="value" class="lip-choose-box" id="checkbox1">
-                                <label for="checkbox1"></label>
-                            </div>
-                            <div class="lip-text-item" id="lip-item-2">
-                                <p>想象一下，如果没有重力会是什么样子？</p>
-                                <input type="checkbox" name="example" value="value" class="lip-choose-box" id="checkbox2">
-                                <label for="checkbox2"></label>
-                            </div>
+                            <textarea placeholder="请输入生成文本" id="show-liptext-panel" class="show-text-panel" readonly style="pointer-events: none;"></textarea>
                         </div>
                         <div class="lip-gen-ctrl-panel">
                             <div class="slider-container" id="slider-container1">
@@ -265,12 +256,12 @@
                                 </div>
                             </div>
                             <div class="slider-container" id="slider-container1">
-                                <div class="slider-label">嘴部开合</div>
+                                <div class="slider-label">处理批次(默认不变)</div>
                                 <div class="slider-wrapper">
-                                    <span>-9</span>
+                                    <span>1</span>
                                     <input id="slider" type="range" min="-9" max="9" step="0.1" value="0" class="slider">
                                     <div id="tooltip" class="tooltip">0</div>
-                                    <span>9</span>
+                                    <span>8</span>
                                 </div>
                             </div>
                         </div>
@@ -398,9 +389,11 @@
                             const partsceneindex = document.getElementById('part-scene-index');
                             const allCameraItems = document.querySelectorAll('.camera-item');
                             const showTextPanel = document.getElementById('show-text-panel');
+                            const showLipTextPanel = document.getElementById('show-liptext-panel');
                             allCameraItems.forEach(item => item.classList.remove('selected'));
                             cameraItem.classList.add('selected');
                             showTextPanel.value = description.textContent; 
+                            showLipTextPanel.value = description.textContent;
                             selectedCameraItem = cameraItem;
                             selectedSceneIndex = parseInt(cameraItem.getAttribute('data-index'), 10); // 获取索引
                             partsceneindex.textContent = "当前分镜素材-"+(selectedSceneIndex + 1).toString().padStart(2, '0');
@@ -926,9 +919,8 @@
                 updatetempTooltip();
             });
             
-
-            const texttoaudiobtn = document.getElementById('text-to-audio-btn');
             //点击语音生成按钮
+            const texttoaudiobtn = document.getElementById('text-to-audio-btn');
             texttoaudiobtn.addEventListener('click', async function() {
                 console.log('生成语音按钮被点击');
                 try {
@@ -1622,7 +1614,31 @@
                     motionSettingPanel.style.display = 'none';
                 }
             }
-
+            //动作拼合与帧插值
+            const motionapplybtn = document.getElementById('motion-apply-btn');
+            motionapplybtn.addEventListener('click', async function() {
+                loadingOverlay.style.display = 'flex';
+                selectedSceneIndex = selectedSceneIndex.toString();
+                try {
+                    const response = await fetch('/motion-apply', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ selectedSceneIndex})
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('动作拼合成功',data.fileName);
+                    }
+                }
+                catch (error) {
+                    console.error('生成动作时出错:', error);
+                }
+                finally {
+                    loadingOverlay.style.display = 'none';
+                }
+            });
 
 
             //处理视频播放进度条

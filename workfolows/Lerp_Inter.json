@@ -1,0 +1,79 @@
+{
+  "4": {
+    "inputs": {
+      "image1": [
+        "8",
+        0
+      ],
+      "image2": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "ImageBatch",
+    "_meta": {
+      "title": "组合图像批次"
+    }
+  },
+  "6": {
+    "inputs": {
+      "frame_rate": 24,
+      "loop_count": 0,
+      "filename_prefix": "motion/0_0.1",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "7": {
+    "inputs": {
+      "ckpt_name": "GMFSS_fortuna_union",
+      "clear_cache_after_n_frames": 10,
+      "multiplier": 4,
+      "frames": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "GMFSS Fortuna VFI",
+    "_meta": {
+      "title": "GMFSS Fortuna VFI"
+    }
+  },
+  "8": {
+    "inputs": {
+      "image": "demo/static/data/motion/temp/0.png",
+      "force_size": "Disabled",
+      "custom_width": 512,
+      "custom_height": 512
+    },
+    "class_type": "VHS_LoadImagePath",
+    "_meta": {
+      "title": "Load Image (Path) 🎥🅥🅗🅢"
+    }
+  },
+  "9": {
+    "inputs": {
+      "image": "demo/static/data/motion/temp/1.png",
+      "force_size": "Disabled",
+      "custom_width": 512,
+      "custom_height": 512
+    },
+    "class_type": "VHS_LoadImagePath",
+    "_meta": {
+      "title": "Load Image (Path) 🎥🅥🅗🅢"
+    }
+  }
+}

@@ -1,0 +1,215 @@
+{
+  "1": {
+    "inputs": {
+      "model_dataset": "remodiffuse-human_ml3d"
+    },
+    "class_type": "MotionDiffLoader",
+    "_meta": {
+      "title": "MotionDiff Loader"
+    }
+  },
+  "2": {
+    "inputs": {
+      "text": [
+        "75",
+        0
+      ],
+      "md_clip": [
+        "1",
+        1
+      ],
+      "motion_data": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "MotionCLIPTextEncode",
+    "_meta": {
+      "title": "MotionCLIP Text Encode"
+    }
+  },
+  "3": {
+    "inputs": {
+      "frames": 50
+    },
+    "class_type": "EmptyMotionData",
+    "_meta": {
+      "title": "Empty Motion Data"
+    }
+  },
+  "4": {
+    "inputs": {
+      "sampler_name": "ddpm",
+      "seed": 1118956467785936,
+      "md_model": [
+        "1",
+        0
+      ],
+      "md_clip": [
+        "1",
+        1
+      ],
+      "md_cond": [
+        "2",
+        0
+      ],
+      "motion_data": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "MotionDiffSimpleSampler",
+    "_meta": {
+      "title": "MotionDiff Simple Sampler"
+    }
+  },
+  "16": {
+    "inputs": {
+      "num_smplify_iters": 10,
+      "smplify_step_size": 0.5,
+      "smpl_model": "SMPL_MALE.pkl",
+      "motion_data": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "SmplifyMotionData",
+    "_meta": {
+      "title": "Smplify Motion Data"
+    }
+  },
+  "32": {
+    "inputs": {
+      "frame_rate": [
+        "80",
+        0
+      ],
+      "loop_count": 0,
+      "filename_prefix": "motion-pre/0_0",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "38",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "SMPL"
+    }
+  },
+  "38": {
+    "inputs": {
+      "draw_platform": false,
+      "depth_only": false,
+      "yfov": 0.6,
+      "move_x": 0,
+      "move_y": -0.3,
+      "move_z": -1,
+      "rotate_x": 6,
+      "rotate_y": 2,
+      "rotate_z": 0,
+      "background_hex_color": "#FFFFFF",
+      "frame_width": 480,
+      "frame_height": 720,
+      "normals": true,
+      "smpl": [
+        "16",
+        0
+      ]
+    },
+    "class_type": "RenderSMPLMesh",
+    "_meta": {
+      "title": "Render SMPL Mesh"
+    }
+  },
+  "75": {
+    "inputs": {
+      "from_translate": "auto",
+      "to_translate": "en",
+      "manual_translate": false,
+      "Manual Trasnlate": "Manual Trasnlate",
+      "text": "a person is jumping"
+    },
+    "class_type": "GoogleTranslateTextNode",
+    "_meta": {
+      "title": "Google Translate Text Node"
+    }
+  },
+  "76": {
+    "inputs": {
+      "text": [
+        "75",
+        0
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "Show Text 🐍"
+    }
+  },
+  "77": {
+    "inputs": {
+      "select": 1,
+      "sel_mode": false,
+      "input1": [
+        "38",
+        0
+      ],
+      "input2": [
+        "78",
+        0
+      ]
+    },
+    "class_type": "ImpactSwitch",
+    "_meta": {
+      "title": "Switch (Any)"
+    }
+  },
+  "78": {
+    "inputs": {
+      "ckpt_name": "film_net_fp32.pt",
+      "clear_cache_after_n_frames": 10,
+      "multiplier": 2,
+      "frames": [
+        "38",
+        0
+      ]
+    },
+    "class_type": "FILM VFI",
+    "_meta": {
+      "title": "FILM VFI"
+    }
+  },
+  "79": {
+    "inputs": {
+      "Value": [
+        "77",
+        2
+      ]
+    },
+    "class_type": "DF_Int_to_Float",
+    "_meta": {
+      "title": "Int to Float"
+    }
+  },
+  "80": {
+    "inputs": {
+      "a": 12,
+      "b": [
+        "79",
+        0
+      ],
+      "operation": "multiply"
+    },
+    "class_type": "easy mathFloat",
+    "_meta": {
+      "title": "Math Float"
+    }
+  }
+}

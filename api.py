@@ -13,6 +13,9 @@ from io import BytesIO
 from PIL import Image
 import pydub
 from pydub import AudioSegment
+import cv2
+import moviepy
+from moviepy.editor import VideoFileClip, concatenate_videoclips
 # 配置日志记录
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -221,14 +224,6 @@ async def apply_audio_file(data: AudioFileCombineRequest):
             combined_audio += audio_segment
         # 保存拼接后的音频文件
         combined_audio.export(output_file_name, format="flac")
-        # 删除参与拼合的音频文件
-        # for audio_file in audio_files:
-        #     file_path = os.path.join(base_dir, audio_file)
-        #     try:
-        #         os.remove(file_path)
-        #         logger.info(f"删除文件: {file_path}")
-        #     except Exception as e:
-        #         logger.error(f"删除文件 {file_path} 时出错: {str(e)}")
         return JSONResponse(content={"message": f"音频文件已成功合成并保存为 {output_file_name}", "fileName": fileName + ".flac","audio_files": audio_files})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -332,11 +327,11 @@ async def charrender(data: CharRenderModel):
 
 
 # 获取符合条件的动作文件
-class SelectedSceneIndex(BaseModel):
+class GetMotionFiles(BaseModel):
     selectedSceneIndex: str
     folderName: str
 @app.post("/get-motion-files")
-async def get_motion_files(data: SelectedSceneIndex):
+async def get_motion_files(data: GetMotionFiles):
     selected_scene_index = data.selectedSceneIndex
     MOTION_FOLDER = './static/data/'+data.folderName
     logger.info(f"MOTION_FOLDER: {MOTION_FOLDER}")
@@ -345,7 +340,7 @@ async def get_motion_files(data: SelectedSceneIndex):
     try:
         motion_files = [
             motion for motion in os.listdir(MOTION_FOLDER)
-            if motion.startswith(selected_scene_index + "_") and motion.endswith('.mp4')  # 可根据需要添加其他扩展名
+            if motion.startswith(selected_scene_index + "_") and motion.endswith('.mp4') and '.' not in motion[:-4] # 可根据需要添加其他扩展名
         ]
         if not motion_files:
             raise HTTPException(status_code=404, detail="未找到符合条件的动作文件")
@@ -359,6 +354,98 @@ async def get_motion_files(data: SelectedSceneIndex):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+#动作拼合与帧插值
+class MotionMergeModel(BaseModel):
+    selectedSceneIndex: str
+@app.post("/motion-apply")
+async def motion_merge(data: MotionMergeModel):
+    selectedSceneIndex = data.selectedSceneIndex
+    MOTION_FOLDER = './static/data/motion'
+    TEMP_FOLDER = os.path.join(MOTION_FOLDER, 'temp')
+    if not os.path.exists(MOTION_FOLDER):
+        raise HTTPException(status_code=404, detail="动作文件夹未找到")
+
+    motion_files = [
+        motion for motion in os.listdir(MOTION_FOLDER)
+        if motion.startswith(selectedSceneIndex + "_") and motion.endswith('.mp4') and '.' not in motion[:-4]
+    ]
+    if not motion_files:
+        raise HTTPException(status_code=404, detail="未找到符合条件的动作文件")
+    # 自定义排序函数，按下划线后面的数字排序
+    def sort_key(file_name):
+        # 提取下划线后面的部分，并去掉 .flac 后缀
+        number_part = file_name.split('_')[1].split('.')[0]
+        return int(number_part)
+    motion_files.sort(key=sort_key)
+    print("motion_files:"+str(motion_files))
+    # 帧插值
+    if not os.path.exists(TEMP_FOLDER):
+        os.makedirs(TEMP_FOLDER)
+    for i in range(len(motion_files) - 1):
+        current_video_path = os.path.join(MOTION_FOLDER, motion_files[i])
+        next_video_path = os.path.join(MOTION_FOLDER, motion_files[i + 1])
+        # 获取当前视频的最后一帧
+        current_video = cv2.VideoCapture(current_video_path)
+        total_frames = int(current_video.get(cv2.CAP_PROP_FRAME_COUNT))
+        current_video.set(cv2.CAP_PROP_POS_FRAMES, total_frames - 1)
+        ret, frame = current_video.read()    
+        if ret:
+            cv2.imwrite(os.path.join(TEMP_FOLDER, '0.png'), frame)
+        current_video.release()            
+        # 获取下一个视频的第一帧
+        next_video = cv2.VideoCapture(next_video_path)
+        ret, frame = next_video.read()
+        if ret:
+            cv2.imwrite(os.path.join(TEMP_FOLDER, '1.png'), frame)
+        next_video.release()
+        startfile = os.path.basename(current_video_path)
+        endfile = os.path.basename(next_video_path)
+        # 生成outputname
+        start_suffix = startfile.split('_')[1].split('.')[0]
+        end_suffix = endfile.split('_')[1].split('.')[0]
+        outputname = f"{selectedSceneIndex}_{start_suffix}.{end_suffix}"                     
+        # 运行插帧函数（假设插帧函数名为interpolate_frames）
+        result =  await interpolate_frames(outputname)
+        if result:
+            logger.info(f"{outputname} 帧插值完成")
+            # 调用 rename_motion_file 函数
+            rename_request = MotionFileRenameRequest(motionoutputname=outputname)
+            rename_response = await rename_motion_file(rename_request)
+            if rename_response:
+                logger.info(f"{outputname} 重命名完成")
+            else:
+                logger.error(f"{outputname} 重命名失败")
+        # 删除临时文件夹中的内容
+        for file_name in os.listdir(TEMP_FOLDER):
+            file_path = os.path.join(TEMP_FOLDER, file_name)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+            except Exception as e:
+                logger.error(f"Failed to delete {file_path}. Reason: {e}")
+    # 删除临时文件夹
+    shutil.rmtree(TEMP_FOLDER)
+    #视频拼合
+    merge_motion_files = [
+        motion for motion in os.listdir(MOTION_FOLDER)
+        if motion.startswith(selectedSceneIndex + "_") and motion.endswith('.mp4')
+    ]
+    merge_motion_files.sort(key=sort_key)
+    print("merge_motion_files:"+str(merge_motion_files))
+    if not merge_motion_files:
+        raise HTTPException(status_code=404, detail="未找到需要拼合的视频文件")    
+    clips = [VideoFileClip(os.path.join(MOTION_FOLDER, file)) for file in merge_motion_files]
+    final_clip = concatenate_videoclips(clips)
+    final_clip.write_videofile(os.path.join(MOTION_FOLDER, f"{selectedSceneIndex}.mp4"), codec='libx264')
+    # 删除拼合前的视频文件
+    for file in merge_motion_files:
+        file_path = os.path.join(MOTION_FOLDER, file)
+        try:
+            os.unlink(file_path)
+            logger.info(f"删除文件: {file_path}")
+        except Exception as e:
+            logger.error(f"Failed to delete {file_path}. Reason: {e}")
+    return JSONResponse(content={"status": "success", "message": "视频拼合完成", "fileName": f"{selectedSceneIndex}.mp4"})
 #获取Lora模型列表
 @app.get("/get_lora_list", response_class=JSONResponse)
 async def get_lora_list():
@@ -444,6 +531,8 @@ async def delete_audio_file(data: DeleteImageFileRequest):
         return {"message": f"文件 {data.fileName} 已删除"}
     else:
         raise HTTPException(status_code=404, detail=f"文件 {data.fileName} 未找到")
+
+
 
 #文生图
 # class TextToImageModel(BaseModel):
