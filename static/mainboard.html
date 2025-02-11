@@ -234,11 +234,16 @@
                         </div>
                     </div>
                 </div>
-                <!-- 口型列表 -->
+                <!-- 口型匹配列表 -->
                 <div class="process-tab-container" id="wav2lip-tab-container">
                     <div class="process-tab-content">
-                        <div class="lip-text-choose-panel">
-                            <textarea placeholder="请输入生成文本" id="show-liptext-panel" class="show-text-panel" readonly style="pointer-events: none;"></textarea>
+                        <div class="lip-gen-panel">
+                            <div class="lip-text-choose-panel">
+                                <textarea placeholder="请输入生成文本" id="show-liptext-panel" class="show-text-panel" readonly style="pointer-events: none;"></textarea>
+                            </div>
+                            <div id="lip-show-panel" class="show-text-panel" style="display: none;">
+                                <video id="char-video" controls style="max-height: 110px; border-radius: 4px;">
+                            </div>
                         </div>
                         <div class="lip-gen-ctrl-panel">
                             <div class="slider-container" id="slider-container1">
@@ -262,7 +267,8 @@
                         </div>
                         
                         <div class="process-btn-container">
-                            <button class="process-main-btn" id="wavtolip-apply-btn">应用</button>
+                            <button class="process-grey-btn" id="wavtolip-apply-btn">预览</button>
+                            <button class="process-main-btn" id="wavtolip-ensure-btn" style="display: none;">应用</button>
                         </div>
                     </div>    
                 </div>
@@ -586,7 +592,7 @@
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);
                     }
-                    const data = await response.json();
+                     
                     return data;
                 } catch (error) {
                     console.error('There was a problem with the fetch operation:', error);
@@ -1730,9 +1736,14 @@
                 tooltip2.style.opacity = 1;
             });
             slider2.addEventListener('mouseleave', () => tooltip2.style.opacity = 0);
+
             //点击口型匹配按钮
+            const Lipshowpanel = document.getElementById('lip-show-panel');
+            const charVideo = document.getElementById('char-video');
             const WavtoLipApplyBtn = document.getElementById('wavtolip-apply-btn');
+            const WavtoLipEnsureBtn = document.getElementById('wavtolip-ensure-btn');
             WavtoLipApplyBtn.addEventListener('click', async function() {
+                loadingOverlay.style.display = 'flex';
                 const bbox_shift = slider1.value;
                 const batchsize = slider2.value;
                 selectedSceneIndex = selectedSceneIndex.toString();
@@ -1763,12 +1774,22 @@
                         const fileNameData = await fileNameResponse.json();
                         console.log('重命名后的文件名:', fileNameData.fileName);
                         }
+                        //显示面板
+                        charVideo.src = `data/char_video/${selectedSceneIndex}.mp4`;
+                        Lipshowpanel.style.display = 'block';
+                        WavtoLipEnsureBtn.style.display = 'block';
                 }
                 catch (error) {
                     console.error('生成动作时出错:', error);
                 }
+                finally {
+                    loadingOverlay.style.display = 'none';
+                }
             });
-
+            //点击应用口型匹配按钮
+            WavtoLipEnsureBtn.addEventListener('click', async function() {
+                console.log('应用口型匹配');
+            });
 
             // 跳转
             const createcharbtn = document.getElementById('add-all-cha-btn');

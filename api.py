@@ -19,9 +19,6 @@ from moviepy.editor import VideoFileClip, concatenate_videoclips
 # 配置日志记录
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-# UPLOAD_DIRECTORY = "./uploaded_videos"
-# if not os.path.exists(UPLOAD_DIRECTORY):
-#     os.makedirs(UPLOAD_DIRECTORY)
 app = FastAPI()
 """
 当访问根路径时，尝试读取并返回index.html文件的内容，如果文件不存在，则返回404错误。
@@ -34,6 +31,7 @@ Returns:
 app.mount("/static", StaticFiles(directory="./static"), name="static")
 current_directory = os.getcwd()
 logger.info(current_directory)
+UPLOAD_DIRECTORY = "../input"
 #试图打开位于"./static/index.html"路径下的HTML文件
 @app.get("/", response_class=HTMLResponse)
 def read_root():
@@ -502,7 +500,7 @@ async def get_lora_list():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-#文本生成图片-flux
+#文本生成图片-flux-无参考
 class TextToImageModel(BaseModel):
     prompt: str
     selectedFileName: str
@@ -519,6 +517,42 @@ async def generate_img(data: TextToImageModel):
     except Exception as e:
         logger.error(f"Error generating image: {e}")
         return {"error": str(e)}
+
+#文本生成图片-flux-有参考
+class TextToImageWithCNModel(BaseModel):
+    prompt: str
+    selectedFileName: str
+    InputRefName: str
+    baseStyle: str
+    loraModel: str
+    CN_index: int
+    WeightValue: float
+    removebgornot: int
+@app.post("/generate_img_with_cn")
+async def generate_img_with_cn(data: TextToImageWithCNModel):
+    return await process_generateimgflux_with_cn(data)
+
+#文本生成图片-flux-IPA
+class TextToImageWithIPAModel(BaseModel):
+    prompt: str
+    InputRefName: str
+    removebgornot: int
+    WeightValue: float
+@app.post("/generate_img_with_ipa")
+async def generate_img_with_ipa(data: TextToImageWithIPAModel):
+    return await process_generateimgflux_with_ipa(data)  
+
+#上传参考图到本地
+@app.post("/upload-ref-image")
+async def upload_image(file: UploadFile = File(...)):
+    file_path = os.path.join(UPLOAD_DIRECTORY, file.filename)
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        return {"message": f"文件已保存至 {file_path}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 #保存生成的图片
 class SaveImageRequest(BaseModel):
@@ -542,7 +576,7 @@ async def save_gen_image(request: SaveImageRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-#获取生成的图片
+#获取文件夹中所有生成的图片
 class GetImageRequest(BaseModel):
     FloderName: str
 @app.post("/get_gen_image")
@@ -595,7 +629,7 @@ class ImgToImgModel(BaseModel):
     selectedFileName: str
     queuesize: int
     batchsize:int
-UPLOAD_DIRECTORY = "../input"
+
 @app.post("/imgGenerateImg", tags=["perfume bottle"])
 async def imgGenerateImg(
     prompt: str = Form(...),

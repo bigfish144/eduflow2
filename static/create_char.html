@@ -7,6 +7,11 @@
     <link rel="stylesheet" href="css/create_char.css">
 </head>
 <body>
+    <!-- 加载动画-->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>生成中，请稍候...</p>
+    </div>
     <!-- 导航栏 -->
     <header class="navbar">
         <button id="back-to-main-btn" class="back-button">
@@ -75,7 +80,7 @@
                                 <img src="images/btn_add.png" alt="添加" id="add-btn">
                                 <label for="file-input" class="upload-label">点击上传</label>
                             </button>
-                            <img id="preview-upload-image" src="#" alt="Image Preview" style="display:none; max-width: 280px; margin-top: 10px;">
+                            <img id="preview-upload-image" src="#" alt="Image Preview" style="display:none; max-height: 200px; margin-top: 10px;">
                         </div>
                         <div class="preview-container">
                             <label>预处理预览</label>
@@ -91,15 +96,14 @@
                         <button class="dimension-btn" data-dimension="character">景深</button>
                         <button class="dimension-btn" data-dimension="pose">人物姿势</button>
                         <button class="dimension-btn" data-dimension="style">风格</button>
-                        <button class="dimension-btn" data-dimension="character">角色特征</button>
                     </div>
                     <label>参考权重</label>
-                    <span id="weight-value">0.3</span>
+                    <span id="weight-value">0.6</span>
                     <div class="slider-container-all">
                         <span>0</span>
                         <div class="slider-container">
                             <div class="slider-track"></div>
-                            <input type="range" id="weight-slider" min="0" max="1" step="0.1" value="0.3" />
+                            <input type="range" id="weight-slider" min="0" max="1" step="0.1" value="0.6" />
                         </div>
                         <span>1</span>
                     </div>
@@ -146,21 +150,41 @@
                 });
         };
         document.addEventListener('DOMContentLoaded', function() {
+            const loadingOverlay = document.getElementById('loading-overlay');
             // 开启参考
             const applyandbackToMainBtn = document.getElementById('apply-and-return-btn');
             const importRefImgCheckbox = document.getElementById('import-refimg');
             const advancedContent = document.getElementById('advanced-content');
+            const widthInput = document.getElementById('width');
+            const heightInput = document.getElementById('height');
             importRefImgCheckbox.checked = false;
             advancedContent.style.display = 'none';
+            // 初始化时根据复选框状态禁用或启用输入框
+            toggleInputs(importRefImgCheckbox.checked);
             importRefImgCheckbox.addEventListener('change', function() {
                 if (importRefImgCheckbox.checked) {
                     advancedContent.style.display = 'block';
-                    updateSliderTrack(); 
+                    updateSliderTrack();
+                    toggleInputs(this.checked);
                 } else {
                     advancedContent.style.display = 'none';
+                    toggleInputs(this.checked); // 恢复输入框的可编辑状态
+                    toggleSelects(false);
                 }
             });
-            
+            function toggleInputs(isChecked) {
+                if (isChecked) {
+                    widthInput.disabled = true;
+                    heightInput.disabled = true;
+                    widthInput.classList.add('disabled-input');
+                    heightInput.classList.add('disabled-input');
+                } else {
+                    widthInput.disabled = false;
+                    heightInput.disabled = false;
+                    widthInput.classList.remove('disabled-input');
+                    heightInput.classList.remove('disabled-input');
+                }
+            }         
             // 上传参考图
             document.querySelector('.file-upload').addEventListener('click', function() {
                 document.getElementById('file-input').click();
@@ -198,6 +222,7 @@
             updateSliderTrack();
 
             //选择维度
+            let selectedDimension = 0;
             const dimensionButtons = document.querySelectorAll('.dimension-btn');
             dimensionButtons.forEach(button => {
                 button.addEventListener('click', function() {
@@ -205,11 +230,54 @@
                         btn.classList.remove('active');
                     });
                     this.classList.add('active');
+
+                // 根据按钮的 data-dimension 属性设置 selectedDimension 的值
+                switch (button.getAttribute('data-dimension')) {
+                    case 'edge-outline':
+                        selectedDimension = 1;
+                        toggleSelects(false);
+                        break;
+                    case 'character':
+                        selectedDimension = 2;
+                        toggleSelects(false);
+                        break;
+                    case 'pose':
+                        selectedDimension = 3;
+                        toggleSelects(false);
+                        break;
+                    case 'style':
+                        selectedDimension = 4; // 如果需要，可以为其他按钮分配不同的值
+                        toggleSelects(true); // 禁用选择
+                        break;
+                    default:
+                        selectedDimension = 0; // 默认值
+                        toggleSelects(false); // 恢复选择
+                }
+                console.log('Selected Dimension:', selectedDimension);    
                 });
+
+
             });
+            const baseStyleSelect = document.getElementById('base-style');
+            const loraModelSelect = document.getElementById('lora-model');
+            //禁用选择Moedel和Lora
+            function toggleSelects(isDisabled) {
+                    if (isDisabled) {
+                        baseStyleSelect.disabled = true;
+                        loraModelSelect.disabled = true;
+                        baseStyleSelect.classList.add('disabled-select');
+                        loraModelSelect.classList.add('disabled-select');
+                    } else {
+                        baseStyleSelect.disabled = false;
+                        loraModelSelect.disabled = false;
+                        baseStyleSelect.classList.remove('disabled-select');
+                        loraModelSelect.classList.remove('disabled-select');
+                    }
+                }
             //点击生成按钮
             document.getElementById('generate-btn').addEventListener('click', function() {
                 console.log('生成按钮被点击'); 
+                loadingOverlay.style.display = 'flex';
                 // 收集表单数据
                 const prompt = document.getElementById('char-description').value;
                 const selectedFileName = document.getElementById('char-name').value;
@@ -223,6 +291,7 @@
                 // 验证所有字段是否为空
                 if (!prompt || !baseStyle || !loraModel || !width || !height || !selectedFileName) {
                     alert('请填写全部数据');
+                    loadingOverlay.style.display = 'none';
                     return; // 停止进一步执行
                 }
                 // 创建请求体
@@ -255,16 +324,124 @@
                         if (data.image_url && Array.isArray(data.image_url)) {
                             console.log('Image URLs:', data.image_url);
                             updatePreviewGrid(data.image_url);
+                            loadingOverlay.style.display = 'none';
                         }
                     })
                     .catch(error => {
                         console.error('There was a problem with the fetch operation:', error);
                     });
                 }
+                //开启cn
                 else{
                     console.log('生成图片cn');
+                    const WeightValue = parseFloat(slider.value);
+                    const fileInput = document.getElementById('file-input');
+                    if (fileInput.files.length > 0) {
+                        const file = fileInput.files[0];
+                        const InputRefName = file.name;
+                        console.log('InputRefName:', InputRefName);
+                        uploadInputImage(file);
+                        //根据维度选择生成参考图
+                        if (selectedDimension == 0){
+                            alert('请选择维度');
+                            return;
+                        }
+                        //Ipa生图
+                        else if (selectedDimension == 4){
+                            console.log('生成图片style');
+                            const data = {
+                            prompt: prompt,
+                            InputRefName: InputRefName,
+                            removebgornot: removebgornot,
+                            WeightValue: WeightValue
+                            };
+                            fetch('/generate_img_with_ipa', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(data)
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok ' + response.statusText);
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (data.image_url && Array.isArray(data.image_url)) {
+                                    console.log('Image URLs:', data.image_url);
+                                    updatePreviewGrid(data.image_url);
+                                    loadingOverlay.style.display = 'none';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('There was a problem with the fetch operation:', error);
+                            });
+
+                        }
+                        //CN生图
+                        else {
+                            const data = {
+                            prompt: prompt,
+                            selectedFileName: selectedFileName,
+                            InputRefName: InputRefName,
+                            baseStyle: baseStyle,
+                            loraModel: loraModel,
+                            CN_index : selectedDimension,
+                            removebgornot: removebgornot,
+                            WeightValue: WeightValue
+                            };
+                            console.log(data);
+                            fetch('/generate_img_with_cn', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(data)
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok ' + response.statusText);
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (data.image_url && Array.isArray(data.image_url)) {
+                                    console.log('Image URLs:', data.image_url);
+                                    updatePreviewGrid(data.image_url);
+                                    loadingOverlay.style.display = 'none';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('There was a problem with the fetch operation:', error);
+                            });
+                        }
+
+                    } else {
+                        alert('请先上传图片');
+                    }
                 }
+                
             });
+            //上传参考图至input
+            function uploadInputImage(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                fetch('/upload-ref-image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('文件上传成功:', data);      
+                })
+                .catch(error => {
+                    console.error('文件上传失败:', error);
+                    alert('文件上传失败');
+                });
+            }
+
             // 更新预览网格
             function updatePreviewGrid(imageUrls) {
                 const previewGrid = document.getElementById('preview-grid');
@@ -288,8 +465,8 @@
                     previewGrid.appendChild(previewImageDiv);
                 });
             }
+
             // 应用并返回按钮逻辑
-            
             applyandbackToMainBtn.addEventListener('click', function() {
                 // 获取选中的图片
                 const selectedImage = document.querySelector('.preview-image-img.selected');

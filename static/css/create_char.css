@@ -1,3 +1,42 @@
+/* 加载中动画 */
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1005;
+}
+/* 禁用 */
+.disabled-input {
+  color: #4F4C64; /* 置灰文字颜色 */
+  cursor: not-allowed; /* 禁用光标 */
+}
+.disabled-select  {
+  background-color: #232334;
+  color: #4F4C64; /* 置灰文字颜色 */
+  cursor: not-allowed; /* 禁用光标 */
+}
+.loading-spinner {
+  border: 8px solid rgba(255, 255, 255, 1);
+  border-top: 8px solid #6966FF;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 body {
   font-family: Arial, sans-serif;
   background-color: #1C1C28;
@@ -224,7 +263,7 @@ input[type="file"] {
   border: 2px solid transparent;
 }
 .dimension-btn.active{
-  border: 2px solid white;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 .reference-dimensions .dimension-btn:hover {
   background: #6C83FF;

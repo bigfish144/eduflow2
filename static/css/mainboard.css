@@ -865,7 +865,13 @@ body {
   padding: 4px 0;
 }
 /*口型匹配区*/
+.lip-gen-panel{
+  display: flex;
+  flex-direction: row;
+  gap:8px;
+}
 .lip-text-choose-panel{
+  width: 100%;
   background-color: #232334;
   border-radius: 8px;
 }

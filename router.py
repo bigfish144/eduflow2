@@ -186,6 +186,49 @@ async def process_generateimgflux(data):
     logger.info(imagesurls)
     return {"image_url": imagesurls}
 
+#生成角色-CN
+async def process_generateimgflux_with_cn(data):
+    imagesurls = []  # 存储所有生成的图像
+    request_count = 4
+    for i in range(request_count):
+        print("生成角色无参考_第"+ str(i+1)+"次")
+        client_id = str(uuid.uuid4())
+        prompt = load_json_template('./workfolows/FLUX_CN.json')
+        prompt["14"]["inputs"]["seed"] = random.randrange(10**14, 10**15)
+        add_text = data.baseStyle
+        lora_name = data.loraModel
+        #输入图片
+        prompt["91"]["inputs"]["image"] = "input/"+data.InputRefName
+        if lora_name != "null": #启用lora
+            prompt["84"]["inputs"]["select"] = 2
+            prompt["83"]["inputs"]["lora_name"] = lora_name
+        prompt["36"]["inputs"]["strength"] = data.WeightValue
+        prompt["80"]["inputs"]["text"] = data.prompt
+        prompt["81"]["inputs"]["text"] = add_text
+        # prompt["41"]["inputs"]["filename_prefix"] = data.selectedFileName
+        prompt["76"]["inputs"]["select"] = data.CN_index
+        prompt["86"]["inputs"]["select"] = data.removebgornot
+        generated_images = await get_imgoutputs(client_id, prompt)
+        imagesurls.append(generated_images['image_url'])  # 收集所有生成的图像的url值
+    logger.info(imagesurls)
+    return {"image_url": imagesurls}    
+
+#生成角色-IPA
+async def process_generateimgflux_with_ipa(data):
+    imagesurls = []  # 存储所有生成的图像
+    request_count = 4
+    client_id = str(uuid.uuid4())
+    prompt = load_json_template('./workfolows/Flux_Ipa.json')
+    prompt["89"]["inputs"]["seed"] = random.randrange(10**14, 10**15)
+    #输入图片
+    prompt["98"]["inputs"]["image"] = "input/"+data.InputRefName
+    prompt["79"]["inputs"]["weight"] = data.WeightValue
+    prompt["97"]["inputs"]["text"] = data.prompt
+    prompt["100"]["inputs"]["select"] = data.removebgornot
+    generated_images = await get_imgoutputs(client_id, prompt)
+    imagesurls.append(generated_images['image_url'])  # 收集所有生成的图像的url值
+    logger.info(imagesurls)
+    return {"image_url": imagesurls}
 
 # #文生图
 # async def process_generateimg(data, request_count=1):

@@ -57,7 +57,7 @@ async def get_imgoutputs(client_id, prompt):
             for image in node_output['images']:
                 image_url = get_image_url(image['filename'], image['filename'], image['type'])
                 output_imagesurl.append(image_url)
-    print(f"image_url:{image_url}")  # 移动到循环内部
+                print(f"image_url:{image_url}")  # 移动到循环内部
     return {"image_url": image_url}  # 确保在所有情况下返回有效的列表
 #获取视频输出
 async def get_videooutputs(client_id, prompt):
