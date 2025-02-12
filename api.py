@@ -518,7 +518,7 @@ async def generate_img(data: TextToImageModel):
         logger.error(f"Error generating image: {e}")
         return {"error": str(e)}
 
-#文本生成图片-flux-有参考
+#文本生成图片-flux-CN
 class TextToImageWithCNModel(BaseModel):
     prompt: str
     selectedFileName: str
@@ -542,6 +542,16 @@ class TextToImageWithIPAModel(BaseModel):
 async def generate_img_with_ipa(data: TextToImageWithIPAModel):
     return await process_generateimgflux_with_ipa(data)  
 
+#图片生成动画-CogVideo
+class CogVideoModel(BaseModel):
+    inputFile: str
+    frame:int
+    Inputtext:str
+    removebgornot:int
+@app.post("/generate_animation")
+async def generate_animation(data: CogVideoModel):
+    return await process_generate_animation(data)
+
 #上传参考图到本地
 @app.post("/upload-ref-image")
 async def upload_image(file: UploadFile = File(...)):
@@ -557,18 +567,21 @@ async def upload_image(file: UploadFile = File(...)):
 #保存生成的图片
 class SaveImageRequest(BaseModel):
     imageUrl: str
-    charName: str
+    fileName: str
+    FloderName: str
 @app.post("/save_gen_image")
 async def save_gen_image(request: SaveImageRequest):
-    save_path = "./static/data/character"
+    save_path = "./static/data/"+request.FloderName
     try:
+        # 确保保存路径存在
+        os.makedirs(save_path, exist_ok=True)
         # 下载图片
         response = requests.get(request.imageUrl)
         if response.status_code != 200:
             raise HTTPException(status_code=400, detail="Failed to download image")
         file_extension = ".png"  # 默认使用 .png 扩展名
         # 构建保存路径
-        save_filename = f"{request.charName}{file_extension}"
+        save_filename = f"{request.fileName}{file_extension}"
         save_full_path = os.path.join(save_path, save_filename)
         with open(save_full_path, 'wb') as file:
             file.write(response.content)

@@ -5,54 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>素材生成-01</title>
     <link rel="stylesheet" href="css/create_material.css">
-    <style>
-        .slider-container {
-            position: relative;
-            width: 100%;
-        }
 
-        #weight-value {
-            position: absolute;
-            top: -20px; /* 根据需要调整 */
-            transform: translateX(-50%);
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 14px;
-            pointer-events: none; /* 确保不会干扰滑块操作 */
-            z-index: 10; /* 确保 weight-value 在其他元素之上 */
-        }
-
-        .preview-image.selected {
-            border: 2px solid blue;
-        }
-
-        .file-upload-container {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .file-upload {
-            width: 260px;
-            height: 120px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 10px 20px;
-            background: #4F4C64;
-            border-radius: 5px;
-            cursor: pointer;
-            color: #fff;
-        }
-
-        #add-btn {
-            width: 16px;
-            height: 16px;
-        }
-    </style>
 </head>
 <body>
+    <!-- 加载动画-->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>生成中，请稍候...</p>
+    </div>
     <div class="app-container">
         <header>
             <button id="back-to-main-btn" class="back-button">
@@ -69,19 +29,26 @@
         </div>
         <main>
             <div class="form-section" id="basic-content">
+                <label>角色命名</label>
+                <input type="text" id="material-name" placeholder="请输入素材名，例如：星空背景"></input>
                 <label for="description" class="first-label">素材描述</label>
                 <textarea id="description" placeholder="太空中有很多星球"></textarea>
-                <label for="style">选择基础风格</label>
                 <div class="select-models">
-                    <select id="style">
-                        <option value="3D卡通">3D卡通</option>
-                        <option value="写实">写实</option>
-                        <option value="抽象">抽象</option>
-                    </select>
-                    <select id="model">
-                        <option value="微调模型（可选）">微调模型（可选）</option>
-                        <option value="基础模型">基础模型</option>
-                    </select>
+                    <div class="select-item">
+                        <label>选择基础风格</label>
+                        <select id="base-style">
+                            <option value="3D cartoon style">3D卡通</option>
+                            <option value="realistic style">写实风格</option>
+                            <option value="anime style">动漫风格</option>
+                            <option value="2.5D style">2.5D风格</option>
+                        </select>
+                    </div>
+                    <div class="select-item">
+                        <label>选择Lora模型(可选)</label>
+                        <select id="lora-model">
+                            <option value="null">无</option>
+                        </select>
+                    </div>
                 </div>
             
                 <label>图片尺寸</label>
@@ -100,30 +67,23 @@
                         <label for="transparent-background">透明背景</label>
                     </div>
                 </div>
-                <div class="checkbox-group" id="video-checkbox">
-                    <input type="checkbox" id="enable-animation">
-                    <label for="enable-animation">启用动画</label>
-                </div>
-            
+
                 <div id="animation-settings">
                     <div class="animation-settings-container">
                         <div class="select-fps">
-                            <label for="frame-rate">帧率：</label>
-                            <input type="number" id="frame-rate" value="8">
+                            <label for="frame-rate">动画时长</label>
+                            <input type="number" id="animation-duration" value="3">
+                            <span>s</span>
                         </div>
-                        <div class="select-frame-count">
-                            <label for="frame-count">帧数：</label>
-                            <input type="number" id="frame-count" value="24">
-                        </div>
-                        <span class="predict-time">预估时长: 3s</span>
                     </div>
                     <label for="animation-description">动画描述：</label>
                     <textarea id="animation-description" placeholder="星球缓慢旋转"></textarea>
                 </div>
                 <button class="advanced-control-btn">高级控制</button>
-                <button class="generate-button" onclick="generateContent()">生成</button>
+                <button class="generate-button" id="generate-btn">生成图片</button>
+                <button class="generate-animation-button" id="generate-animation-btn" style="display: none;">生成动画</button>
             </div>
-            
+            <!-- 高级设置面板-->
             <div id="advanced-content" style="display: none;" class="form-section">
                 <div class="upload-and-preview-container">
                     <div class="file-upload-container">
@@ -133,7 +93,7 @@
                             <img src="images/btn_add.png" alt="添加" id="add-btn">
                             <label for="file-input" class="upload-label">点击上传</label>
                         </button>
-                        <img id="preview-upload-image" src="#" alt="Image Preview" style="display:none; max-width: 280px; margin-top: 10px;">
+                        <img id="preview-upload-image" src="#" alt="Image Preview" style="display:none; max-width: 160px; margin-top: 10px;">
                     </div>
                     <div class="preview-container">
                         <label>预处理预览</label>
@@ -149,14 +109,7 @@
                     <button class="dimension-btn" data-dimension="character">景深</button>
                     <button class="dimension-btn" data-dimension="pose">人物姿势</button>
                     <button class="dimension-btn" data-dimension="style">风格</button>
-                    <button class="dimension-btn" data-dimension="character">角色特征</button>
                 </div>
-                <label>选择模型 (可选)</label>
-                <select id="model-select">
-                    <option value="lineart.safetensor">lineart.safetensor</option>
-                    <option value="model2">模型2</option>
-                    <option value="model3">模型3</option>
-                </select>
                 <label>参考权重</label>
                 <span id="weight-value">0.3</span>
                 <div class="slider-container-all">
@@ -168,60 +121,61 @@
                     <span>1</span>
                 </div>
                 <button id="advanced-save-btn">保存</button>
-                <button id="advanced-back-btn" class="secondary-btn">返回</button>
+                <button id="advanced-back-btn" class="secondary-btn">取消</button>
             </div>            
 
             <div class="preview-section">
                 <p>效果图预览</p>
-                <div class="preview-grid">
-                    <div class="preview-image">
-                        <img src="images/gen-image.png" alt="效果图" class="preview-image-img">
-                    </div>
-                    <div class="preview-image">
-                        <img src="images/gen-image.png" alt="效果图" class="preview-image-img">
-                    </div>
-                    <div class="preview-image">
-                        <img src="images/gen-image.png" alt="效果图" class="preview-image-img">
-                    </div>
-                    <div class="preview-image">
-                        <img src="images/gen-image.png" alt="效果图" class="preview-image-img">
-                    </div>
+                <div class="preview-grid" id="preview-grid">
                 </div>
 
                 <p>视频预览</p>
-                <div class="preview-grid">
-                    <div class="preview-video">
-                        <video src="data/color.mp4"></video>
-                    </div>
-                    <div class="preview-video">
-                        <video src="data/color.mp4"></video>
-                    </div>
-                    <div class="preview-video">
-                        <video src="data/color.mp4"></video>
-                    </div>
-                    <div class="preview-video">
-                        <video src="data/color.mp4"></video>
-                    </div>
+                <div class="preview-grid" id="preview-video-grid">
                 </div>
 
-                <button class="apply-button">应用并返回</button>
+                <button class="apply-button" id="apply-and-return-btn" style="display: none;">应用并返回</button>
             </div>
         </main>
     </div>
 
     <script>
+        window.onload = function() {
+            //获取lora列表
+            const selectElement = document.getElementById('lora-model');
+            fetch('/get_lora_list')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.lora_models) {
+                        data.lora_models.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            selectElement.appendChild(option);
+                        });
+                    } else {
+                        console.error('No lora models found in the response');
+                    }
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                });
+        };
         document.addEventListener('DOMContentLoaded', function() {
             const url = new URL(window.location.href);
             const urlParams = new URLSearchParams(url.search);
             const dataParam = urlParams.get('data');
-
+            const loadingOverlay = document.getElementById('loading-overlay');
+            //显示文案
             if (dataParam) {
                 try {
                     // 解码并解析 JSON 数据
                     const data = JSON.parse(decodeURIComponent(dataParam));
                     console.log("获取到的描述文案:", data.text);
-
-                    // 将描述文案显示在页面上
                     const descriptionDiv = document.getElementById('tip-text');
                     descriptionDiv.textContent = data.text;
                 } catch (error) {
@@ -230,11 +184,6 @@
             } else {
                 console.error("未找到 data 参数");
             }
-            // 返回mainboard
-            const backToMainBtn = document.getElementById('back-to-main-btn');
-            backToMainBtn.addEventListener('click', function() {
-                window.location.href = 'mainboard.html';
-            });
 
             // 上传参考图
             document.querySelector('.file-upload').addEventListener('click', function() {
@@ -253,63 +202,124 @@
                     document.querySelector('.file-upload').style.display = 'none';
                 }
             });
-            
-            // 为 advanced-save-btn 添加点击事件监听器
-            const advancedSaveBtn = document.getElementById('advanced-save-btn');
-            advancedSaveBtn.addEventListener('click', function() {
-                const advancedContent = document.getElementById('advanced-content');
-                const basicContent = document.getElementById('basic-content');
-                advancedContent.style.display = 'none';
-                basicContent.style.display = 'block';
-            });
+            //禁用选择Moedel和Lora
+            const baseStyleSelect = document.getElementById('base-style');
+            const loraModelSelect = document.getElementById('lora-model');
+            function toggleSelects(isDisabled) {
+                    if (isDisabled) {
+                        baseStyleSelect.disabled = true;
+                        loraModelSelect.disabled = true;
+                        baseStyleSelect.classList.add('disabled-select');
+                        loraModelSelect.classList.add('disabled-select');
+                    } else {
+                        baseStyleSelect.disabled = false;
+                        loraModelSelect.disabled = false;
+                        baseStyleSelect.classList.remove('disabled-select');
+                        loraModelSelect.classList.remove('disabled-select');
+                    }
+                }            
 
-            // 选择维度
-            const dimensionButtons = document.querySelectorAll('.dimension-btn');
-            dimensionButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    dimensionButtons.forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    this.classList.add('active');
-                });
-            });
-
-            // 开启关闭动画设置
-            const enableAnimationCheckbox = document.getElementById('enable-animation');
+            // 默认隐藏动画面板
             const animationSettings = document.getElementById('animation-settings');
             animationSettings.style.display = 'none';
-            enableAnimationCheckbox.addEventListener('change', function() {
-                if (enableAnimationCheckbox.checked) {
-                    animationSettings.style.display = 'block'; // 显示 animation-settings
-                } else {
-                    animationSettings.style.display = 'none'; // 隐藏 animation-settings
-                }
-            });
+
 
             // 高级设置
             const advancedControlBtn = document.querySelector('.advanced-control-btn');
-            const backToBasicBtn = document.getElementById('advanced-back-btn'); // 修改选择器为 ID
+            const advancedSaveBtn = document.getElementById('advanced-save-btn');
+            const backToBasicBtn = document.getElementById('advanced-back-btn'); 
+
             const basicContent = document.getElementById('basic-content');
             const advancedContent = document.getElementById('advanced-content');
+
             const previewUploadImage = document.getElementById('preview-upload-image');
             const fileInput = document.getElementById('file-input');
+            let selectedDimension = 0;
+            let useCN = false;
+            //点击高级设置按钮
             advancedControlBtn.addEventListener('click', function() {
                 basicContent.style.display = 'none'; // 隐藏基本设置
                 advancedContent.style.display = 'block'; // 显示高级设置
                 updateSliderTrack(); 
+                //选择维度
+                const dimensionButtons = document.querySelectorAll('.dimension-btn');
+                dimensionButtons.forEach(button => {
+                    button.addEventListener('click', function() {
+                        dimensionButtons.forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+                        this.classList.add('active');
+                        switch (button.getAttribute('data-dimension')) {
+                            case 'edge-outline':
+                                selectedDimension = 1;
+                                toggleSelects(false);
+                                break;
+                            case 'character':
+                                selectedDimension = 2;
+                                toggleSelects(false);
+                                break;
+                            case 'pose':
+                                selectedDimension = 3;
+                                toggleSelects(false);
+                                break;
+                            case 'style':
+                                selectedDimension = 4; // 如果需要，可以为其他按钮分配不同的值
+                                toggleSelects(true); // 禁用选择
+                                break;
+                            default:
+                                selectedDimension = 0; // 默认值
+                                toggleSelects(false); // 恢复选择
+                        }
+                        console.log('Selected Dimension:', selectedDimension);    
+                    });  
+                }); 
+                toggleInputs(true);
+
             });
+            //禁用width and height
+            function toggleInputs(isChecked) {
+                const widthInput = document.getElementById('width');
+                const heightInput = document.getElementById('height');
+                if (isChecked) {
+                    widthInput.disabled = true;
+                    heightInput.disabled = true;
+                    widthInput.classList.add('disabled-input');
+                    heightInput.classList.add('disabled-input');
+                } else {
+                    widthInput.disabled = false;
+                    heightInput.disabled = false;
+                    widthInput.classList.remove('disabled-input');
+                    heightInput.classList.remove('disabled-input');
+                }
+            }
+            //返回基本设置-取消CN
             backToBasicBtn.addEventListener('click', function() {
+                toggleSelects(false); // 恢复选择
+                toggleInputs(false);//恢复width and height
                 // 隐藏高级设置面板
                 advancedContent.style.display = 'none';
                 // 显示基本设置面板
                 basicContent.style.display = 'block';
-                
                 // 重置上传的图片
-                previewUploadImage.src = '#'; // 清空图片源
-                previewUploadImage.style.display = 'none'; // 隐藏图片预览
-                fileInput.value = ''; // 重置文件输入框
-                document.querySelector('label[for="file-input"]').style.display = 'flex'; // 显示上传标签
-                document.querySelector('.file-upload').style.display = 'flex'; // 重新显示上传按钮
+                previewUploadImage.src = '#'; 
+                previewUploadImage.style.display = 'none'; 
+                fileInput.value = ''; 
+                document.querySelector('label[for="file-input"]').style.display = 'flex'; 
+                document.querySelector('.file-upload').style.display = 'flex'; 
+                useCN = false;
+            });
+            
+            // 保存基本设置
+            advancedSaveBtn.addEventListener('click', function() {
+                if (selectedDimension==0 || fileInput.files.length === 0) {
+                    alert('请填写全部数据');
+                    return; 
+                }
+                const advancedContent = document.getElementById('advanced-content');
+                const basicContent = document.getElementById('basic-content');
+                advancedContent.style.display = 'none';
+                basicContent.style.display = 'block';
+                useCN = true;
             });
 
             // 权重进度条
@@ -336,39 +346,365 @@
                 image.addEventListener('click', function() {
                     // 移除其他图片的选中状态
                     previewImages.forEach(img => img.classList.remove('selected'));
-
                     // 为当前点击的图片添加选中状态
                     this.classList.add('selected');
                 });
             });
+            //点击生成图片按钮
+            document.getElementById('generate-btn').addEventListener('click', function() {
+                loadingOverlay.style.display = 'flex';
+                // 收集表单数据
+                const prompt = document.getElementById('description').value;
+                const selectedFileName = document.getElementById('material-name').value;
+                const baseStyle = document.getElementById('base-style').value;
+                const loraModel = document.getElementById('lora-model').value;
+                const width = parseInt(document.getElementById('width').value, 10);
+                const height = parseInt(document.getElementById('height').value, 10);
+                const removebgornot = document.getElementById('transparent-background').checked ? 3 : 1;
+                console.log(prompt,baseStyle,loraModel,width,height,removebgornot,selectedFileName);
+                // 创建请求体
+                const data = {
+                    prompt: prompt,
+                    selectedFileName: selectedFileName,
+                    baseStyle: baseStyle,
+                    loraModel: loraModel,
+                    width: width,
+                    height: height,
+                    removebgornot: removebgornot
+                };
+                console.log('生成图片-无CN');
+                    if (!prompt || !baseStyle || !loraModel || !width || !height || !selectedFileName) {
+                    alert('请填写全部数据');
+                    loadingOverlay.style.display = 'none';
+                    return; 
+                }
+                //无CN
+                if (!useCN) {
+                    fetch('/generate_img', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    // 生成成功
+                    .then(data => {
+                        if (data.image_url && Array.isArray(data.image_url)) {
+                            console.log('Image URLs:', data.image_url);
+                            updatePreviewGrid(data.image_url);
+                            loadingOverlay.style.display = 'none';
+                            ImagetoAnimationBtn.style.display = 'block';
+                            animationSettings.style.display = 'block';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('There was a problem with the fetch operation:', error);
+                    });
 
-            // 提交生成
-            function generateContent() {
-                const description = document.getElementById('description').value;
-                const style = document.getElementById('style').value;
-                const model = document.getElementById('model').value;
-                const width = document.getElementById('width').value;
-                const height = document.getElementById('height').value;
-                const transparentBackground = document.getElementById('transparent-background').checked;
-                const enableAnimation = document.getElementById('enable-animation').checked;
-                const frameRate = document.getElementById('frame-rate').value;
-                const frameCount = document.getElementById('frame-count').value;
-                const animationDescription = document.getElementById('animation-description').value;
-                console.log('Generating with the following parameters:');
-                console.log({
-                    description,
-                    style,
-                    model,
-                    width,
-                    height,
-                    transparentBackground,
-                    enableAnimation,
-                    frameRate,
-                    frameCount,
-                    animationDescription
+                }
+                //使用CN
+                else{
+                    const WeightValue = parseFloat(slider.value);
+                    const file = fileInput.files[0];
+                    const InputRefName = file.name;
+                    console.log('InputRefName:', InputRefName);
+                    uploadInputImage(file);
+                    if (selectedDimension == 4)//IPA
+                    {
+                        console.log('生成图片style');
+                        const data = {
+                        prompt: prompt,
+                        InputRefName: InputRefName,
+                        removebgornot: removebgornot,
+                        WeightValue: WeightValue
+                        };
+                        fetch('/generate_img_with_ipa', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(data)
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok ' + response.statusText);
+                            }
+                            return response.json();
+                        })
+                        //生成成功
+                        .then(data => {
+                            if (data.image_url && Array.isArray(data.image_url)) {
+                                console.log('Image URLs:', data.image_url);
+                                updatePreviewGrid(data.image_url);
+                                loadingOverlay.style.display = 'none';
+                                ImagetoAnimationBtn.style.display = 'block';
+                                animationSettings.style.display = 'block';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('There was a problem with the fetch operation:', error);
+                        });
+                        
+                    }
+                    //CN
+                    else{
+                        console.log('生成图片-CN');
+                        const data = {
+                        prompt: prompt,
+                        selectedFileName: selectedFileName,
+                        InputRefName: InputRefName,
+                        baseStyle: baseStyle,
+                        loraModel: loraModel,
+                        CN_index : selectedDimension,
+                        removebgornot: removebgornot,
+                        WeightValue: WeightValue
+                        };
+                        console.log(data);
+                        fetch('/generate_img_with_cn', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(data)
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok ' + response.statusText);
+                            }
+                            return response.json();
+                        })
+                        //生成成功
+                        .then(data => {
+                            if (data.image_url && Array.isArray(data.image_url)) {
+                                console.log('Image URLs:', data.image_url);
+                                updatePreviewGrid(data.image_url);
+                                loadingOverlay.style.display = 'none';
+                                ImagetoAnimationBtn.style.display = 'block';
+                                animationSettings.style.display = 'block';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('There was a problem with the fetch operation:', error);
+                        });                        
+                    }
+                }
+            });
+
+            const ImagetoAnimationBtn = document.getElementById('generate-animation-btn');
+            ImagetoAnimationBtn.addEventListener('click', () => {
+                const selectedImage = document.querySelector('.preview-image-img.selected');
+                const imageUrl = selectedImage.src;
+                const Inputtext = document.getElementById('animation-description').value;
+                
+                if (!selectedImage) {
+                    alert('请先选择一张图片！');
+                    return;
+                }
+                if (Inputtext == '') {
+                    alert('请输入描述！');
+                    return;
+                }
+                ImagetoAnimation(imageUrl);
+
+            });
+            //生成动画
+            function ImagetoAnimation(imageUrl)
+            {
+                const filename = document.getElementById('material-name').value;
+                const FloderName = 'material/temp';
+
+                const duration = document.getElementById('animation-duration');
+                const frame = Math.round(duration.value*12);
+                const Inputtext = document.getElementById('animation-description').value;
+                const removebgornot = document.getElementById('transparent-background').checked ? 2 : 1;
+                //保存图片
+                fetch('/save_gen_image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ imageUrl: imageUrl, fileName: filename, FloderName:FloderName})
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Image saved successfully:', data.filename);
+                    const inputFile = data.filename
+                    //生成动画
+                    console.log('生成动画');
+                    const apidata = {
+                        inputFile: inputFile,
+                        frame: frame,
+                        Inputtext: Inputtext,
+                        removebgornot: removebgornot
+                    };
+                    console.log(apidata);
+                    fetch('/generate_animation', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(apidata)
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    //生成动画成功
+                    .then(data => {
+                        if (data.video_url && Array.isArray(data.video_url)) {
+                            console.log('Animation URLs:', data.video_url);
+                            updateAnimaitonPreviewGrid(data.video_url);
+                            //删除temp文件
+                            const FloderName = 'material/temp';
+                            console.log('删除temp文件'+filename);
+                            fetch('/delete-image-file', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ FloderName:FloderName,fileName: filename+'.png' })
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Network response was not ok ' + response.statusText);
+                                }
+                            })
+                        }
+                    })
+                    .catch(error => {
+                        console.error('There was a problem with the fetch operation:', error);
+                    });
+
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                    alert('保存图片失败，请重试');
                 });
-                alert('生成任务已提交！');
             }
+
+
+
+            const applyandbackToMainBtn = document.getElementById('apply-and-return-btn');
+            // 更新预览网格-图片
+            function updatePreviewGrid(imageUrls) {
+                const previewGrid = document.getElementById('preview-grid');
+                previewGrid.innerHTML = '';  // 清除现有的预览内容
+                applyandbackToMainBtn.style.display = 'block';
+                imageUrls.forEach(url => {
+                    const previewImageDiv = document.createElement('div');
+                    previewImageDiv.className = 'preview-image';
+                    const imgElement = document.createElement('img');
+                    imgElement.src = url;
+                    imgElement.alt = "效果图";
+                    imgElement.className = 'preview-image-img';
+
+                    // 为新创建的图片元素添加点击事件监听器
+                    imgElement.addEventListener('click', function() {
+                        const allPreviewImages = document.querySelectorAll('.preview-image-img');
+                        allPreviewImages.forEach(img => img.classList.remove('selected'));
+                        this.classList.add('selected');
+                    });
+                    previewImageDiv.appendChild(imgElement);
+                    previewGrid.appendChild(previewImageDiv);
+                });
+            }
+            // 更新预览网格-动画
+            function updateAnimaitonPreviewGrid(imageUrls) {
+                const previewGrid = document.getElementById('preview-video-grid');
+                previewGrid.innerHTML = '';  // 清除现有的预览内容
+                applyandbackToMainBtn.style.display = 'block';
+                imageUrls.forEach(url => {
+                    const previewImageDiv = document.createElement('div');
+                    previewImageDiv.className = 'preview-image';
+                    const imgElement = document.createElement('img');
+                    imgElement.src = url;
+                    imgElement.alt = "效果图";
+                    imgElement.className = 'preview-image-img';
+
+                    // 为新创建的图片元素添加点击事件监听器
+                    imgElement.addEventListener('click', function() {
+                        const allPreviewImages = document.querySelectorAll('.preview-image-img');
+                        allPreviewImages.forEach(img => img.classList.remove('selected'));
+                        this.classList.add('selected');
+                    });
+                    previewImageDiv.appendChild(imgElement);
+                    previewGrid.appendChild(previewImageDiv);
+                });
+            }
+
+            //上传参考图至input
+            function uploadInputImage(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                fetch('/upload-ref-image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('文件上传成功:', data);      
+                })
+                .catch(error => {
+                    console.error('文件上传失败:', error);
+                    alert('文件上传失败');
+                });
+            }
+            // 应用并返回按钮逻辑
+            applyandbackToMainBtn.addEventListener('click', function() {
+                // 获取选中的图片
+                const selectedImage = document.querySelector('.preview-image-img.selected');
+                if (!selectedImage) {
+                    alert('请先选择一张图片');
+                    return;
+                }
+                const imageUrl = selectedImage.src;
+                const materialName = document.getElementById('material-name').value;
+                const FloderName ="material";
+                if (!materialName) {
+                    alert('请输入素材名称');
+                    return;
+                }
+                // 发送数据到后端 API
+                fetch('/save_gen_image', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ imageUrl: imageUrl, fileName: materialName, FloderName:FloderName})
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Image saved successfully:', data.save_filename);
+                    window.location.href = 'mainboard.html';
+                })
+                .catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                    alert('保存图片失败，请重试');
+                });
+            });
+            // 返回mainboard
+            const backToMainBtn = document.getElementById('back-to-main-btn');
+            backToMainBtn.addEventListener('click', function() {
+                window.location.href = 'mainboard.html';
+            });            
         });
     </script>
 </body>

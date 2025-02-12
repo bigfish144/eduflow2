@@ -1,3 +1,41 @@
+/* 加载中动画 */
+.loading-overlay {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1005;
+  }
+  .loading-spinner {
+    border: 8px solid rgba(255, 255, 255, 1);
+    border-top: 8px solid #6966FF;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+/* 禁用 */
+.disabled-input {
+    color: #4F4C64; /* 置灰文字颜色 */
+    cursor: not-allowed; /* 禁用光标 */
+  }
+  .disabled-select  {
+    background-color: #232334;
+    color: #4F4C64; /* 置灰文字颜色 */
+    cursor: not-allowed; /* 禁用光标 */
+  }
 body {
     font-family: Arial, sans-serif;
     font-size: 16px;
@@ -101,9 +139,14 @@ input{
     box-sizing: border-box;
 }
 .select-models{
+    margin-top: 8px;
     display: flex;
     flex-direction: row;
     gap: 8px;
+}
+.select-item
+{
+  width: 100%;
 }
 select{
     width: 100%;
@@ -179,6 +222,7 @@ select{
 /* 启用动画面板 */
 #animation-settings {
     display: none; /* 默认隐藏 */
+    margin-top: 8px;
 }
 #advanced-content {
     display: none;
@@ -189,18 +233,15 @@ select{
     align-items: center;
     gap:8px;
 }
-.select-fps,
-.select-frame-count{
+.select-fps{
     display: flex;
     flex-direction: row;
     align-items: center;
+    gap: 8px;
 }
-.select-fps input ,
-.select-frame-count input{
-    width:80px;
-}
-.predict-time{
-    color: rgba(255, 255, 255, 0.75);
+.select-fps input{
+    width:48px;
+    text-align: center;
 }
 .advanced-control-btn{
     width: 100%;
@@ -217,6 +258,16 @@ select{
     width: 100%;
     padding: 10px;
     background-color: #4F4C64;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    margin-top: 8px;
+}
+.generate-animation-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #6966FF;
     border: none;
     border-radius: 8px;
     color: white;
@@ -282,7 +333,7 @@ input[type="file"] {
     border: 2px solid transparent;
 }
 .dimension-btn.active{
-    border: 2px solid white;
+    border:1px solid rgba(255, 255, 255, 0.5);
 }
 .reference-dimensions .dimension-btn:hover {
     background: #6C83FF;
@@ -358,17 +409,20 @@ input[type="file"] {
     cursor: pointer;
     margin-top: 8px;
 }
-#advanced-back-btn{
+.secondary-btn {
     width: 100%;
-    margin: 8px 0;
-    display: flex;
-    justify-content: center;
-    background-color: transparent;
-    color:#18A0FB;
+    padding: 10px;
+    background-color: #4F4C64;
     border: none;
-    box-shadow: none;
-    text-decoration: underline;
-}
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    margin-top: 12px;
+  }
+  /* .secondary-btn:hover {
+    background: #6C83FF;
+  } */
+  
 /* 右侧预览面板 */
 .preview-section {
     width: 60%;
@@ -401,12 +455,14 @@ input[type="file"] {
     justify-content: center; 
 }
 
-.preview-image-img {
+.preview-image-img,
+.preview-video-img {
     border-radius: 8px;
     width: 220px;
     border: 1px solid rgba(255, 255, 255, 0.5);
   }
-  .preview-image-img.selected {
+  .preview-image-img.selected,
+  .preview-video-img.selected {
     border: 3px solid #18A0FB;
   }
 

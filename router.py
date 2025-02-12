@@ -168,7 +168,7 @@ async def process_generateimgflux(data):
     for i in range(request_count):
         print("生成角色无参考_第"+ str(i+1)+"次")
         client_id = str(uuid.uuid4())
-        prompt = load_json_template('./workfolows/t2i_flux.json')
+        prompt = load_json_template('./workfolows/Flux_t2i.json')
         prompt["25"]["inputs"]["noise_seed"] = random.randrange(10**14, 10**15)
         add_text = data.baseStyle
         lora_name = data.loraModel
@@ -216,7 +216,6 @@ async def process_generateimgflux_with_cn(data):
 #生成角色-IPA
 async def process_generateimgflux_with_ipa(data):
     imagesurls = []  # 存储所有生成的图像
-    request_count = 4
     client_id = str(uuid.uuid4())
     prompt = load_json_template('./workfolows/Flux_Ipa.json')
     prompt["89"]["inputs"]["seed"] = random.randrange(10**14, 10**15)
@@ -229,6 +228,22 @@ async def process_generateimgflux_with_ipa(data):
     imagesurls.append(generated_images['image_url'])  # 收集所有生成的图像的url值
     logger.info(imagesurls)
     return {"image_url": imagesurls}
+
+#图片生成动画-Cogvideo
+async def process_generate_animation(data):
+    videosurls = []  # 存储所有生成的图像
+    client_id = str(uuid.uuid4())
+    prompt = load_json_template('./workfolows/Cogvideo_I2V.json')
+    #输入图片
+    prompt["83"]["inputs"]["image"] = "demo/static/data/material/temp/"+data.inputFile
+    prompt["71"]["inputs"]["text"] = data.Inputtext
+    prompt["80"]["inputs"]["select"] = data.removebgornot
+    generated_images = await get_videooutputs(client_id, prompt)
+    videosurls.append(generated_images['video_url'])  # 收集所有生成的图像的url值
+    logger.info(videosurls)
+    print(videosurls)
+    return {"video_url": videosurls}
+
 
 # #文生图
 # async def process_generateimg(data, request_count=1):

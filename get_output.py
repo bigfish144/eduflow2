@@ -24,13 +24,6 @@ def get_image_url(filename, subfolder, folder_type):
     image_url = "http://{}/view?{}".format(server_address, url_values)
     return image_url
 
-def get_video_url(filename, subfolder, folder_type):
-    # data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
-    data = {"filename": filename, "type": folder_type}
-    url_values = urllib.parse.urlencode(data)
-    video_url = "http://{}/view?{}".format(server_address, url_values)
-    return video_url
-
 #解析响应内容为JSON格式并返回 
 def get_history(prompt_id):
     with urllib.request.urlopen("http://{}/history/{}".format(server_address, prompt_id)) as response:
@@ -58,11 +51,15 @@ async def get_imgoutputs(client_id, prompt):
                 image_url = get_image_url(image['filename'], image['filename'], image['type'])
                 output_imagesurl.append(image_url)
                 print(f"image_url:{image_url}")  # 移动到循环内部
-    return {"image_url": image_url}  # 确保在所有情况下返回有效的列表
+    if len(output_imagesurl) > 0:
+        return {"image_url": image_url}  # 确保在所有情况下返回有效的列表
+    else:
+        return {"image_url": []}
+    
 #获取视频输出
 async def get_videooutputs(client_id, prompt):
     prompt_id = queue_prompt(prompt, client_id)['prompt_id']
-    output_imagesurl=[]
+    output_videosurl=[]
     async with websockets.connect(f"ws://{server_address}/ws?clientId={client_id}") as websocket:        
         while True:
             out = await websocket.recv()
@@ -74,6 +71,16 @@ async def get_videooutputs(client_id, prompt):
                         break 
     history = get_history(prompt_id)[prompt_id]
     print(f"prompt_id:{prompt_id}")
+    for node_id, node_output in history['outputs'].items():
+        if 'gifs' in node_output:
+            for gifs in node_output['gifs']:
+                video_url = get_image_url(gifs['filename'], gifs['filename'], gifs['type'])
+                output_videosurl.append(video_url)
+                print(f"video_url:{video_url}")  # 移动到循环内部
+    if len(output_videosurl) > 0:
+        return {"video_url": video_url}  # 确保在所有情况下返回有效的列表
+    else:
+        return {"video_url": []}
 
 #获取文本切分
 async def get_splitoutputs(client_id,prompt):

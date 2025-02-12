@@ -72,7 +72,7 @@
   },
   "14": {
     "inputs": {
-      "seed": 570659480457468,
+      "seed": 1039061385977408,
       "steps": 22,
       "cfg": 1,
       "sampler_name": "euler",
@@ -277,7 +277,8 @@
       "text_b": [
         "81",
         0
-      ]
+      ],
+      "result": "1 girl, anime style"
     },
     "class_type": "StringFunction|pysssss",
     "_meta": {
@@ -339,7 +340,7 @@
   },
   "86": {
     "inputs": {
-      "select": 2,
+      "select": 3,
       "sel_mode": false,
       "input1": [
         "15",
@@ -347,6 +348,10 @@
       ],
       "input2": [
         "85",
+        0
+      ],
+      "input3": [
+        "93",
         0
       ]
     },
@@ -377,6 +382,22 @@
     "class_type": "VHS_LoadImagePath",
     "_meta": {
       "title": "Load Image (Path) 🎥🅥🅗🅢"
+    }
+  },
+  "93": {
+    "inputs": {
+      "rem_mode": "RMBG-1.4",
+      "image_output": "Hide",
+      "save_prefix": "ComfyUI",
+      "torchscript_jit": false,
+      "images": [
+        "15",
+        0
+      ]
+    },
+    "class_type": "easy imageRemBg",
+    "_meta": {
+      "title": "Image Remove Bg"
     }
   }
 }

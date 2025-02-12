@@ -80,7 +80,7 @@
                                 <img src="images/btn_add.png" alt="添加" id="add-btn">
                                 <label for="file-input" class="upload-label">点击上传</label>
                             </button>
-                            <img id="preview-upload-image" src="#" alt="Image Preview" style="display:none; max-height: 200px; margin-top: 10px;">
+                            <img id="preview-upload-image" src="#" alt="Image Preview" style="display:none; max-height: 160px; margin-top: 10px;">
                         </div>
                         <div class="preview-container">
                             <label>预处理预览</label>
@@ -255,8 +255,6 @@
                 }
                 console.log('Selected Dimension:', selectedDimension);    
                 });
-
-
             });
             const baseStyleSelect = document.getElementById('base-style');
             const loraModelSelect = document.getElementById('lora-model');
@@ -476,6 +474,7 @@
                 }
                 const imageUrl = selectedImage.src;
                 const charName = document.getElementById('char-name').value;
+                const FloderName ="character";
                 if (!charName) {
                     alert('请输入角色名称');
                     return;
@@ -486,7 +485,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ imageUrl: imageUrl, charName: charName })
+                    body: JSON.stringify({ imageUrl: imageUrl, fileName: charName, FloderName:FloderName})
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -495,7 +494,7 @@
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Image saved successfully:', data.save_filename);
+                    console.log('Image saved successfully:', data.filename);
                     window.location.href = 'mainboard.html';
                 })
                 .catch(error => {
@@ -503,6 +502,11 @@
                     alert('保存图片失败，请重试');
                 });
             });
+            // 返回mainboard
+            const backToMainBtn = document.getElementById('back-to-main-btn');
+            backToMainBtn.addEventListener('click', function() {
+                window.location.href = 'mainboard.html';
+            });  
         });
     </script>
 </body>
