@@ -15,6 +15,7 @@ from fastapi import FastAPI, HTTPException
 import asyncio
 from gradio_client import Client, handle_file
 import shutil
+import subprocess
 
 # 配置日志记录
 logging.basicConfig(level=logging.INFO)
@@ -71,12 +72,13 @@ async def process_texttospeech(data):
             prompt["4"]["inputs"]["audio"] = "voice2_confused.wav"
         await get_audiooutputs(client_id, prompt)
         return {"outputname": data.output_name}
-#自定义生成动作-museV
+#自定义生成动作-MotionDiffuser
 async def process_custommotion(data):
     client_id = str(uuid.uuid4())
     prompt = load_json_template('./workfolows/moiondiffuser.json')
     prompt["75"]["inputs"]["text"] = data.motionGenPrompt
     prompt["3"]["inputs"]["frames"] = data.motionframe
+    print("自定义生成动作帧数:"+data.motionframe)
     prompt["77"]["inputs"]["select"] = data.motionLerp
     prompt["32"]["inputs"]["filename_prefix"] = "motion-pre/"+data.motionoutputname
     await get_custommotionoutputs(client_id, prompt)
@@ -84,50 +86,21 @@ async def process_custommotion(data):
     return {"outputname": data.motionoutputname}
 #默认生成动作-EMAGE
 async def process_defaultmotion(fileName):
-    client = Client("H-Liu1997/EMAGE")
-    audiopath = "./static/data/audio/"+ fileName +".flac"
-    logger.info("默认生成动作:"+audiopath)
-    try:
-        result = client.predict(
-            audio=handle_file(audiopath),  # 输入音频文件的 URL
-            model_type="CaMN (Upper only)",  # 选择模型类型，可能的值有 "DisCo (Upper only)", "CaMN (Upper only)", "EMAGE (Full body + Face)"
-            render_mesh=True,  # 是否渲染网格模型
-            render_face=False,  # 是否渲染2D人脸标志
-            render_mesh_face=False,  # 是否渲染网格人脸模型
-            api_name="/inference_app"  # API 名称
-        )
-        print(result)
-        # logger.info(f"Prediction result: {result}")
-        output_dir = './static/data/motion-pre'
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        # 处理视频文件并重命名
-        for item in result:
-            if isinstance(item, dict) and 'video' in item:
-                video_path = item['video']
-                if video_path:
-                    basename = os.path.basename(video_path)
-                    if basename == "camn_output_2dbody_audio.mp4":
-                        os.remove(video_path)
-                        logger.info(f"Deleted video: {video_path}")
-                    elif basename == "camn_output.mp4":
-                        new_video_name = fileName + ".mp4"
-                        new_video_path = os.path.join(output_dir, new_video_name)
-                        shutil.move(video_path, new_video_path)
-                        logger.info(f"Renamed video: {video_path} to {new_video_path}")
-        
-        # 处理 .npz 文件
-        for item in result:
-            if isinstance(item, str) and item.endswith('.npz'):
-                npz_file = item
-                if npz_file:
-                    os.remove(npz_file)
-                    logger.info(f"Deleted .npz file: {npz_file}")
-        
-        return {"outputname": fileName + ".mp4"}
-    except Exception as e:
-        logger.error(f"Error in process_defaultmotion: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    audio_name =  fileName +".flac"
+    save_folder = "./static/data/motion-pre"
+    # 调用 run_EMAGE.sh 脚本
+    result = subprocess.run(
+        ['bash', 'run_EMAGE.sh', audio_name],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    # 删除 save_folder 中所有以 .npz 结尾的文件
+    for file in os.listdir(save_folder):
+        if file.endswith('.npz'):
+            file_path = os.path.join(save_folder, file)
+            os.remove(file_path)
+    return {"message": "Script executed successfully", "output": result.stdout}, 200
 #角色动作渲染-Musepose
 async def process_charrender(data):
     client_id = str(uuid.uuid4())
@@ -144,20 +117,21 @@ async def interpolate_frames(outputname):
     print(outputname)
     client_id = str(uuid.uuid4())
     prompt = load_json_template('./workfolows/Lerp_Inter.json')
-    prompt["6"]["inputs"]["filename_prefix"] = "motion/"+ outputname
+    prompt["6"]["inputs"]["filename_prefix"] = "char_video/"+ outputname
     await get_custommotionoutputs(client_id, prompt)
     return {"outputname": outputname}
 
 #口型匹配
 async def process_wavtolip(data):
     client_id = str(uuid.uuid4())
-    outputname = data.selectedSceneIndex
+    outputname = data.fileName
     prompt = load_json_template('./workfolows/musetalk.json')
     prompt["5"]["inputs"]["bbox_shift"] = data.bbox_shift
     prompt["5"]["inputs"]["batch_size"] = data.batchsize
-    prompt["17"]["inputs"]["video"] = "demo/static/data/motion/"+ data.selectedSceneIndex +".mp4"
-    prompt["15"]["inputs"]["audio_path"] = "demo/static/data/audio/"+ data.selectedSceneIndex +".flac"
+    prompt["17"]["inputs"]["video"] = "demo/static/data/motion/"+ data.fileName +".mp4"
+    prompt["15"]["inputs"]["audio_path"] = "demo/static/data/audio/"+ data.fileName +".flac"
     prompt["13"]["inputs"]["filename_prefix"] = "char_video/"+ outputname
+    print("保存为"+data.fileName)
     await get_audiooutputs(client_id, prompt)
     return {"outputname": outputname}
 

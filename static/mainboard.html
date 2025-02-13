@@ -592,7 +592,10 @@
                     if (!response.ok) {
                         throw new Error('Network response was not ok ' + response.statusText);
                     }
-                     
+                    // 解析响应数据为 JSON
+                    const data = await response.json();
+
+                    // 返回解析后的数据
                     return data;
                 } catch (error) {
                     console.error('There was a problem with the fetch operation:', error);
@@ -1267,6 +1270,7 @@
                     console.error('合成时出错:', error);
                 }
             });
+            
             // 动作生成面板
             selectCharElement.addEventListener('change', function() {
                 selectedCharValue = selectCharElement.value;
@@ -1340,6 +1344,8 @@
                                         } else {
                                             alert('请先生成音乐文件！');
                                             console.error(`文件 ${fileName} 不存在`);
+                                            loadingOverlay.style.display = 'none';
+                                            return;
                                         }
                                     })
                                     .catch(error => {
@@ -1366,28 +1372,59 @@
                 console.log('预览动作');
                 const MotionContainer = document.getElementById('show-motion-panel');
                 const MotionItems = MotionContainer.getElementsByClassName('motion-item');
-                for (let i = 0; i < MotionItems.length; i++) {
-                    const fileName = `${selectedSceneIndex}_${i}.flac`;
-                    const filePath = `data/audio/${fileName}`;
-                    const selectElement = MotionItems[i].querySelector('.motion-select');
-                    fetch(filePath, { method: 'HEAD' })
-                        .then(response => {
-                            if (!response.ok) {
-                                if (!alertShown) {
-                                    alert('请先生成音乐文件！');
-                                    alertShown = true; // 设置标志变量为 true，表示 alert 已经显示
-                                }
-                            }
-                        })
-                        .catch(error => {
-                            console.error(`检查文件 ${fileName} 时出错:`, error);
-                        });
-                    if (selectElement.value !== 'custom' && !alertShown) {
-                        await handleMotionPreview(selectedSceneIndex.toString(),i.toString());
-                        UpdateMotionVideo(selectedSceneIndex.toString(),"motion-pre");
+                try {
+                    const audioFiles = await fetchAudioFiles();
+                    console.log('获取到的音频文件:', audioFiles);
+                    // 检查文件数量是否一致
+                    if (audioFiles.length !== MotionItems.length) {
+                        if (!alertShown) {
+                            alert('音频文件数量与 MotionItems 数量不一致！');
+                            alertShown = true;
+                            loadingOverlay.style.display = 'none';
+                            return;
+                        }
+                    }
+                    // 依次执行 handleMotionPreview 函数
+                    for (let i = 0; i < audioFiles.length; i++) {
+                        const fileName = audioFiles[i].replace('.flac', '');
+                        const selectElement = MotionItems[i].querySelector('.motion-select');
+                        if (selectElement.value !== 'custom' && !alertShown) {
+                            await handleMotionPreview(fileName);
+                            UpdateMotionVideo(selectedSceneIndex.toString(), "motion-pre");
+                        }
+                    }
+                } catch (error) {
+                    console.error('获取音频文件列表时出错:', error);
+                    if (!alertShown) {
+                        alert('获取音频文件列表时出错！');
+                        alertShown = true;
+                        loadingOverlay.style.display = 'none';
                     }
                 }
             });
+
+            //获取动作文件列表
+            async function getmotionfiles(selectedSceneIndex,folderName) {
+                try {
+                    const response = await fetch('/get-motion-files', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ selectedSceneIndex, folderName})
+                    });
+                    if (!response.ok) {
+                        throw new Error('网络响应失败');
+                    }
+                    const data = await response.json();
+                    //创建视频播放器
+                    const motion_files = data.motion_files;
+                    return motion_files;
+                }
+                catch (error) {
+                    console.error('获取motion文件列表时出错:', error);
+                }
+            }
             //点击角色渲染预览按钮
             const motionrenderbtn = document.getElementById('motion-render-pre');
             motionrenderbtn.addEventListener('click', async function() {
@@ -1395,32 +1432,40 @@
                 let alertShown = false;
                 const MotionContainer = document.getElementById('show-motion-panel');
                 const MotionItems = MotionContainer.getElementsByClassName('motion-item');
-                for (let i = 0; i < MotionItems.length; i++) {
-                    const fileName = `${selectedSceneIndex}_${i}.mp4`;
-                    const filePath = `data/motion-pre/${fileName}`;
-                    fetch(filePath, { method: 'HEAD' })
-                        .then(response => {
-                            if (!response.ok) {
-                                if (!alertShown) {
-                                    alert('姿态文件缺失。\n请先点击姿态预览，生成姿态文件！');
-                                    alertShown = true; // 设置标志变量为 true，表示 alert 已经显示
-                                }
-                            }
-                        })
-                        .catch(error => {
-                            console.error(`检查文件 ${fileName} 时出错:`, error);
-                        });
+                try {
+                    const motion_files = await getmotionfiles(selectedSceneIndex.toString(),"motion-pre");
+                    console.log("获取到的动作文件:",motion_files);
+                    // 检查文件数量是否一致
+                    if (motion_files.length !== MotionItems.length) {
+                        if (!alertShown) {
+                            alert('音频文件数量与 MotionItems 数量不一致！');
+                            alertShown = true;
+                            loadingOverlay.style.display = 'none';
+                            return;
+                        }
+                    }
+                    // 依次执行 handleMotionPreview 函数
+                    for (let i = 0; i < motion_files.length; i++) {
+                        const fileName = motion_files[i].replace('.mp4', '');
+                        const selectElement = MotionItems[i].querySelector('.motion-select');
+                        if (!alertShown) {
+                            await handleMotionRender(fileName,selectedCharValue);
+                            UpdateMotionVideo(selectedSceneIndex.toString(),"motion");
+                        }
+                    }
+                } catch (error) {
+                    console.error('获取动作文件列表时出错:', error);
                     if (!alertShown) {
-                        console.log(selectedCharValue);
-                        await handleMotionRender(selectedSceneIndex.toString(),i.toString(),selectedCharValue);
-                        UpdateMotionVideo(selectedSceneIndex.toString(),"motion");
+                        alert('获取动作文件列表时出错！');
+                        alertShown = true;
+                        loadingOverlay.style.display = 'none';
                     }
                 }
             });
 
             // 生成默认动作-姿态预览动作-EMAGE
-            async function handleMotionPreview(selectedSceneIndex,selectedIndex) {
-                fileName = selectedSceneIndex + '_' + selectedIndex;
+            async function handleMotionPreview(fileName) {
+                const filename = fileName
                 loadingOverlay.style.display = 'flex'; // 显示加载图标
                 console.log(fileName)
                 try {
@@ -1429,7 +1474,7 @@
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ fileName: fileName })
+                        body: JSON.stringify({ fileName: filename })
                     });
                     if (!response.ok) {
                         throw new Error('网络响应失败');
@@ -1445,16 +1490,16 @@
                 }
             }
             //生成角色渲染动作-Musepose
-            async function handleMotionRender(selectedSceneIndex,selectedIndex,selectedCharValue) {
+            async function handleMotionRender(fileName,selectedCharValue) {
                 loadingOverlay.style.display = 'flex';
-                fileName = selectedSceneIndex + '_' + selectedIndex;
+                const filename = fileName
                 try {
                     const response = await fetch('/generate-charrender', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ fileName: fileName, selectedCharValue: selectedCharValue })
+                        body: JSON.stringify({ fileName: filename, selectedCharValue: selectedCharValue })
                     });
                     if (!response.ok) {
                         throw new Error('网络响应失败');
@@ -1506,7 +1551,7 @@
                     const data = await response.json();
                     //创建视频播放器
                     const motion_files = data.motion_files;
-                    console.log('动作文件选择:', motion_files);
+                    console.log('创建视频播放器:', motion_files);
                     motion_files.forEach(fileName => createMotionPreviewPlayer(fileName,folderName));
 
                 }
@@ -1577,7 +1622,7 @@
                 }
             }
 
-            // 生成自定义动作
+            // 生成自定义动作-MotionDiffuser
             async function handleMotionGeneration(selectedSceneIndex, motionindex, motionGenPrompt, motionLerp, motionframe) {
                 loadingOverlay.style.display = 'flex'; // 显示加载图标
                 const motionoutputname = selectedSceneIndex.toString() + '_' + motionindex.toString()
@@ -1619,37 +1664,37 @@
                     
                 }
             }
-            //动作拼合与帧插值
-            const motionapplybtn = document.getElementById('motion-apply-btn');
-            motionapplybtn.addEventListener('click', async function() {
-                loadingOverlay.style.display = 'flex';
-                selectedSceneIndex = selectedSceneIndex.toString();
-                const MotionPreviewPanel = document.getElementById('motion-preview-panel');
-                try {
-                    const response = await fetch('/motion-apply', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ selectedSceneIndex})
-                    });
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log('动作拼合成功',data.fileName);
-                        MotionPreviewPanel.innerHTML = '';
-                        const fileName = data.fileName;
-                        const folderName = "motion";
-                        createMotionPreviewPlayer(fileName,folderName)
-                    }
+            // //动作拼合与帧插值
+            // const motionapplybtn = document.getElementById('motion-apply-btn');
+            // motionapplybtn.addEventListener('click', async function() {
+            //     loadingOverlay.style.display = 'flex';
+            //     selectedSceneIndex = selectedSceneIndex.toString();
+            //     const MotionPreviewPanel = document.getElementById('motion-preview-panel');
+            //     try {
+            //         const response = await fetch('/motion-apply', {
+            //             method: 'POST',
+            //             headers: {
+            //                 'Content-Type': 'application/json'
+            //             },
+            //             body: JSON.stringify({ selectedSceneIndex})
+            //         });
+            //         if (response.ok) {
+            //             const data = await response.json();
+            //             console.log('动作拼合成功',data.fileName);
+            //             MotionPreviewPanel.innerHTML = '';
+            //             const fileName = data.fileName;
+            //             const folderName = "motion";
+            //             createMotionPreviewPlayer(fileName,folderName)
+            //         }
 
-                }
-                catch (error) {
-                    console.error('生成动作时出错:', error);
-                }
-                finally {
-                    loadingOverlay.style.display = 'none';
-                }
-            });
+            //     }
+            //     catch (error) {
+            //         console.error('生成动作时出错:', error);
+            //     }
+            //     finally {
+            //         loadingOverlay.style.display = 'none';
+            //     }
+            // });
 
 
             //处理视频播放进度条
@@ -1704,10 +1749,8 @@
             // 口型匹配滑块
             const slider1 = document.getElementById('slider1'); // 滑块1
             const tooltip1 = document.getElementById('tooltip1'); // Tooltip1
-
             const slider2 = document.getElementById('slider2'); // 滑块2
             const tooltip2 = document.getElementById('tooltip2'); // Tooltip2
-
             function updateTooltip(slider, tooltip) {
                 const sliderRect = slider.getBoundingClientRect();
                 const sliderWidth = slider.offsetWidth;
@@ -1743,18 +1786,85 @@
             const WavtoLipApplyBtn = document.getElementById('wavtolip-apply-btn');
             const WavtoLipEnsureBtn = document.getElementById('wavtolip-ensure-btn');
             WavtoLipApplyBtn.addEventListener('click', async function() {
+                let alertShown = false;
+                const MotionContainer = document.getElementById('show-motion-panel');
+                const MotionItems = MotionContainer.getElementsByClassName('motion-item');
+                try {
+                    const motion_files = await getmotionfiles(selectedSceneIndex.toString(),"motion");
+                    console.log("获取到的动作渲染文件:",motion_files);
+                    // 检查文件数量是否一致
+                    if (motion_files.length !== MotionItems.length) {
+                        if (!alertShown) {
+                            alert('音频文件数量与 MotionItems 数量不一致！');
+                            alertShown = true;
+                            loadingOverlay.style.display = 'none';
+                            return;
+                        }
+                    }
+                    // 依次执行口型匹配函数
+                    for (let i = 0; i < motion_files.length; i++) {
+                        const fileName = motion_files[i].replace('.mp4', '');
+                        const selectElement = MotionItems[i].querySelector('.motion-select');
+                        if (!alertShown) {
+                            console.log(selectedCharValue);
+                            await handleWavtoLipRender(fileName);
+                        }
+                    }
+                    //拼合视频并显示面板
+                    await MergeVideo();
+                    charVideo.src = `data/char_video/${selectedSceneIndex}.mp4`;
+                    Lipshowpanel.style.display = 'block';
+                    WavtoLipEnsureBtn.style.display = 'block';
+                } catch (error) {
+                    console.error('获取动作文件列表时出错:', error);
+                    if (!alertShown) {
+                        alert('获取动作文件列表时出错！');
+                        alertShown = true;
+                        loadingOverlay.style.display = 'none';
+                    }
+                }
+            });
+            //拼合视频函数
+            async function MergeVideo() {
+                loadingOverlay.style.display = 'flex';
+                selectedSceneIndex = selectedSceneIndex.toString();
+                const MotionPreviewPanel = document.getElementById('motion-preview-panel');
+                try {
+                    const response = await fetch('/motion-apply', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ selectedSceneIndex})
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('动作拼合成功',data.fileName);
+                        return data.fileName;
+                    }
+                }
+                catch (error) {
+                    console.error('生成动作时出错:', error);
+                }
+                finally {
+                    loadingOverlay.style.display = 'none';
+                }
+            }
+
+            // 口型匹配函数
+            async function handleWavtoLipRender(filename) {
                 loadingOverlay.style.display = 'flex';
                 const bbox_shift = slider1.value;
                 const batchsize = slider2.value;
-                selectedSceneIndex = selectedSceneIndex.toString();
-                console.log('口型匹配模块');
+                const fileName = filename;
+                console.log('口型匹配模块:'+fileName);
                 try {
                     const response = await fetch('/wavtolip', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ selectedSceneIndex,bbox_shift,batchsize})
+                        body: JSON.stringify({ fileName,bbox_shift,batchsize})
                     });
                     if (response.ok) {
                         const data = await response.json();
@@ -1774,10 +1884,6 @@
                         const fileNameData = await fileNameResponse.json();
                         console.log('重命名后的文件名:', fileNameData.fileName);
                         }
-                        //显示面板
-                        charVideo.src = `data/char_video/${selectedSceneIndex}.mp4`;
-                        Lipshowpanel.style.display = 'block';
-                        WavtoLipEnsureBtn.style.display = 'block';
                 }
                 catch (error) {
                     console.error('生成动作时出错:', error);
@@ -1785,10 +1891,34 @@
                 finally {
                     loadingOverlay.style.display = 'none';
                 }
-            });
+            }
+
+            //删除冗余的动作数据
+            async function deletmotiondata(selectedSceneIndex) {
+                selectedSceneIndex = selectedSceneIndex.toString();
+                try {
+                    const response = await fetch('/delete-motion-data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ selectedSceneIndex: selectedSceneIndex})
+                    });
+                    if (!response.ok) {
+                        throw new Error('网络响应失败');
+                    }
+                    const data = await response.json();
+                    console.log('删除动作数据成功');
+                }
+                catch (error) {
+                    console.error('获取motion文件列表时出错:', error);
+                }
+            }
+
             //点击应用口型匹配按钮
             WavtoLipEnsureBtn.addEventListener('click', async function() {
-                console.log('应用口型匹配');
+                console.log("应用口型匹配按钮被点击");
+                deletmotiondata(selectedSceneIndex);
             });
 
             // 跳转
