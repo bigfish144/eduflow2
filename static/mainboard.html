@@ -214,7 +214,6 @@
                             <div class="audio-controls">
                                 <button id="audio-del-btn">删除</button>
                                 <button id="audio-replace-btn">重生片段</button>
-                                <button id="audio-apply-btn">应用</button>
                             </div>
                         </div>      
                     </div>
@@ -229,8 +228,7 @@
                         </div>
                         <div class="process-btn-container">
                             <button class="process-grey-btn" id="motion-pose-pre">姿态预览</button>
-                            <button class="process-grey-btn" id ="motion-render-pre">角色渲染预览</button>
-                            <button class="process-main-btn" id="motion-apply-btn">应用</button>
+                            <button class="process-main-btn" id ="motion-render-pre">角色渲染</button>
                         </div>
                     </div>
                 </div>
@@ -321,7 +319,7 @@
                     <button class="all-tab-button" data-tab="all-characters">角色</button>
                 </div>
                 <div class="all-tab-content active" id="all-images">
-                    <div class="content-list">
+                    <div class="content-list" id="all-img-list">
                         <div class="ori-img-material">
                             <p>01</p>
                             <p class="all-img-name">背景</p>
@@ -355,6 +353,7 @@
             const audioContainer = document.querySelector('.audio-container');
             const audioMaterials = audioContainer.querySelectorAll('.audio-material');
             audioMaterials.forEach(material => material.remove());
+
             // 镜头列表面板
             async function loadStoryboardData() { // 获取并加载分镜数据
                 const leftPanel = document.querySelector('.left-panel');
@@ -470,7 +469,6 @@
             });
 
             //素材库面板
-
             const allTabButtons = document.querySelectorAll('.all-tab-button');// 处理素材库all-tabs 的点击事件
             const allTabContents = document.querySelectorAll('.all-tab-content');
             allTabButtons.forEach(button => {
@@ -490,7 +488,7 @@
             const selectCharElement = document.getElementById('choose-char');
             let selectedCharValue = '';
 
-            // 获取素材库生成的角色图片
+            // 获取素材库-角色图片
             async function getGeneratedCharImages() {
                 const FloderName = "character";  // 你可以根据需要更改文件夹名称
                 try {
@@ -517,7 +515,35 @@
                     alert('获取图片失败，请重试');
                 }
             }
+            //获取素材库-素材图片
+            async function getGeneratedMatImages() {
+                const FloderName = "material";  // 你可以根据需要更改文件夹名称
+                try {
+                    const response = await fetch('/get_gen_image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ FloderName: FloderName })
+                    });
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    const data = await response.json();
+                    if (data.files) {
+                        console.log('Files:', data.files);
+                        updateMaterialList(data.files);
+                    } else {
+                        console.error('Unexpected response format:', data);
+                    }
+                } catch (error) {
+                    console.error('There was a problem with the fetch operation:', error);
+                    alert('获取图片失败，请重试');
+                }
+            }
             getGeneratedCharImages();
+            getGeneratedMatImages();
+
             // 更新选择角色的下拉菜单
             function updateCharacterSelect(fileNames) {
                 const selectElement = document.getElementById('choose-char');
@@ -534,7 +560,7 @@
                     console.log('默认选中的角色:', selectedCharValue);
                 }
             }
-            // 更新素材库角色列表
+            // 更新素材库-角色列表
             function updateCharacterList(fileNames) {
                 const allCharactersContainer = document.getElementById('all-char-list');
                 allCharactersContainer.innerHTML = '';  // 清除现有的角色列表
@@ -561,7 +587,7 @@
                     // 为删除按钮添加点击事件监听器
                     deleteButton.addEventListener('click', function() {
                         // 调用删除函数
-                        deleteCharImageFile("character", fileName).then(response => {
+                        deleteImageFile("character", fileName).then(response => {
                             if (response.message) {
                                 getGeneratedCharImages();
                                 // allCharactersContainer.removeChild(oriChaMaterialDiv);
@@ -579,8 +605,54 @@
                     allCharactersContainer.appendChild(oriChaMaterialDiv);
                 });
             }
+            // 更新素材库-素材列表
+            function updateMaterialList(fileNames) {
+                const allMatContainer = document.getElementById('all-img-list');
+                allMatContainer.innerHTML = '';  // 清除现有的角色列表
+                fileNames.forEach(fileName => {
+                    // 创建一个新的 div 容器
+                    const oriImgMaterialDiv = document.createElement('div');
+                    oriImgMaterialDiv.className = 'ori-img-material';
+                    const imgElement = document.createElement('img');
+                    imgElement.src = `data/material/${fileName}`;
+                    imgElement.alt = "png";
+                    imgElement.className = 'icon';
+                    const nameElement = document.createElement('p');
+                    nameElement.className = 'all-img-name';
+                    const displayName = fileName.replace(/\.png$/, '');
+                    nameElement.textContent = displayName;
+                    // 创建添加按钮
+                    const addButton = document.createElement('button');
+                    addButton.className = 'edit-all-img-btn';
+                    addButton.textContent = '添加';
+                    // 创建删除按钮
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'del-all-img-btn';
+                    deleteButton.textContent = '删除';
+                    // 为删除按钮添加点击事件监听器
+                    deleteButton.addEventListener('click', function() {
+                        // 调用删除函数
+                        deleteImageFile("material", fileName).then(response => {
+                            if (response.message) {
+                                getGeneratedMatImages();
+                                // allMatractersContainer.removeChild(oriMatMaterialDiv);
+                            }
+                        }).catch(error => {
+                            console.error('删除文件失败:', error);
+                        });
+                    });
+                    // 将 img 元素添加到 div 容器中
+                    oriImgMaterialDiv.appendChild(imgElement);
+                    oriImgMaterialDiv.appendChild(nameElement);
+                    oriImgMaterialDiv.appendChild(addButton);
+                    oriImgMaterialDiv.appendChild(deleteButton);
+                    // 将 div 容器添加到 all-characters 容器中
+                    allMatContainer.appendChild(oriImgMaterialDiv);
+                });
+            }
+
             // 删除角色图片文件
-            async function deleteCharImageFile(FloderName, fileName) {
+            async function deleteImageFile(FloderName, fileName) {
                 try {
                     const response = await fetch('/delete-image-file', {
                         method: 'POST',
@@ -1243,33 +1315,32 @@
                     }
                 }
             });
-
-            // 语音片段合成
-            const audioApplyBtn = document.getElementById('audio-apply-btn');
-            audioApplyBtn.addEventListener('click', async function() {
-                console.log('合成按钮被点击:');
-                selectedSceneIndex_str = selectedSceneIndex.toString();
-                try {
-                    const response = await fetch('/apply-audio-file', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ fileName: selectedSceneIndex_str })
-                    });
-                    if (!response.ok) {
-                        const errorData = await response.json(); // 获取错误信息
-                        throw new Error(`合成失败: ${errorData.detail || '未知错误'}`);
-                    }
-                    const data = await response.json();
-                    audioContainer.innerHTML = '';
-                    const fileName = data.fileName;
-                    console.log('合成的文件名:', data.audio_files);
-                    createAudioPlayer(fileName);
-                } catch (error) {
-                    console.error('合成时出错:', error);
-                }
-            });
+            // // 语音片段合成
+            // const audioApplyBtn = document.getElementById('audio-apply-btn');
+            // audioApplyBtn.addEventListener('click', async function() {
+            //     console.log('合成按钮被点击:');
+            //     selectedSceneIndex_str = selectedSceneIndex.toString();
+            //     try {
+            //         const response = await fetch('/apply-audio-file', {
+            //             method: 'POST',
+            //             headers: {
+            //                 'Content-Type': 'application/json'
+            //             },
+            //             body: JSON.stringify({ fileName: selectedSceneIndex_str })
+            //         });
+            //         if (!response.ok) {
+            //             const errorData = await response.json(); // 获取错误信息
+            //             throw new Error(`合成失败: ${errorData.detail || '未知错误'}`);
+            //         }
+            //         const data = await response.json();
+            //         audioContainer.innerHTML = '';
+            //         const fileName = data.fileName;
+            //         console.log('合成的文件名:', data.audio_files);
+            //         createAudioPlayer(fileName);
+            //     } catch (error) {
+            //         console.error('合成时出错:', error);
+            //     }
+            // });
             
             // 动作生成面板
             selectCharElement.addEventListener('change', function() {
@@ -1664,38 +1735,6 @@
                     
                 }
             }
-            // //动作拼合与帧插值
-            // const motionapplybtn = document.getElementById('motion-apply-btn');
-            // motionapplybtn.addEventListener('click', async function() {
-            //     loadingOverlay.style.display = 'flex';
-            //     selectedSceneIndex = selectedSceneIndex.toString();
-            //     const MotionPreviewPanel = document.getElementById('motion-preview-panel');
-            //     try {
-            //         const response = await fetch('/motion-apply', {
-            //             method: 'POST',
-            //             headers: {
-            //                 'Content-Type': 'application/json'
-            //             },
-            //             body: JSON.stringify({ selectedSceneIndex})
-            //         });
-            //         if (response.ok) {
-            //             const data = await response.json();
-            //             console.log('动作拼合成功',data.fileName);
-            //             MotionPreviewPanel.innerHTML = '';
-            //             const fileName = data.fileName;
-            //             const folderName = "motion";
-            //             createMotionPreviewPlayer(fileName,folderName)
-            //         }
-
-            //     }
-            //     catch (error) {
-            //         console.error('生成动作时出错:', error);
-            //     }
-            //     finally {
-            //         loadingOverlay.style.display = 'none';
-            //     }
-            // });
-
 
             //处理视频播放进度条
             const video = document.getElementById('thispape-video');
