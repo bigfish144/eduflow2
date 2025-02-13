@@ -196,20 +196,6 @@
                         </div>
                         <div class="wav-range-container">
                             <div class="audio-container">
-                                <div class="audio-material">
-                                    <div class="audio-player">
-                                        <button class="audio-play-pause-btn">
-                                            <img src="images/btn_play.png" alt="播放">
-                                        </button>
-                                        <div id="audio-progress-container-1" class="audio-progress-container">
-                                            <div class="audio-progress"></div>
-                                        </div>
-                                    </div>
-                                    <audio>
-                                        <source src="data/audio/0_0.flac" type="audio/wav">
-                                        您的浏览器不支持 audio 元素。
-                                    </audio>
-                                </div>
                             </div>
                             <div class="audio-controls">
                                 <button id="audio-del-btn">删除</button>
@@ -483,12 +469,32 @@
                     document.getElementById(targetTab).classList.add('active');
                 });
             });
+            // 删除图片文件函数
+            async function deleteImageFile(FloderName, fileName) {
+                try {
+                    const response = await fetch('/delete-image-file', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ FloderName: FloderName, fileName: fileName })
+                    });
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('There was a problem with the fetch operation:', error);
+                    throw error;
+                }
+            }
             //素材库面板-角色
             // 选择角色的下拉菜单添加 change 事件监听器
             const selectCharElement = document.getElementById('choose-char');
             let selectedCharValue = '';
-
             // 获取素材库-角色图片
+            getGeneratedCharImages();
             async function getGeneratedCharImages() {
                 const FloderName = "character";  // 你可以根据需要更改文件夹名称
                 try {
@@ -515,35 +521,6 @@
                     alert('获取图片失败，请重试');
                 }
             }
-            //获取素材库-素材图片
-            async function getGeneratedMatImages() {
-                const FloderName = "material";  // 你可以根据需要更改文件夹名称
-                try {
-                    const response = await fetch('/get_gen_image', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ FloderName: FloderName })
-                    });
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok ' + response.statusText);
-                    }
-                    const data = await response.json();
-                    if (data.files) {
-                        console.log('Files:', data.files);
-                        updateMaterialList(data.files);
-                    } else {
-                        console.error('Unexpected response format:', data);
-                    }
-                } catch (error) {
-                    console.error('There was a problem with the fetch operation:', error);
-                    alert('获取图片失败，请重试');
-                }
-            }
-            getGeneratedCharImages();
-            getGeneratedMatImages();
-
             // 更新选择角色的下拉菜单
             function updateCharacterSelect(fileNames) {
                 const selectElement = document.getElementById('choose-char');
@@ -605,6 +582,35 @@
                     allCharactersContainer.appendChild(oriChaMaterialDiv);
                 });
             }
+
+            // 素材库面板-素材
+            //获取素材库-素材图片
+            getGeneratedMatImages();
+            async function getGeneratedMatImages() {
+                const FloderName = "material";  // 你可以根据需要更改文件夹名称
+                try {
+                    const response = await fetch('/get_gen_image', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ FloderName: FloderName })
+                    });
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok ' + response.statusText);
+                    }
+                    const data = await response.json();
+                    if (data.files) {
+                        console.log('Files:', data.files);
+                        updateMaterialList(data.files);
+                    } else {
+                        console.error('Unexpected response format:', data);
+                    }
+                } catch (error) {
+                    console.error('There was a problem with the fetch operation:', error);
+                    alert('获取图片失败，请重试');
+                }
+            }
             // 更新素材库-素材列表
             function updateMaterialList(fileNames) {
                 const allMatContainer = document.getElementById('all-img-list');
@@ -651,34 +657,9 @@
                 });
             }
 
-            // 删除角色图片文件
-            async function deleteImageFile(FloderName, fileName) {
-                try {
-                    const response = await fetch('/delete-image-file', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ FloderName: FloderName, fileName: fileName })
-                    });
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok ' + response.statusText);
-                    }
-                    // 解析响应数据为 JSON
-                    const data = await response.json();
-
-                    // 返回解析后的数据
-                    return data;
-                } catch (error) {
-                    console.error('There was a problem with the fetch operation:', error);
-                    throw error;
-                }
-            }
 
 
-
-
-            //处理文本处理面板的tab
+            //三个处理面板
             const voiceGenBtn = document.getElementById('voice-gen-btn');
             const VoiceSelect = document.getElementById('choose-voice');
             const motionGenBtn = document.getElementById('motion-gen-btn');
