@@ -421,6 +421,8 @@ body {
   padding: 12px 8px;
 }
 .edit-all-img-btn,
+.edit-part-img-btn,
+.add-all-img-btn,
 .edit-all-cha-btn{
   color: #16B57F;
   background-color: #4F4C64;
@@ -434,7 +436,8 @@ body {
 .all-cha-name{
   width:60px;
 }
-.add-all-img-btn,
+
+.create-all-img-btn,
 .add-all-cha-btn,
 .blend-part-img-btn{
   background-color: #4F4C64;

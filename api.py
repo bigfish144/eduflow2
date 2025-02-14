@@ -180,7 +180,7 @@ async def get_audio_files(data: SelectedSceneIndex):
         if file.startswith(selected_scene_index + "_") and file.endswith('.flac')  # 可根据需要添加其他扩展名
     ]
     if not audio_files:
-        raise HTTPException(status_code=404, detail="未找到符合条件的音频文件")
+       audio_files = []
     # 自定义排序函数，按下划线后面的数字排序
     def sort_key(file_name):
         # 提取下划线后面的部分，并去掉 .flac 后缀
@@ -332,7 +332,7 @@ async def charrender(data: CharRenderModel):
     return await process_charrender(data)
 
 
-# 获取动作文件
+# 获取文件夹中所有动作文件
 class GetMotionFiles(BaseModel):
     selectedSceneIndex: str
     folderName: str
@@ -348,7 +348,7 @@ async def get_motion_files(data: GetMotionFiles):
         if motion.startswith(selected_scene_index + "_") and motion.endswith('.mp4') and '.' not in motion[:-4] # 可根据需要添加其他扩展名
     ]
     if not motion_files:
-        raise HTTPException(status_code=404, detail="未找到符合条件的动作文件")
+        motion_files=[]
     # 自定义排序函数，按下划线后面的数字排序
     def sort_key(file_name):
         # 提取下划线后面的部分，并去掉 .mp4 后缀
@@ -360,9 +360,11 @@ async def get_motion_files(data: GetMotionFiles):
 #视频拼合与帧插值
 class MotionMergeModel(BaseModel):
     selectedSceneIndex: str
+    selectedCharValue: str
 @app.post("/motion-apply")
 async def motion_merge(data: MotionMergeModel):
     selectedSceneIndex = data.selectedSceneIndex
+    selectedCharValue = data.selectedCharValue
     MOTION_FOLDER = './static/data/char_video'
     TEMP_FOLDER = os.path.join(MOTION_FOLDER, 'temp')
     if not os.path.exists(MOTION_FOLDER):
@@ -427,20 +429,24 @@ async def motion_merge(data: MotionMergeModel):
                 logger.error(f"Failed to delete {file_path}. Reason: {e}")
     # 删除临时文件夹
     shutil.rmtree(TEMP_FOLDER)
-    #视频拼合
+    # 视频拼合
     merge_motion_files = [
         motion for motion in os.listdir(MOTION_FOLDER)
         if motion.startswith(selectedSceneIndex + "_") and motion.endswith('.mp4')
     ]
     merge_motion_files.sort(key=sort_key)
-    print("merge_motion_files:"+str(merge_motion_files))
+    print("merge_motion_files:" + str(merge_motion_files))
     if not merge_motion_files:
-        raise HTTPException(status_code=404, detail="未找到需要拼合的视频文件")    
+        raise HTTPException(status_code=404, detail="未找到需要拼合的视频文件")
+
     clips = [VideoFileClip(os.path.join(MOTION_FOLDER, file)) for file in merge_motion_files]
     final_clip = concatenate_videoclips(clips)
-    final_clip.write_videofile(os.path.join(MOTION_FOLDER, f"{selectedSceneIndex}.mp4"), codec='libx264')
 
-    return JSONResponse(content={"status": "success", "message": "视频拼合完成", "fileName": f"{selectedSceneIndex}.mp4"})
+    # 修改拼合视频的文件名
+    final_video_name = f"{selectedSceneIndex}-{selectedCharValue}.mp4"
+    final_clip.write_videofile(os.path.join(MOTION_FOLDER, final_video_name), codec='libx264')
+
+    return JSONResponse(content={"status": "success", "message": "视频拼合完成", "fileName": final_video_name})
 
 #删除冗杂数据
 class DeleteMotiondataModel(BaseModel):
@@ -632,7 +638,7 @@ async def get_gen_image(request: GetImageRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-#删除生成的图片
+#删除生成的文件
 class DeleteImageFileRequest(BaseModel):
     FloderName: str
     fileName: str
@@ -649,6 +655,48 @@ async def delete_audio_file(data: DeleteImageFileRequest):
     else:
         raise HTTPException(status_code=404, detail=f"文件 {data.fileName} 未找到")
 
+#保存json数据
+class SaveJosnDataModel(BaseModel):
+    Jsondata: dict
+    fileName: str
+@app.put("/save-json-data")
+async def save_json_data(data: SaveJosnDataModel):
+    file_path = os.path.join('./static/data/', data.fileName)
+    try:
+        with open(file_path, "w") as json_file:
+            json.dump(data.Jsondata, json_file, ensure_ascii=False, indent=4)
+        return {"message": f"JSON data saved to {file_path}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+#读取josn数据
+class ReadJosnDataModel(BaseModel):
+    fileName: str
+@app.post("/read-json-data")
+async def read_json_data(data: ReadJosnDataModel):
+    file_path = os.path.join('./static/data/', data.fileName)
+    with open(file_path, "r") as json_file:
+        json_data = json.load(json_file)
+    return json_data
+
+#获取生成的角色视频列表
+class GetCharVideoRequest(BaseModel):
+    selectedSceneIndex: str
+@app.post("/get_genchar_video")
+async def get_gen_video(data: GetCharVideoRequest):
+    selectedSceneIndex = data.selectedSceneIndex
+    directory = './static/data/char_video'
+    if not os.path.exists(directory):
+        raise HTTPException(status_code=404, detail="文件夹未找到")
+    try:
+        # 只获取以 selectedSceneIndex + "-" 开头的视频文件
+        video_files = [
+            f for f in os.listdir(directory)
+            if os.path.isfile(os.path.join(directory, f)) and f.startswith(selectedSceneIndex + "-")
+        ]
+        return {"files": video_files}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取视频文件时出错: {str(e)}")
 
 
 #文生图
