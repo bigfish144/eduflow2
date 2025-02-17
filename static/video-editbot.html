@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Edit Bot</title>
+    <style>
+        #editor {
+            position: relative;
+            width: calc(100% - 250px); /* 确保编辑器占据剩余空间 */
+            height: 600px; /* 根据需要调整高度 */
+            border: 1px solid #ccc;
+            float: left; /* 使编辑器和图层列表并排显示 */
+        }
+        #layerList {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 250px; /* 设置图层列表的宽度 */
+            height: 100%; /* 使图层列表占据整个高度 */
+            border: 1px solid #ccc;
+            overflow-y: auto; /* 添加垂直滚动条 */
+            background-color: #f9f9f9; /* 设置背景颜色 */
+        }
+        .layer {
+            position: absolute;
+            border: 1px solid blue;
+            box-sizing: border-box; /* 确保 width 和 height 包括 padding 和 border */
+        }
+
+        .resizer {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            z-index: 10;
+        }
+
+        .resizer-top-left {
+            top: -5px;
+            left: -5px;
+            cursor: nw-resize;
+        }
+
+        .resizer-bottom-right {
+            bottom: -5px;
+            right: -5px;
+            cursor: se-resize;
+        }
+
+        /* 旋转按钮样式 */
+        .rotate-button {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            width: 20px;
+            height: 20px;
+            background-color: green;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Video Edit Bot</h1>
+    <input type="file" id="fileInput" multiple accept="image/*,video/*">
+    <button id="exportButton">导出视频</button>
+    <div id="editor"></div>
+    <ul id="layerList"></ul>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const editor = document.getElementById('editor');
+            const layerList = document.getElementById('layerList');
+            let layers = []; // 存储所有图层的数组
+            let selectedLayer = null; // 当前选中的图层
+
+            // 阻止默认的拖拽行为
+            editor.addEventListener('dragstart', function(event) {
+                event.preventDefault();
+            });
+
+            // 监听文件输入变化事件
+            document.getElementById('fileInput').addEventListener('change', function(event) {
+                const files = event.target.files;
+                for (let file of files) {
+                    const layer = createLayer(file); // 创建新的图层
+                    if (layer) {
+                        layers.push(layer); // 将新图层添加到图层数组中
+                        updateLayerList(); // 更新图层列表
+                    }
+                }
+            });
+
+            // 创建新的图层
+            function createLayer(file) {
+                const layer = document.createElement('div');
+                layer.className = 'layer';
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (file.type.startsWith('image')) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.onload = function() {
+                            const naturalWidth = img.naturalWidth;
+                            const naturalHeight = img.naturalHeight;
+
+                            // 设置图层的初始位置和大小
+                            layer.style.top = '50px';
+                            layer.style.left = '50px';
+                            layer.style.width = naturalWidth + 'px';
+                            layer.style.height = naturalHeight + 'px';
+
+                            // 将图片添加到图层中
+                            layer.appendChild(img);
+
+                            // 创建调整大小的锚点
+                            const resizers = createResizers();
+                            resizers.forEach(resizer => layer.appendChild(resizer));
+
+                            // 创建旋转按钮
+                            const rotateButton = createRotateButton();
+                            layer.appendChild(rotateButton);
+
+                            // 将图层添加到编辑器中
+                            editor.appendChild(layer);
+
+                            // 使图层可拖动和调整大小
+                            makeDraggable(layer);
+                            makeResizable(layer);
+                            makeRotatable(layer, rotateButton); // 添加旋转功能
+                        };
+                    } else if (file.type.startsWith('video')) {
+                        const video = document.createElement('video');
+                        video.controls = true;
+                        video.src = e.target.result;
+                        video.onloadedmetadata = function() {
+                            const naturalWidth = video.videoWidth;
+                            const naturalHeight = video.videoHeight;
+
+                            // 设置图层的初始位置和大小
+                            layer.style.top = '50px';
+                            layer.style.left = '50px';
+                            layer.style.width = naturalWidth + 'px';
+                            layer.style.height = naturalHeight + 'px';
+
+                            // 将视频添加到图层中
+                            layer.appendChild(video);
+
+                            // 创建调整大小的锚点
+                            const resizers = createResizers();
+                            resizers.forEach(resizer => layer.appendChild(resizer));
+
+                            // 创建旋转按钮
+                            const rotateButton = createRotateButton();
+                            layer.appendChild(rotateButton);
+
+                            // 将图层添加到编辑器中
+                            editor.appendChild(layer);
+
+                            // 使图层可拖动和调整大小
+                            makeDraggable(layer);
+                            makeResizable(layer);
+                            makeRotatable(layer, rotateButton); // 添加旋转功能
+                        };
+                    }
+                };
+                reader.readAsDataURL(file);
+                return layer;
+            }
+
+            // 创建旋转按钮
+            function createRotateButton() {
+                const rotateButton = document.createElement('div');
+                rotateButton.className = 'rotate-button';
+                return rotateButton;
+            }
+
+            // 创建调整大小的锚点
+            function createResizers() {
+                const resizerTL = document.createElement('div');
+                resizerTL.className = 'resizer resizer-top-left';
+                const resizerBR = document.createElement('div');
+                resizerBR.className = 'resizer resizer-bottom-right';
+                return [resizerTL, resizerBR];
+            }
+
+            // 旋转功能
+            function makeRotatable(layer, rotateButton) {
+                let initialAngle = 0;
+                rotateButton.addEventListener('mousedown', function(event) {
+                    event.preventDefault(); // 防止默认行为
+                    const centerX = layer.offsetLeft + layer.offsetWidth / 2;
+                    const centerY = layer.offsetTop + layer.offsetHeight / 2;
+                    const offsetX = event.clientX - centerX;
+                    const offsetY = event.clientY - centerY;
+                    // 禁用拖拽和调整大小
+                    disableDraggable(layer);
+                    disableResizable(layer);
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+
+                    function onMouseMove(event) {
+                        const deltaX = event.clientX - centerX;
+                        const deltaY = event.clientY - centerY;
+
+                        const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI); // 计算角度
+                        const rotateAngle = angle - Math.atan2(offsetY, offsetX) * (180 / Math.PI) + initialAngle;
+
+                        layer.style.transform = `rotate(${rotateAngle}deg)`; // 应用旋转
+                    }
+
+                    function onMouseUp() {
+                        initialAngle += (Math.atan2(event.clientY - centerY, event.clientX - centerX) * (180 / Math.PI));
+                        // 恢复拖拽和调整大小
+                        enableDraggable(layer);
+                        enableResizable(layer);
+
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                    }
+                });
+            }
+
+            // 禁用拖拽
+            function disableDraggable(layer) {
+                layer.removeEventListener('mousedown', handleDragStart);
+            }
+            // 恢复拖拽
+            function enableDraggable(layer) {
+                layer.addEventListener('mousedown', handleDragStart);
+            }
+            // 禁用调整大小
+            function disableResizable(layer) {
+                const resizers = layer.querySelectorAll('.resizer');
+                resizers.forEach(resizer => resizer.removeEventListener('mousedown', handleResize));
+            }
+            // 恢复调整大小
+            function enableResizable(layer) {
+                const resizers = layer.querySelectorAll('.resizer');
+                resizers.forEach(resizer => resizer.addEventListener('mousedown', handleResize));
+            }
+
+            // 拖拽逻辑
+            function makeDraggable(layer) {
+                layer.addEventListener('mousedown', handleDragStart);
+            }
+
+            // 拖拽开始处理函数
+            function handleDragStart(event) {
+                const layer = event.currentTarget;
+                const offsetX = event.clientX - layer.offsetLeft;
+                const offsetY = event.clientY - layer.offsetTop;
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+                function onMouseMove(event) {
+                    const newLeft = event.clientX - offsetX;
+                    const newTop = event.clientY - offsetY;
+                    const editorRect = editor.getBoundingClientRect();
+                    layer.style.left = Math.max(0, Math.min(newLeft, editorRect.width - layer.offsetWidth)) + 'px';
+                    layer.style.top = Math.max(0, Math.min(newTop, editorRect.height - layer.offsetHeight)) + 'px';
+                }
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+            }
+
+            // 调整大小逻辑
+            function makeResizable(layer) {
+                const resizers = layer.querySelectorAll('.resizer');
+                resizers.forEach(resizer => {
+                    resizer.addEventListener('mousedown', handleResize);
+                });
+            }
+
+            // 调整大小开始处理函数
+            function handleResize(event) {
+                const layer = event.currentTarget.closest('.layer');
+                const resizer = event.currentTarget;
+                const startX = event.clientX;
+                const startY = event.clientY;
+                const startWidth = layer.offsetWidth;
+                const startHeight = layer.offsetHeight;
+                const startLeft = layer.offsetLeft;
+                const startTop = layer.offsetTop;
+                const startRatio = startWidth / startHeight;
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+
+                function onMouseMove(event) {
+                    const deltaX = event.clientX - startX;
+                    const deltaY = event.clientY - startY;
+                    const editorRect = editor.getBoundingClientRect();
+
+                    if (resizer.classList.contains('resizer-bottom-right')) {
+                        let newWidth, newHeight;
+                        if (event.shiftKey) {
+                            newWidth = Math.max(10, startWidth + deltaX);
+                            newHeight = newWidth / startRatio;
+                            if (newHeight < 10) {
+                                newHeight = 10;
+                                newWidth = newHeight * startRatio;
+                            }
+                        } else {
+                            newWidth = Math.max(10, startWidth + deltaX);
+                            newHeight = Math.max(10, startHeight + deltaY);
+                        }
+                        layer.style.width = Math.min(newWidth, editorRect.width - startLeft) + 'px';
+                        layer.style.height = Math.min(newHeight, editorRect.height - startTop) + 'px';
+
+                        // 更新图片的宽高
+                        const img = layer.querySelector('img');
+                        const video = layer.querySelector('video');
+                        if (img) {
+                            img.style.width = '100%';
+                            img.style.height = '100%';
+                        } else if (video) {
+                            video.style.width = '100%';
+                            video.style.height = '100%';
+                        }
+                    } else if (resizer.classList.contains('resizer-top-left')) {
+                        let newWidth, newHeight;
+                        if (event.shiftKey) {
+                            newWidth = Math.max(10, startWidth - deltaX);
+                            newHeight = newWidth / startRatio;
+                            if (newHeight < 10) {
+                                newHeight = 10;
+                                newWidth = newHeight * startRatio;
+                            }
+                        } else {
+                            newWidth = Math.max(10, startWidth - deltaX);
+                            newHeight = Math.max(10, startHeight - deltaY);
+                        }
+
+                        // 更新左上角锚点不变
+                        const newLeft = startLeft - deltaX;
+                        const newTop = startTop - deltaY;
+                        
+                        // 设置图层的宽高和位置
+                        layer.style.width = Math.min(newWidth, editorRect.width - newLeft) + 'px';
+                        layer.style.height = Math.min(newHeight, editorRect.height - newTop) + 'px';
+                        layer.style.left = Math.max(0, newLeft) + 'px';
+                        layer.style.top = Math.max(0, newTop) + 'px';
+
+                        // 更新图片的宽高
+                        const img = layer.querySelector('img');
+                        const video = layer.querySelector('video');
+                        if (img) {
+                            img.style.width = '100%';
+                            img.style.height = '100%';
+                        } else if (video) {
+                            video.style.width = '100%';
+                            video.style.height = '100%';
+                        }
+                    }
+                    updateLayerList(); // 更新图层列表
+                }
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+            }
+
+            // 更新图层列表
+            function updateLayerList() {
+                layerList.innerHTML = ''; // 清空现有列表
+                layers.forEach((layer, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `Layer ${index + 1}`;
+                    listItem.addEventListener('click', function() {
+                        if (selectedLayer) {
+                            selectedLayer.style.borderColor = 'blue';
+                            selectedLayer.querySelectorAll('.resizer').forEach(resizer => resizer.style.display = 'none');
+                            selectedLayer.querySelector('.rotate-button').style.display = 'none';
+                            disableDraggable(selectedLayer);
+                            disableResizable(selectedLayer);
+                        }
+                        if (selectedLayer === layer) {
+                            selectedLayer = null; // 取消选择
+                        } else {
+                            selectedLayer = layer;
+                            selectedLayer.style.borderColor = 'red';
+                            selectedLayer.querySelectorAll('.resizer').forEach(resizer => resizer.style.display = 'block');
+                            selectedLayer.querySelector('.rotate-button').style.display = 'block';
+                            enableDraggable(selectedLayer);
+                            enableResizable(selectedLayer);
+                        }
+                    });
+                    // 删除按钮
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = '删除';
+                    deleteButton.addEventListener('click', function() {
+                        layer.remove(); // 从编辑器中删除图层
+                        layers.splice(index, 1); // 从 layers 数组中删除
+                        updateLayerList(); // 更新图层列表
+                    });
+
+                    listItem.appendChild(deleteButton);
+                    layerList.appendChild(listItem);
+                });
+            }
+
+            // 导出视频按钮点击事件
+            document.getElementById('exportButton').addEventListener('click', function() {
+                const layerData = layers.map(layer => ({
+                    type: layer.querySelector('img') ? 'image' : 'video',
+                    src: layer.querySelector('img, video').src,
+                    position: {
+                        top: layer.style.top,
+                        left: layer.style.left
+                    },
+                    size: {
+                        width: layer.style.width,
+                        height: layer.style.height
+                    },
+                    transform: layer.style.transform || 'rotate(0deg)' // 添加旋转角度
+                }));
+                console.log(layerData);
+                fetch('/export_video', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ layers: layerData })
+                }).then(response => response.json())
+                  .then(data => {
+                      alert('视频导出成功: ' + data.url);
+                  })
+                  .catch(error => {
+                      console.error('导出失败:', error);
+                  });
+            });
+        });
+    </script>
+</body>
+</html>

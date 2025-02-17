@@ -699,6 +699,7 @@ async def get_gen_video(data: GetCharVideoRequest):
         raise HTTPException(status_code=500, detail=f"获取视频文件时出错: {str(e)}")
 
 
+
 #文生图
 # class TextToImageModel(BaseModel):
 #     prompt: str
@@ -718,7 +719,6 @@ class ImgToImgModel(BaseModel):
     selectedFileName: str
     queuesize: int
     batchsize:int
-
 @app.post("/imgGenerateImg", tags=["perfume bottle"])
 async def imgGenerateImg(
     prompt: str = Form(...),
