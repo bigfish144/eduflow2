@@ -381,7 +381,9 @@
                             // 更新播放器
                             await updateAudioPlayers();
                             //更新当前素材列表
-                            getThisPageMatImages();
+                            await getThisPageMatImages();
+                            //更新视频编辑器
+                            await getThisPageVideoMaterial();
                         });
                     }
                     // 默认选择第一个 camera-item
@@ -682,11 +684,12 @@
             }
             //更新当前素材-素材列表
             function update_this_MaterialList(fileNames) {
-                
+
                 const this_MatContainer = document.getElementById('part-images');
                 this_MatContainer.innerHTML = '';  // 清除现有的角色列表
                 fileNames.forEach(fileName => {
-                    const truefilename = fileName.replace(/^\d+\./, "");
+                    const truefilename = fileName.replace(/(\d+)(?=\.\w+$)/, '');
+                    console.log(fileName,"to",truefilename);
                     // 创建一个新的 div 容器
                     const this_ImgMaterialDiv = document.createElement('div');
                     this_ImgMaterialDiv.className = 'apply-img-material';
@@ -711,7 +714,7 @@
                     deleteButton.textContent = '删除';
                     // 当前素材-删除按钮
                     deleteButton.addEventListener('click', function() {
-                        delete_this_ImageFile(truefilename,fileName).then(response => {
+                        delete_this_ImageFile(fileName).then(response => {
                             if (response.message) {
                                 getThisPageMatImages();     
                             }
@@ -727,9 +730,8 @@
                 });
             }
             //删除当前素材-素材图片
-            async function delete_this_ImageFile(truefilename,fileName) {
+            async function delete_this_ImageFile(fileName) {
                 const SceneIndex = selectedSceneIndex.toString();
-                console.log('删除素材', truefilename);
                 try {
                     // 读取现有的 JSON 数据
                     const response = await fetch('/read-json-data', {
@@ -765,7 +767,7 @@
                     if (!updateResponse.ok) {
                         throw new Error('更新数据失败');
                     }
-                    removeLayer(truefilename);//删除图层
+                    removeLayer(fileName);//删除图层
                     return { message: '当前素材文件已删除' };        
                 }
                 catch (error) {
@@ -2183,12 +2185,64 @@
             // video.addEventListener('ended', () => {
             //     playIcon.src = "images/btn_play.png";
             // });
+            
+            // 图片/视频转File
+            async function createFileFromUrl(url, fileName) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch the image');
+                    }
+                    const blob = await response.blob();
+                    return new File([blob], fileName, { type: blob.type });
+                } catch (error) {
+                    console.error('Error creating file from URL:', error);
+                    throw error;
+                }
+            }
+            //中文转英文ID
+            function generateid(fileName) {
+                if (fileName.includes('.')) {
+                    var { pinyin } = pinyinPro;
+                    fileName = fileName.split('.')[0];
+                    const uniqueString = pinyin(fileName,{ toneType: 'none' });
+                    const outputid = uniqueString.replace(/\s+/g, '');
+                    return outputid;
+                }
+            }
+
             const editor = document.getElementById('editor');
             editor.addEventListener('dragstart', function(event) {
                 event.preventDefault();
             });
             let layers = []; // 存储所有图层的数组
             let selectedLayer = null; // 当前选中的图层
+
+            // 选中图层
+            editor.addEventListener('click', function(event) {
+                const clickedLayer = event.target.closest('.layer');
+                if (!clickedLayer && selectedLayer) {
+                    selectedLayer.classList.remove('selected');
+                    disableDraggable(selectedLayer);
+                    disableResizable(selectedLayer);
+                    disableRotatable(selectedLayer);
+                    selectedLayer = null;
+                }
+            });
+            function handleLayerClick(event) {
+                const clickedLayer = event.currentTarget;
+                if (selectedLayer) {
+                    selectedLayer.classList.remove('selected');
+                    disableDraggable(selectedLayer);
+                    disableResizable(selectedLayer);
+                    disableRotatable(selectedLayer);
+                }
+                clickedLayer.classList.add('selected');
+                selectedLayer = clickedLayer;
+                enableDraggable(selectedLayer);
+                enableResizable(selectedLayer);
+                enableRotatable(selectedLayer);
+            }
 
             // 当前素材-素材库添加到当前素材列表
             async function addImageToPartMaterial(fileName) {
@@ -2239,44 +2293,17 @@
                         throw new Error('更新数据失败');
                     }
                     getThisPageMatImages(); // 获取当前素材列表
-                    addVideoMaterial(fileName);
+                    console.log('添加的fileName',newFileName);
+                    addVideoMaterial(newFileName);
                 } catch (error) {
                     console.error('There was a problem with the fetch operation:', error);
                 }
             }
 
-            // 视频编辑器添加一个图片/素材
-            async function addVideoMaterial(fileName) {
-                const imageUrl = `data/material/${encodeURIComponent(fileName)}`;
-                try {
-                    const file = await createFileFromUrl(imageUrl, fileName);
-                    const layer = createLayer(file);
-                    if (layer) {
-                        layers.push(layer);
-                        console.log('Layer added:', layer);
-                    }
-                } catch (error) {
-                    console.error('Error adding image from URL:', error);
-                }
-            }
-
-            // 图片/视频转File
-            async function createFileFromUrl(url, fileName) {
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch the image');
-                    }
-                    const blob = await response.blob();
-                    return new File([blob], fileName, { type: blob.type });
-                } catch (error) {
-                    console.error('Error creating file from URL:', error);
-                    throw error;
-                }
-            }
-
             //初始化加入视频编辑器素材
             async function getThisPageVideoMaterial() {
+                const editor = document.getElementById('editor');
+                editor.innerHTML = ''; // 清空编辑器
                 try {
                     const response = await fetch('/read-json-data', {
                         method: 'POST',
@@ -2306,8 +2333,9 @@
             }
 
             // 删除一个图层
-            function removeLayer(fileName) {
-                const layerId = generateid(fileName);
+            function removeLayer(newfileName) {
+                console.log('removeLayer', newfileName);
+                const layerId = generateid(newfileName);
                 const layer = document.querySelector(`.layer#${layerId}`);
                 console.log('removeLayer', layerId);
                 if (layer) {
@@ -2318,37 +2346,94 @@
                     console.warn('Layer not found:', layerId);
                 }
             }
-            //中文转英文ID
-            function generateid(fileName) {
-                var { pinyin } = pinyinPro;
-                fileName = fileName.split('.')[0];
-                const uniqueString = pinyin(fileName,{ toneType: 'none' });
-                const outputid = uniqueString.replace(/\s+/g, '');
-                return outputid;
+            //创建图层
+            async function addVideoMaterial(newFileName) {
+                if (!newFileName) {
+                    console.error('Invalid newFileName:', newFileName);
+                    return;
+                }
+                const fileName = newFileName.replace(/(\d+)(?=\.\w+$)/, '');
+                const imageUrl = `data/material/${encodeURIComponent(fileName)}`;
+                try {
+                    const file = await createFileFromUrl(imageUrl, fileName);
+                    const layerId = generateid(newFileName);
+                    const layerSceneIndex = selectedSceneIndex.toString();
+                    // 获取 layerIndex
+                    const response = await fetch('/read-json-data', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            fileName: 'Material_data.json'
+                        })
+                    });
+                    const data = await response.json();
+                    const filenames = data[selectedSceneIndex.toString()];
+                    const layerIndex = filenames.indexOf(newFileName);
+                    // 检查 layers 数组中是否已经存在具有相同唯一标识的 layer
+                    const existingLayer = layers.find(existingLayer =>
+                        existingLayer.id === layerId && existingLayer.getAttribute('sceneindex') === layerSceneIndex
+                    );
+                    if (existingLayer) {
+                        console.log('existingLayer', existingLayer);
+                        // 应用现有 layer 的位置、缩放、旋转参数
+                        const initialStyles = {
+                            top: existingLayer.style.top,
+                            left: existingLayer.style.left,
+                            width: existingLayer.style.width,
+                            height: existingLayer.style.height,
+                            transform: existingLayer.style.transform
+                        };
+                        // 移除现有的 layer
+                        existingLayer.remove();
+                        // 创建新的 layer 并应用初始样式
+                        const layer = createLayer(file, initialStyles, layerIndex, layerId);
+                        // 更新 layers 数组
+                        const index = layers.indexOf(existingLayer);
+                        if (index !== -1) {
+                            layers[index] = layer;
+                        }
+                        console.log('Layer updated:', layer);
+                    } else {
+                        // 创建新的 layer 并应用默认样式
+                        const layer = createLayer(file, {}, layerIndex, layerId);
+                        // 添加新的 layer
+                        layers.push(layer);
+                        console.log('Layer added:', layer);
+                    }
+                    // 按 layerIndex 排序 layers 数组
+                    layers.sort((a, b) => a.layerIndex - b.layerIndex);
+                    // 清空编辑器并重新添加 layers
+                    editor.innerHTML = '';
+                    layers.forEach(layer => editor.appendChild(layer));
+                } catch (error) {
+                    console.error('Error adding image from URL:', error);
+                }
             }
-            //创建一个图层
-            async function createLayer(file) {
+            // 创建一个图层
+            function createLayer(file, initialStyles = {}, layerIndex, layerID) {
                 console.log('createLayer', file);
                 const layer = document.createElement('div');
                 layer.className = 'layer';
-                layer.id = generateid(file.name);
+                layer.id = layerID;
+                layer.setAttribute('data-name', file.name);
+                layer.setAttribute('sceneindex', selectedSceneIndex.toString());
+                layer.setAttribute('layerindex', layerIndex); // 设置 layerIndex 属性
                 console.log('layer.id', layer.id);
+                // 添加点击事件监听器
+                layer.addEventListener('click', handleLayerClick);
+                // 应用初始样式
+                Object.assign(layer.style, initialStyles);
+                // 创建图片或视频元素
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     if (file.type.startsWith('image')) {
                         const img = document.createElement('img');
                         img.src = e.target.result;
                         img.onload = function() {
-                            const naturalWidth = img.naturalWidth;
-                            const naturalHeight = img.naturalHeight;
-                            // 设置图层的初始位置和大小
-                            layer.style.top = '50px';
-                            layer.style.left = '50px';
-                            layer.style.width = Math.floor(naturalWidth / 4) + 'px';
-                            layer.style.height = Math.floor(naturalHeight / 4)+ 'px';
-                            img.style.width = Math.floor(naturalWidth / 4) + 'px';
-                            img.style.height = Math.floor(naturalHeight / 4) + 'px';
-                            // 将图片添加到图层中
+                            img.style.width = '100%';
+                            img.style.height = '100%';
                             layer.appendChild(img);
                             // 创建调整大小的锚点
                             const resizers = createResizers();
@@ -2363,35 +2448,21 @@
                             makeResizable(layer);
                             makeRotatable(layer, rotateButton); 
                         };
-                    }else if (file.type.startsWith('video')) {
+                    } else if (file.type.startsWith('video')) {
                         console.log('函数被触发');
                         const video = document.createElement('video');
                         video.controls = true;
                         video.src = e.target.result;
                         video.onloadedmetadata = function() {
-                            const naturalWidth = video.videoWidth;
-                            const naturalHeight = video.videoHeight;
-
-                            // 设置图层的初始位置和大小
-                            layer.style.top = '50px';
-                            layer.style.left = '50px';
-                            layer.style.width = naturalWidth + 'px';
-                            layer.style.height = naturalHeight + 'px';
-
-                            // 将视频添加到图层中
                             layer.appendChild(video);
-
                             // 创建调整大小的锚点
                             const resizers = createResizers();
                             resizers.forEach(resizer => layer.appendChild(resizer));
-
                             // 创建旋转按钮
                             const rotateButton = createRotateButton();
                             layer.appendChild(rotateButton);
-
                             // 将图层添加到编辑器中
                             editor.appendChild(layer);
-
                             // 使图层可拖动和调整大小
                             makeDraggable(layer);
                             makeResizable(layer);
@@ -2421,48 +2492,54 @@
 
             // 旋转功能
             function makeRotatable(layer, rotateButton) {
+                rotateButton.addEventListener('mousedown', handleRotateStart);
+            }
+            function handleRotateStart(event) {
+                event.preventDefault(); // 防止默认行为
+                const layer = event.currentTarget.closest('.layer');
+                const rotateButton = event.currentTarget;
+                const centerX = layer.offsetLeft + layer.offsetWidth / 2;
+                const centerY = layer.offsetTop + layer.offsetHeight / 2;
+                const offsetX = event.clientX - centerX;
+                const offsetY = event.clientY - centerY;
+                disableDraggable(layer);
+                disableResizable(layer);
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
                 let initialAngle = 0;
-                rotateButton.addEventListener('mousedown', function(event) {
-                    event.preventDefault(); // 防止默认行为
-                    const centerX = layer.offsetLeft + layer.offsetWidth / 2;
-                    const centerY = layer.offsetTop + layer.offsetHeight / 2;
-                    const offsetX = event.clientX - centerX;
-                    const offsetY = event.clientY - centerY;
-                    disableDraggable(layer);
-                    disableResizable(layer);
-                    document.addEventListener('mousemove', onMouseMove);
-                    document.addEventListener('mouseup', onMouseUp);
-                    function onMouseMove(event) {
-                        const deltaX = event.clientX - centerX;
-                        const deltaY = event.clientY - centerY;
-                        const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI); // 计算角度
-                        const rotateAngle = angle - Math.atan2(offsetY, offsetX) * (180 / Math.PI) + initialAngle;
-                        layer.style.transform = `rotate(${rotateAngle}deg)`; // 应用旋转
+                if (layer.style.transform) {
+                    const match = layer.style.transform.match(/rotate\(([\d.]+)deg\)/);
+                    if (match) {
+                        initialAngle = parseFloat(match[1]);
                     }
-                    function onMouseUp() {
-                        initialAngle += (Math.atan2(event.clientY - centerY, event.clientX - centerX) * (180 / Math.PI));
-                        enableDraggable(layer);
-                        enableResizable(layer);
-                        document.removeEventListener('mousemove', onMouseMove);
-                        document.removeEventListener('mouseup', onMouseUp);
-                    }
-                });
+                }
+                function onMouseMove(event) {
+                    const deltaX = event.clientX - centerX;
+                    const deltaY = event.clientY - centerY;
+                    const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI); // 计算角度
+                    const rotateAngle = angle - Math.atan2(offsetY, offsetX) * (180 / Math.PI) + initialAngle;
+                    layer.style.transform = `rotate(${rotateAngle}deg)`; // 应用旋转
+                }
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                    enableDraggable(layer);
+                    enableResizable(layer);
+                }
             }
-            // 禁用/恢复拖拽
-            function disableDraggable(layer) {
-                layer.removeEventListener('mousedown', handleDragStart);
+
+            // 禁用/恢复旋转
+            function disableRotatable(layer) {
+                const rotateButton = layer.querySelector('.rotate-button');
+                if (rotateButton) {
+                    rotateButton.removeEventListener('mousedown', handleRotateStart);
+                }
             }
-            function enableDraggable(layer) {
-                layer.addEventListener('mousedown', handleDragStart);
-            }
-            // 禁用/恢复调整大小
-            function disableResizable(layer) {
-                const resizers = layer.querySelectorAll('.resizer');
-                resizers.forEach(resizer => resizer.removeEventListener('mousedown', handleResize));
-            }
-            function enableResizable(layer) {
-                const resizers = layer.querySelectorAll('.resizer');
-                resizers.forEach(resizer => resizer.addEventListener('mousedown', handleResize));
+            function enableRotatable(layer) {
+                const rotateButton = layer.querySelector('.rotate-button');
+                if (rotateButton) {
+                    rotateButton.addEventListener('mousedown', handleRotateStart);
+                }
             }
 
             // 拖拽逻辑
@@ -2476,17 +2553,25 @@
                 const offsetY = event.clientY - layer.offsetTop;
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
+
                 function onMouseMove(event) {
                     const newLeft = event.clientX - offsetX;
                     const newTop = event.clientY - offsetY;
-                    const editorRect = editor.getBoundingClientRect();
-                    layer.style.left = Math.max(0, Math.min(newLeft, editorRect.width - layer.offsetWidth)) + 'px';
-                    layer.style.top = Math.max(0, Math.min(newTop, editorRect.height - layer.offsetHeight)) + 'px';
+                    layer.style.left = newLeft + 'px';
+                    layer.style.top = newTop + 'px';
                 }
+
                 function onMouseUp() {
                     document.removeEventListener('mousemove', onMouseMove);
                     document.removeEventListener('mouseup', onMouseUp);
                 }
+            }
+            // 禁用/恢复拖拽
+            function disableDraggable(layer) {
+                layer.removeEventListener('mousedown', handleDragStart);
+            }
+            function enableDraggable(layer) {
+                layer.addEventListener('mousedown', handleDragStart);
             }
 
             // 调整大小逻辑
@@ -2575,9 +2660,54 @@
                     document.removeEventListener('mousemove', onMouseMove);
                     document.removeEventListener('mouseup', onMouseUp);
                 }
-            }            
-            
+            } 
+            // 禁用/恢复调整大小
+            function disableResizable(layer) {
+                const resizers = layer.querySelectorAll('.resizer');
+                resizers.forEach(resizer => resizer.removeEventListener('mousedown', handleResize));
+            }
+            function enableResizable(layer) {
+                const resizers = layer.querySelectorAll('.resizer');
+                resizers.forEach(resizer => resizer.addEventListener('mousedown', handleResize));
+            }
 
+            // 导出视频按钮点击事件
+            document.getElementById('preview-btn').addEventListener('click', function() {
+                // 过滤掉无效的图层
+                const validLayers = layers.filter(layer => layer instanceof HTMLElement);
+                const layerData = validLayers.map(layer => ({
+                    scene: layer.getAttribute('sceneindex'),
+                    type: layer.querySelector('img') ? 'image' : 'video',
+                    src: `./static/data/material/${layer.getAttribute('data-name')}`,
+                    position: {
+                        top: layer.style.top,
+                        left: layer.style.left
+                    },
+                    size: {
+                        width: layer.style.width,
+                        height: layer.style.height
+                    },
+                    transform: layer.style.transform || 'rotate(0deg)', // 添加旋转角度
+                    layerIndex: parseInt(layer.getAttribute('layerindex')) // 添加 layerIndex 属性
+                }));
+                console.log("layerData", layerData);
+                
+                // fetch('/export_video', {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json'
+                //     },
+                //     body: JSON.stringify({ layers: layerData })
+                // }).then(response => response.json())
+                // .then(data => {
+                //     alert('视频导出成功: ' + data.url);
+                // })
+                // .catch(error => {
+                //     console.error('导出失败:', error);
+                // });
+            });
+
+            
         });
 </script>
 

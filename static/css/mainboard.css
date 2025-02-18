@@ -939,12 +939,6 @@ body {
   justify-content: center;
   background-color: #1C1C28;
 }
-#editor {
-  position: relative;
-  width: 540px;
-  height: 270px;
-  background-color: #232334;
-}
 
 .player-controls {
   position: relative; /* 使子元素可以绝对定位 */
@@ -990,10 +984,22 @@ body {
   border: 1.5px solid #fff;
   border-radius: 12px;
 }
+
+#editor {
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+  width: 540px;
+  height: 270px;
+  background-color: #232334;
+}
 .layer {
   position: absolute;
-  border: 1px solid blue;
+  border: 1px solid transparent; /* 默认情况下没有描边 */
   box-sizing: border-box; /* 确保 width 和 height 包括 padding 和 border */
+}
+.layer.selected {
+  border: 2px solid blue; /* 选中时添加蓝色描边 */
 }
 .resizer {
   position: absolute;
@@ -1001,6 +1007,11 @@ body {
   height: 10px;
   background-color: red;
   z-index: 10;
+  display: none; 
+}
+
+.layer.selected .resizer {
+  display: block; /* 选中时显示调整大小的锚点 */
 }
 .resizer-top-left {
   top: -5px;
@@ -1022,4 +1033,8 @@ body {
   background-color: green;
   cursor: pointer;
   border-radius: 50%;
+  display: none; /* 默认情况下隐藏旋转按钮 */
+}
+.layer.selected .rotate-button {
+  display: block; /* 选中时显示旋转按钮 */
 }
