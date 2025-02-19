@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -14,8 +14,11 @@ from PIL import Image
 import pydub
 from pydub import AudioSegment
 import cv2
+import numpy as np
 import moviepy
-from moviepy.editor import VideoFileClip, concatenate_videoclips
+from moviepy.editor import VideoFileClip, CompositeVideoClip, ImageClip,ImageSequenceClip, AudioFileClip, concatenate_audioclips, clips_array
+import imageio
+
 # 配置日志记录
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -494,19 +497,19 @@ async def delete_motion_data(data: DeleteMotiondataModel):
             logger.info(f"删除文件: {file_path}")
         except Exception as e:
             logger.error(f"Failed to delete {file_path}. Reason: {e}")
-    #删除audio对应的文件
-    AUDIO_FOLDER = './static/data/audio'
-    audio_files=[
-        audio for audio in os.listdir(AUDIO_FOLDER)
-        if audio.startswith(selectedSceneIndex + "_") and audio.endswith('.flac')
-    ]
-    for file in audio_files:
-        file_path = os.path.join(AUDIO_FOLDER, file)
-        try:
-            os.unlink(file_path)
-            logger.info(f"删除文件: {file_path}")
-        except Exception as e:
-            logger.error(f"Failed to delete {file_path}. Reason: {e}")
+    # #删除audio对应的文件
+    # AUDIO_FOLDER = './static/data/audio'
+    # audio_files=[
+    #     audio for audio in os.listdir(AUDIO_FOLDER)
+    #     if audio.startswith(selectedSceneIndex + "_") and audio.endswith('.flac')
+    # ]
+    # for file in audio_files:
+    #     file_path = os.path.join(AUDIO_FOLDER, file)
+    #     try:
+    #         os.unlink(file_path)
+    #         logger.info(f"删除文件: {file_path}")
+    #     except Exception as e:
+    #         logger.error(f"Failed to delete {file_path}. Reason: {e}")
     return JSONResponse(content={"status": "success", "message": "删除成功"})
 
 
@@ -698,6 +701,242 @@ async def get_gen_video(data: GetCharVideoRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"获取视频文件时出错: {str(e)}")
 
+
+# # 视频合成
+# @app.post("/export_video")
+# async def export_video(request: Request):
+#     data = await request.json()
+#     layers = data.get('layers', [])
+#     selected_scene_index = data.get('selectedSceneIndex', None)
+#     if selected_scene_index is None:
+#         raise HTTPException(status_code=400, detail="selectedSceneIndex is required")
+#     # 筛选出指定scene的素材
+#     selected_layers = [layer for layer in layers if layer['scene'] == selected_scene_index]
+#     if not selected_layers:
+#         raise HTTPException(status_code=400, detail="No layers found for the selected scene index")
+#     # 按照 layerIndex 排序，layerIndex 越大，越在最前面
+#     selected_layers.sort(key=lambda x: x['layerIndex'], reverse=False)
+#     logger.info(f"selected_layers: {selected_layers}")
+#     # 源分辨率和目标分辨率
+#     source_width = 480
+#     source_height = 270
+#     target_width = 1920
+#     target_height = 1080
+#     # 计算缩放因子
+#     scale_x = target_width / source_width
+#     scale_y = target_height / source_height
+#     video_clips = []
+#     audio_clips = []
+#     clips = []  # 初始化 clips 列表
+
+#     for layer in selected_layers:
+#         try:
+#             position = {
+#                 'top': float(layer['position']['top'].replace('px', '')) * scale_y,
+#                 'left': float(layer['position']['left'].replace('px', '')) * scale_x
+#             }
+#             size = {
+#                 'width': float(layer['size']['width'].replace('px', '')) * scale_x,
+#                 'height': float(layer['size']['height'].replace('px', '')) * scale_y
+#             }
+#             # 解析旋转角度
+#             transform = layer['transform']
+#             if 'rotate' in transform:
+#                 rotate_angle = float(transform.split('(')[1].split('deg')[0])
+#             else:
+#                 rotate_angle = 0
+
+#             if layer['type'] == 'video':
+#                 video_clip = VideoFileClip(layer['src'])
+#                 video_clips.append(video_clip)
+#                 if video_clip.audio:
+#                     audio_clips.append(video_clip.audio)
+#                 clip = video_clip
+#             elif layer['type'] == 'image':
+#                 image_clip = ImageClip(layer['src'])
+#                 clip = image_clip
+
+#             clips.append((clip, position, size, rotate_angle))
+#         except Exception as e:
+#             logger.error(f"Failed to process clip from {layer['src']}: {e}")
+#             raise HTTPException(status_code=500, detail=f"Failed to process clip from {layer['src']}")
+
+#     if not clips:
+#         logger.error("No clips added to final video")
+#         raise HTTPException(status_code=400, detail="No clips added to final video")
+
+#     # 计算最大时长
+#     if video_clips:
+#         max_duration = np.max([clip.duration for clip in video_clips])
+#         video_audio_clips = [clip.audio for clip in video_clips if clip.audio]
+#         if video_audio_clips:
+#             final_audio = concatenate_audioclips(video_audio_clips)
+#         else:
+#             final_audio = None
+#     else:
+#         # 获取音频文件路径
+#         audio_filepath = './static/data/audio'
+#         audio_files = [f for f in os.listdir(audio_filepath) if f.startswith(f"{selected_scene_index}_")]
+#         for audio_file in audio_files:
+#             audio_clip = AudioFileClip(os.path.join(audio_filepath, audio_file))
+#             audio_clips.append(audio_clip)
+#         if not audio_clips:
+#             raise HTTPException(status_code=400, detail="No video or audio files found for the selected scene index")
+#         final_audio = concatenate_audioclips(audio_clips)
+#         max_duration = final_audio.duration
+
+#     logger.info(f"max_duration: {max_duration}")
+
+#     # 设置所有剪辑的属性
+#     final_clips = []
+#     for clip, position, size, rotate_angle in clips:
+#         clip = clip.set_duration(max_duration)
+#         clip = clip.set_position((position['left'], position['top']))
+#         clip = clip.resize(newsize=(int(size['width']), int(size['height'])))
+#         clip = clip.rotate(rotate_angle)
+#         final_clips.append(clip)
+
+#     # 创建最终的视频剪辑
+#     final_clip = CompositeVideoClip(final_clips, size=(target_width, target_height)).set_duration(max_duration)
+
+#     # 设置音频
+#     if final_audio:
+#         final_clip = final_clip.set_audio(final_audio)
+
+#     # 保存最终的视频
+#     output_path = f"./static/data/final_video/{selected_scene_index}.mp4"
+#     os.makedirs(os.path.dirname(output_path), exist_ok=True)
+#     final_clip.write_videofile(output_path, codec='libx264')
+#     return JSONResponse(content={"url": output_path})
+
+@app.post("/export_video")
+async def export_video(request: Request):
+    data = await request.json()
+    layers = data.get('layers', [])
+    selected_scene_index = data.get('selectedSceneIndex', None)
+    if selected_scene_index is None:
+        raise HTTPException(status_code=400, detail="selectedSceneIndex is required")
+    
+    # 筛选出指定scene的素材
+    selected_layers = [layer for layer in layers if layer['scene'] == selected_scene_index]
+    if not selected_layers:
+        raise HTTPException(status_code=400, detail="No layers found for the selected scene index")
+    
+    # 按照 layerIndex 排序，layerIndex 越大，越在最前面
+    selected_layers.sort(key=lambda x: x['layerIndex'], reverse=False)
+    logger.info(f"selected_layers: {selected_layers}")
+    
+    # 源分辨率和目标分辨率
+    source_width = 480
+    source_height = 270
+    target_width = 1920
+    target_height = 1080
+    
+    # 计算缩放因子
+    scale_x = target_width / source_width
+    scale_y = target_height / source_height
+    video_clips = []
+    audio_clips = []
+    clips = []  # 初始化 clips 列表
+
+    # 计算最大时长
+    for layer in selected_layers:
+        if layer['type'] == 'video':
+            video_clip = VideoFileClip(layer['src'])
+            video_clips.append(video_clip)
+            if video_clip.audio:
+                audio_clips.append(video_clip.audio)
+    if video_clips:
+        max_duration = np.max([clip.duration for clip in video_clips])
+        video_audio_clips = [clip.audio for clip in video_clips if clip.audio]
+        if video_audio_clips:
+            final_audio = concatenate_audioclips(video_audio_clips)
+        else:
+            final_audio = None
+    else:
+        # 获取音频文件路径
+        audio_filepath = './static/data/audio'
+        audio_files = [f for f in os.listdir(audio_filepath) if f.startswith(f"{selected_scene_index}_")]
+        for audio_file in audio_files:
+            audio_clip = AudioFileClip(os.path.join(audio_filepath, audio_file))
+            audio_clips.append(audio_clip)
+        if not audio_clips:
+            raise HTTPException(status_code=400, detail="No video or audio files found for the selected scene index")
+        final_audio = concatenate_audioclips(audio_clips)
+        max_duration = final_audio.duration
+
+    logger.info(f"max_duration: {max_duration}")
+
+    # 处理所有的素材，包括 GIF 图片
+    for layer in selected_layers:
+        try:
+            position = {
+                'top': float(layer['position']['top'].replace('px', '')) * scale_y,
+                'left': float(layer['position']['left'].replace('px', '')) * scale_x
+            }
+            size = {
+                'width': float(layer['size']['width'].replace('px', '')) * scale_x,
+                'height': float(layer['size']['height'].replace('px', '')) * scale_y
+            }
+            
+            # 解析旋转角度
+            transform = layer['transform']
+            if 'rotate' in transform:
+                rotate_angle = float(transform.split('(')[1].split('deg')[0])
+            else:
+                rotate_angle = 0
+
+            if layer['type'] == 'video':
+                video_clip = VideoFileClip(layer['src'])
+                video_clips.append(video_clip)
+                if video_clip.audio:
+                    audio_clips.append(video_clip.audio)
+                clip = video_clip
+            elif layer['type'] == 'image':
+                # 如果是 GIF 格式
+                if layer['src'].endswith('.gif'):
+                    logger.info('GIF 格式', layer['src'])
+                    gif_reader = imageio.get_reader(layer['src'])
+                    frame_duration = 1 / 24
+                    frames = [frame for frame in gif_reader]
+                    # 使用 ImageSequenceClip 来处理 GIF 动画
+                    gif_clip = ImageSequenceClip(frames, durations=[frame_duration] * len(frames))
+                    gif_clip = gif_clip.loop(duration=max_duration)  # 循环播放，设置循环时长
+                    clip = gif_clip
+                else:
+                    image_clip = ImageClip(layer['src'])
+                    clip = image_clip
+
+            clips.append((clip, position, size, rotate_angle))
+        except Exception as e:
+            logger.error(f"Failed to process clip from {layer['src']}: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to process clip from {layer['src']}")
+
+    if not clips:
+        logger.error("No clips added to final video")
+        raise HTTPException(status_code=400, detail="No clips added to final video")
+
+    # 设置所有剪辑的属性
+    final_clips = []
+    for clip, position, size, rotate_angle in clips:
+        clip = clip.set_duration(max_duration)
+        clip = clip.set_position((position['left'], position['top']))
+        clip = clip.resize(newsize=(int(size['width']), int(size['height'])))
+        clip = clip.rotate(rotate_angle)
+        final_clips.append(clip)
+
+    # 创建最终的视频剪辑
+    final_clip = CompositeVideoClip(final_clips, size=(target_width, target_height)).set_duration(max_duration)
+
+    # 设置音频
+    if final_audio:
+        final_clip = final_clip.set_audio(final_audio)
+
+    # 保存最终的视频
+    output_path = f"./static/data/final_video/{selected_scene_index}.mp4"
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    final_clip.write_videofile(output_path, codec='libx264', fps=24)
+    return JSONResponse(content={"url": output_path})
 
 
 #文生图
