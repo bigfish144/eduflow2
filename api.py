@@ -16,7 +16,7 @@ from pydub import AudioSegment
 import cv2
 import numpy as np
 import moviepy
-from moviepy.editor import VideoFileClip, CompositeVideoClip, ImageClip,ImageSequenceClip, AudioFileClip, concatenate_audioclips, clips_array
+from moviepy.editor import VideoFileClip, CompositeVideoClip, ImageClip,ImageSequenceClip, AudioFileClip, concatenate_audioclips, clips_array, concatenate_videoclips
 import imageio
 
 # 配置日志记录
@@ -45,9 +45,16 @@ def read_root():
     except FileNotFoundError:
         return HTMLResponse(content="File not found", status_code=404)
 
-#文本处理-存储断点
+
 class TextRequest(BaseModel):
     text: str
+#文本处理-生成文本
+@app.post("/generate-draft")
+async def generate_draft(request: TextRequest):
+    user_input = request.text
+    return await generate_draft_text(user_input)
+    
+#文本处理-存储断点
 @app.post("/save_text")
 async def save_text(request: TextRequest):
     original_text = request.text

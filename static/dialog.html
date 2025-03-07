@@ -5,6 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>文稿生成</title>
   <link rel="stylesheet" href="css/dialog.css">
+  <style>
+    /* 添加动效样式 */
+    .loading-dots::after {
+      content: '.';
+      display: inline-block;
+      animation: dots 1.5s steps(5, end) infinite;
+    }
+
+    @keyframes dots {
+      0%{
+        content: '';
+      }
+      30% {
+        content: '.';
+      }
+      60% {
+        content: '..';
+      }
+      90% {
+        content: '...';
+      }
+      100% {
+        content: '';
+      }
+    }
+  </style>
 </head>
 <body>
     <!-- 顶部导航 -->
@@ -33,13 +59,8 @@
                 <button class="generate-btn" id="generate-draft-btn">生成文稿</button>
             </div>
             <div class="dialog-container">
-                <div class="dialog right">
-                    <p>生成一段介绍重力科普文稿，针对儿童</p>
-                </div>
-                <div class="dialog left">
-                    <p>生成中...请稍候</p>
-                    <p>想象一下，如果没有重力会是什么样子？我们的地球将无法吸引物体，你脚下的地面也会消失，而我们自己可能会漂浮在太空中。重力是由英国科学家艾萨克·牛顿首次系统性地描述的。传说有一天，一个苹果从树上掉下来，激发了牛顿的思考，最终他提出了万有引力定律。重力是一种自然现象，物体由于其质量而互相吸引。重力不仅仅是天文学中的概念，它也在我们日常生活中发挥着重要作用。重力让我们稳稳地站在地面上，使得物体总是向下掉落。重力不仅让我们在地球上稳定地生活，还维持着整个太阳系的运行。行星因为太阳的引力而保持轨道运行，形成了我们所知的宇宙秩序。重力是一个无处不在且无形的力量，它不仅影响了我们的日常生活，还主宰着宇宙的运行。通过理解重力，我们更能感知到这个世界的神奇与伟大。</p>
-                </div>
+                <div class="dialog right" id="dialog-right"></div>
+                <div class="dialog left" id="dialog-left"></div>
             </div>
         </div>
 
@@ -48,29 +69,98 @@
         </div>
     </div>
     <script>
-        //显示应用文稿按钮
+        // 显示应用文稿按钮
         document.addEventListener("DOMContentLoaded", function() {
             const generateDraftBtn = document.getElementById('generate-draft-btn');
             const applyBtn = document.querySelector('.apply-btn');
             generateDraftBtn.addEventListener('click', function() {
                 applyBtn.style.display = 'block';
-                document.getElementById('input-group').style.marginBottom="20px";
+                document.getElementById('input-group').style.marginBottom = "20px";
             });
-        });c
+        });
+
         // 获取生成文稿按钮和 discirption-text 元素
         const generateBtn = document.querySelector('.generate-btn');
         const discirptionText = document.querySelector('.discirption-text');
         const dialogContainer = document.querySelector('.dialog-container');
+        const dialogRight = document.getElementById('dialog-right');
+        const dialogLeft = document.getElementById('dialog-left');
+        const inputText = document.querySelector('.input-text');
 
         // 添加点击事件监听器
         generateBtn.addEventListener('click', function() {
-            discirptionText.style.display = 'none'; // 隐藏 discirption-text
-            dialogContainer.style.display = 'flex'; // 显示 dialog-container
+            // 获取输入的文本
+            const userInput = inputText.value;
+            // 将输入的文本添加到 dialog right
+            const userMessage = document.createElement('p');
+            userMessage.textContent = userInput;
+            dialogRight.innerHTML = '';
+            dialogRight.appendChild(userMessage);
+            // 隐藏 discirption-text
+            discirptionText.style.display = 'none';
+            inputText.value = '';
+            // 显示 dialog-container
+            dialogContainer.style.display = 'flex';
+            // 清空 dialog left
+            dialogLeft.innerHTML = '';
+            // 创建加载提示文本
+            const loadingMessage = document.createElement('p');
+            loadingMessage.textContent = '生成中，请稍候';
+            const loadingDots = document.createElement('span');
+            loadingDots.className = 'loading-dots';
+            loadingMessage.appendChild(loadingDots);
+            dialogLeft.appendChild(loadingMessage);
+            // 发送请求到后端
+            fetch('/generate-draft', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: userInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 获取后端生成的文本
+                const generatedText = data.generated_text;
+                // 清空 dialog left
+                dialogLeft.innerHTML = '';
+                // 将生成的文本添加到 dialog left
+                const generatedMessage = document.createElement('p');
+                generatedMessage.textContent = generatedText;
+                dialogLeft.appendChild(generatedMessage);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // 清空 dialog left
+                dialogLeft.innerHTML = '';
+                // 显示错误信息
+                const errorMessage = document.createElement('p');
+                errorMessage.textContent = '生成失败，请重试';
+                dialogLeft.appendChild(errorMessage);
+            });
         });
-        //跳转
+        // 跳转
         const applyBtn = document.querySelector('.apply-btn');
         applyBtn.addEventListener('click', function() {
-        window.location.href = 'textpage.html';
+            // 获取 dialogLeft 中的内容
+            const dialogLeftContent = dialogLeft.querySelector('p');
+            if (dialogLeftContent) {
+                const text = dialogLeftContent.textContent;
+                // 提取标题
+                const titleMatch = text.match(/《([^》]+)》/);
+                const title = titleMatch ? titleMatch[1] : '';
+                // 过滤
+                let content = text.replace(/《[^》]+》/, '');
+                content = content.replace(/\*/g, '');
+                content = content.replace(/\n/g, ' ');
+                const urlParams = new URLSearchParams({
+                    title: title,
+                    content: content
+                });
+                window.location.href = `textpage.html?${urlParams.toString()}`;
+            } else {
+                alert('没有生成的内容');
+            }
         });
     </script>
 </body>

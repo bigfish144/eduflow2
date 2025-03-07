@@ -3,7 +3,16 @@
     padding: 0;
     box-sizing: border-box;
 }
+#fofo {
+    position: fixed;
+    z-index: 9999;
+    cursor: pointer;
+}
 
+#fofo-image {
+    width: 160px;
+    height: 160px;
+}
 body, html  {
     height: 100%;
     display: flex;

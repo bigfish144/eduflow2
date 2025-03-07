@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="static/css/homepage.css">
 </head>
 <body>
+    <div id="fofo">
+        <img id="fofo-image" src="static/images/FOFO/animation1_frame1.png" alt="fofo">
+    </div>
     <header>
         <div class="logo">
             <img src="static/images/LOGO.png" alt="Eduflows">
@@ -65,10 +68,149 @@
         <div class="panel-buttons">
             <button class="btn-secondary" id="no-button">否，帮我生成</button>    
         </div>
-            
-
     </div>
     <script>
+        // FOFO桌宠
+        const fofocontainer = document.getElementById('fofo');
+        const fofoImage = document.getElementById('fofo-image');
+        const frameCount = 3;
+        let currentFrame = 1;
+        let currentAnimation = 1; // 当前动画状态，初始为1
+        const animationFrames = {
+            1: 3, // 动画1有3帧
+            2: 2, // 动画2有2帧
+            3: 2 // 动画3有2帧
+        };
+        const fofolength = Object.keys(animationFrames).length;
+
+        function updateFrame() {
+            const frameCount = animationFrames[currentAnimation]; // 获取当前动画的帧数
+            currentFrame = (currentFrame % frameCount) + 1; // 循环帧
+            fofoImage.src = `static/images/FOFO/animation${currentAnimation}_frame${currentFrame}.png`;
+        }
+
+        // 每隔100毫秒更新一次帧
+        setInterval(updateFrame, 100);
+
+        // 获取屏幕尺寸
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        // 初始位置变量
+        const initialOffset = 20;
+        // 计算并设置初始位置
+        const fofoWidth = fofocontainer.offsetWidth;
+        const fofoHeight = fofocontainer.offsetHeight;
+        fofocontainer.style.top = `${screenHeight - fofoHeight - initialOffset}px`;
+        fofocontainer.style.left = `${screenWidth - fofoWidth - initialOffset}px`;
+
+        let offsetX, offsetY;
+        let isDraggable = true; // 默认可以拖动
+        let isMouseMoved = false; // 标记是否移动鼠标
+        let startX, startY; // 记录鼠标起始位置
+        const moveThreshold = 50; // 移动超过50px判定为拖动
+
+        // 拖动功能
+        fofocontainer.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // 禁用默认的拖拽行为
+            if (isDraggable) {
+                // 记录鼠标起始位置
+                startX = e.clientX;
+                startY = e.clientY;
+
+                // 获取fofo的相对位置，使用getBoundingClientRect()来避免位置计算的误差
+                const rect = fofocontainer.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;  // 计算左边的偏移
+                offsetY = e.clientY - rect.top;   // 计算上边的偏移
+                isMouseMoved = false; // 初始化标记为没有移动
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            }
+        });
+        function onMouseMove(e) {
+            isMouseMoved = true; 
+            if (isDraggable) {
+                // 计算新的left和top
+                let newLeft = e.clientX - offsetX; 
+                let newTop = e.clientY - offsetY;  
+                const fofoWidth = fofocontainer.offsetWidth;
+                const fofoHeight = fofocontainer.offsetHeight
+                // 限制拖动范围，确保元素不会超出屏幕边界
+                if (newLeft < 0) newLeft = 0;
+                if (newTop < 0) newTop = 0;  
+                if (newLeft + fofoWidth > screenWidth) newLeft = screenWidth - fofoWidth; // 确保右边界
+                if (newTop + fofoHeight > screenHeight) newTop = screenHeight - fofoHeight; // 确保下边界
+                // 设置元素的当前位置
+                fofocontainer.style.left = `${newLeft}px`;
+                fofocontainer.style.top = `${newTop}px`;
+            }
+        }
+        function onMouseUp(e) {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            // 计算鼠标移动的距离
+            const moveDistance = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
+            if (moveDistance > moveThreshold) {
+                isMouseMoved = true; 
+            }
+            // 如果没有移动鼠标，则认为是点击操作
+            if (!isMouseMoved) {
+                currentAnimation = (currentAnimation % fofolength) + 1;
+                currentFrame = 1; 
+            }
+            const fofoWidth = fofocontainer.offsetWidth;
+            const fofoHeight = fofocontainer.offsetHeight;
+            let left = parseInt(fofocontainer.style.left, 10);
+            let top = parseInt(fofocontainer.style.top, 10);
+            // 吸附容差
+            const tolerance = 10;
+            let isSticky = false;
+            if (left < tolerance) {
+                fofocontainer.style.left = '0px'; 
+                isSticky = true; 
+                isDraggable = false; 
+            } else if (left + fofoWidth > screenWidth - tolerance) {
+                fofocontainer.style.left = `${screenWidth - fofoWidth}px`;
+                isSticky = true; 
+                isDraggable = false;
+            }
+            if (top < tolerance) {
+                fofocontainer.style.top = '0px'; 
+                isSticky = true; 
+                isDraggable = false;
+            } else if (top + fofoHeight > screenHeight - tolerance) {
+                fofocontainer.style.top = `${screenHeight - fofoHeight}px`; 
+                isSticky = true;
+                isDraggable = false; 
+            }
+            // 如果吸附到边界，则切换动画
+            if (isSticky) {
+                currentAnimation = 3; // 切换到状态3
+                currentFrame = 1; // 重置帧计数
+            }
+        }
+        // 点击fofocontainer时切换动画
+        fofocontainer.addEventListener('click', function() {
+            if (!isMouseMoved) {
+                currentAnimation = (currentAnimation % fofolength) + 1; // 切换到下一个动画状态
+                currentFrame = 1; // 重置帧计数
+            }
+        });
+        // 取消吸附
+        fofocontainer.addEventListener('dblclick', function() {
+            // 检查是否处于吸附状态
+            if (!isDraggable) {
+                isDraggable = true;
+                let newLeft = parseInt(fofocontainer.style.left, 10) + initialOffset;
+                let newTop = parseInt(fofocontainer.style.top, 10) + initialOffset;
+                fofocontainer.style.left = `${newLeft}px`;
+                fofocontainer.style.top = `${newTop}px`;
+                currentAnimation = (currentAnimation % fofolength) + 1;
+                currentFrame = 1; 
+            }
+        });
+
+        // 点击按钮显示新面板
         document.getElementById('start-creation').addEventListener('click', function(event) {
             event.preventDefault();
             document.getElementById('overlay').style.display = 'block';

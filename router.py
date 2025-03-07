@@ -17,11 +17,31 @@ from gradio_client import Client, handle_file
 import shutil
 import subprocess
 
+
 # 配置日志记录
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 server_address = "127.0.0.1:8188"
 url = f"http://{server_address}/prompt"
+#生成文案
+async def generate_draft_text(user_input):
+    from openai import OpenAI
+    final_input="你擅长科普视频文案撰写，根据以下的想法，编写一段300字左右的纯文字文案，标题用书名号括起来"+user_input
+    client = OpenAI(
+        api_key = "sk-XYEBBc2vvQ2AmVRPdoLOk7JQr78fyeUzeBz18mNDpoXNwoEF",
+        base_url = "https://api.moonshot.cn/v1",
+    )
+    completion = client.chat.completions.create(
+        model = "moonshot-v1-32k",
+        messages = [
+            {"role": "system", "content": "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一切涉及恐怖主义，种族歧视，黄色暴力等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。"},
+            {"role": "user", "content": final_input}
+        ],
+        temperature = 0.3,
+    )
+    draft_text = completion.choices[0].message.content
+    print(draft_text)
+    return {"generated_text": draft_text}
 #切分文本
 async def process_split_text(text_content,data):
     client_id = str(uuid.uuid4()) 
