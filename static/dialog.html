@@ -35,7 +35,7 @@
 <body>
     <!-- 顶部导航 -->
     <header class="navbar">
-        <button class="back-btn">首页</button>
+        <button class="back-btn" id="back-to-homepage">首页</button>
         <p class="center-text">文稿生成</p>
     </header>
     <!-- 主内容区域 -->
@@ -161,6 +161,11 @@
             } else {
                 alert('没有生成的内容');
             }
+        });
+        // 选择“首页”按钮
+        const backToHomepageBtn = document.getElementById('back-to-homepage');
+        backToHomepageBtn.addEventListener('click', function() {
+            window.location.href = 'http://127.0.0.1:8000/';
         });
     </script>
 </body>

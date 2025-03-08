@@ -3,17 +3,34 @@
     padding: 0;
     box-sizing: border-box;
 }
-#fofo {
+.fofo-panel {
     position: fixed;
-    z-index: 9999;
+    z-index: 999;
     cursor: pointer;
 }
+.dialog-box {
+    position: absolute; /* 绝对定位 */
+    top: -20px; /* 距离顶部 0 像素 */
+    left: -100px; /* 距离左侧 0 像素 */
+    color: #333333;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    opacity: 0; /* 初始透明度为 0 */
+    transition: opacity 0.5s ease-in-out; /* 添加过渡效果 */
+}
 
+.dialog-box.visible {
+    opacity: 1; /* 显示时透明度为 1 */
+}
 #fofo-image {
-    width: 160px;
-    height: 160px;
+    width: 200px;
+    height: 200px;
 }
 body, html  {
+    cursor: url('/static/images/cursor/default.png'), auto;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -24,6 +41,9 @@ body, html  {
     text-align: center;
     position: relative;
     z-index: 1; /* 确保内容在网格图之上 */
+}
+body.hover-cursor {
+    cursor: url('static/images/cursor/point.png'), auto;
 }
 main {
     flex: 1;

@@ -7,9 +7,13 @@
     <link rel="stylesheet" href="static/css/homepage.css">
 </head>
 <body>
-    <div id="fofo">
-        <img id="fofo-image" src="static/images/FOFO/animation1_frame1.png" alt="fofo">
+    <div id="fofo" class="fofo-panel">
+        <div id="dialog-box" class="dialog-box">
+            <p>有什么可以帮助你？</p>
+        </div>
+        <img id="fofo-image" alt="fofo" src="static/images/FOFO/idle/idle_01.png">
     </div>
+    
     <header>
         <div class="logo">
             <img src="static/images/LOGO.png" alt="Eduflows">
@@ -71,144 +75,206 @@
     </div>
     <script>
         // FOFO桌宠
+        // 对话框元素
+        const dialogBox = document.getElementById('dialog-box');
         const fofocontainer = document.getElementById('fofo');
         const fofoImage = document.getElementById('fofo-image');
-        const frameCount = 3;
-        let currentFrame = 1;
-        let currentAnimation = 1; // 当前动画状态，初始为1
-        const animationFrames = {
-            1: 3, // 动画1有3帧
-            2: 2, // 动画2有2帧
-            3: 2 // 动画3有2帧
-        };
-        const fofolength = Object.keys(animationFrames).length;
+        let currentAnimation = 'idle'; // 当前动画状态，初始为 'idle'
+        const animations = ['idle', 'sayhi', 'bound']; // 动画列表
+        let animationState = 'idle'; // 动画状态管理
+        let sayhiPlayed = false; // 标记 sayhi 动画是否已播放过
+        let boundPlayed = false; // 标记 bound 动画是否已播放过
 
-        function updateFrame() {
-            const frameCount = animationFrames[currentAnimation]; // 获取当前动画的帧数
-            currentFrame = (currentFrame % frameCount) + 1; // 循环帧
-            fofoImage.src = `static/images/FOFO/animation${currentAnimation}_frame${currentFrame}.png`;
+        let idleFrameIndex = 0; // 当前 idle 动画帧索引
+        let sayhiFrameIndex = 0; // 当前 sayhi 动画帧索引
+        let boundFrameIndex = 0; // 当前 bound 动画帧索引
+
+        const idleFrames = 32; // idle 动画帧数
+        const sayhiFrames = 40; // sayhi 动画帧数
+        const boundFrames = 35; // bound 动画帧数
+        let fps = 125;
+
+        // 启动帧更新
+        function startFrameUpdate() {
+            setInterval(updateFrame, fps); // 每 125 毫秒更新一次
         }
 
-        // 每隔100毫秒更新一次帧
-        setInterval(updateFrame, 100);
+        function updateFrame() {
+            if (animationState === 'sayhi' && !sayhiPlayed) {
+                dialogBox.classList.add('visible'); // 添加 visible 类以显示对话框
+                fofoImage.src = `static/images/FOFO/sayhi/sayhi_${String(sayhiFrameIndex).padStart(2, '0')}.png`;
+                sayhiFrameIndex = (sayhiFrameIndex + 1) % sayhiFrames;
+                if (sayhiFrameIndex === 0) {
+                    sayhiPlayed = true;
+                    console.log('sayhi 动画播放结束');
+                    setTimeout(() => {
+                        dialogBox.classList.remove('visible'); // 移除 visible 类以隐藏对话框
+                        animationState = 'idle';
+                        currentAnimation = 'idle';
+                        sayhiPlayed = false;
+                        idleFrameIndex = 0; 
+                    }, 1667); // 延迟重置为 idle 状态
+                }
+            } else if (animationState === 'bound') {
+                fofoImage.src = `static/images/FOFO/bound/bound_${String(boundFrameIndex).padStart(2, '0')}.png`;
+                boundFrameIndex = (boundFrameIndex + 1) % boundFrames;
+            } else if (animationState === 'idle') {
+                fofoImage.src = `static/images/FOFO/idle/idle_${String(idleFrameIndex).padStart(2, '0')}.png`;
+                idleFrameIndex = (idleFrameIndex + 1) % idleFrames;
+            }
+        }
 
         // 获取屏幕尺寸
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
+
         // 初始位置变量
         const initialOffset = 20;
-        // 计算并设置初始位置
-        const fofoWidth = fofocontainer.offsetWidth;
-        const fofoHeight = fofocontainer.offsetHeight;
-        fofocontainer.style.top = `${screenHeight - fofoHeight - initialOffset}px`;
-        fofocontainer.style.left = `${screenWidth - fofoWidth - initialOffset}px`;
+
+        // 计算并设置初始位置，使用当前图片尺寸（初始为 idle 状态）
+        const initialWidth = fofoImage.offsetWidth;
+        const initialHeight = fofoImage.offsetHeight;
+        fofocontainer.style.top = `${screenHeight - initialHeight - initialOffset}px`;
+        fofocontainer.style.left = `${screenWidth - initialWidth - initialOffset}px`;
 
         let offsetX, offsetY;
-        let isDraggable = true; // 默认可以拖动
+        let isDraggable = true; // 默认可拖动
         let isMouseMoved = false; // 标记是否移动鼠标
         let startX, startY; // 记录鼠标起始位置
-        const moveThreshold = 50; // 移动超过50px判定为拖动
+        const moveThreshold = 50; // 超过 50px 判定为拖动
 
         // 拖动功能
         fofocontainer.addEventListener('mousedown', (e) => {
-            e.preventDefault(); // 禁用默认的拖拽行为
+            e.preventDefault(); // 禁用默认拖拽行为
             if (isDraggable) {
-                // 记录鼠标起始位置
                 startX = e.clientX;
                 startY = e.clientY;
-
-                // 获取fofo的相对位置，使用getBoundingClientRect()来避免位置计算的误差
+                // 用 getBoundingClientRect() 获取精确位置
                 const rect = fofocontainer.getBoundingClientRect();
-                offsetX = e.clientX - rect.left;  // 计算左边的偏移
-                offsetY = e.clientY - rect.top;   // 计算上边的偏移
-                isMouseMoved = false; // 初始化标记为没有移动
-
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+                isMouseMoved = false;
                 document.addEventListener('mousemove', onMouseMove);
                 document.addEventListener('mouseup', onMouseUp);
             }
         });
+
         function onMouseMove(e) {
-            isMouseMoved = true; 
+            isMouseMoved = true;
             if (isDraggable) {
-                // 计算新的left和top
-                let newLeft = e.clientX - offsetX; 
-                let newTop = e.clientY - offsetY;  
-                const fofoWidth = fofocontainer.offsetWidth;
-                const fofoHeight = fofocontainer.offsetHeight
-                // 限制拖动范围，确保元素不会超出屏幕边界
+                let newLeft = e.clientX - offsetX;
+                let newTop = e.clientY - offsetY;
+                // 使用当前图片的尺寸来限制边界
+                const currentWidth = fofoImage.offsetWidth;
+                const currentHeight = fofoImage.offsetHeight;
                 if (newLeft < 0) newLeft = 0;
-                if (newTop < 0) newTop = 0;  
-                if (newLeft + fofoWidth > screenWidth) newLeft = screenWidth - fofoWidth; // 确保右边界
-                if (newTop + fofoHeight > screenHeight) newTop = screenHeight - fofoHeight; // 确保下边界
-                // 设置元素的当前位置
+                if (newTop < 0) newTop = 0;
+                if (newLeft + currentWidth > screenWidth) newLeft = screenWidth - currentWidth;
+                if (newTop + currentHeight > screenHeight) newTop = screenHeight - currentHeight;
                 fofocontainer.style.left = `${newLeft}px`;
                 fofocontainer.style.top = `${newTop}px`;
             }
         }
+
         function onMouseUp(e) {
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
-            // 计算鼠标移动的距离
+            // 计算鼠标移动距离
             const moveDistance = Math.sqrt(Math.pow(e.clientX - startX, 2) + Math.pow(e.clientY - startY, 2));
             if (moveDistance > moveThreshold) {
-                isMouseMoved = true; 
+                isMouseMoved = true;
             }
-            // 如果没有移动鼠标，则认为是点击操作
+            // 若未移动鼠标，则视为点击操作
             if (!isMouseMoved) {
-                currentAnimation = (currentAnimation % fofolength) + 1;
-                currentFrame = 1; 
+                const currentIndex = animations.indexOf(currentAnimation);
+                currentAnimation = animations[(currentIndex + 1) % animations.length];
+                animationState = currentAnimation;
+                if (currentAnimation === 'sayhi') {
+                    sayhiPlayed = false;
+                    sayhiFrameIndex = 0; // 重置 sayhi 帧索引
+                } else if (currentAnimation === 'bound') {
+                    boundPlayed = false;
+                    boundFrameIndex = 0; // 重置 bound 帧索引
+                } else if (currentAnimation === 'idle') {
+                    idleFrameIndex = 0; // 重置 idle 帧索引
+                }
             }
-            const fofoWidth = fofocontainer.offsetWidth;
-            const fofoHeight = fofocontainer.offsetHeight;
+            // 使用当前图片的尺寸计算边界，确保吸附时底部紧贴屏幕底部
+            const currentWidth = fofoImage.offsetWidth;
+            const currentHeight = fofoImage.offsetHeight;
             let left = parseInt(fofocontainer.style.left, 10);
             let top = parseInt(fofocontainer.style.top, 10);
-            // 吸附容差
-            const tolerance = 10;
+            const tolerance = 10; // 吸附容差
             let isSticky = false;
+            let rotation = 0; 
+
             if (left < tolerance) {
-                fofocontainer.style.left = '0px'; 
-                isSticky = true; 
-                isDraggable = false; 
-            } else if (left + fofoWidth > screenWidth - tolerance) {
-                fofocontainer.style.left = `${screenWidth - fofoWidth}px`;
-                isSticky = true; 
+                fofocontainer.style.left = '0px';
+                isSticky = true;
                 isDraggable = false;
+                rotation = 90;
+            } else if (left + currentWidth > screenWidth - tolerance) {
+                fofocontainer.style.left = `${screenWidth - currentWidth}px`;
+                isSticky = true;
+                isDraggable = false;
+                rotation = -90; 
             }
             if (top < tolerance) {
-                fofocontainer.style.top = '0px'; 
-                isSticky = true; 
-                isDraggable = false;
-            } else if (top + fofoHeight > screenHeight - tolerance) {
-                fofocontainer.style.top = `${screenHeight - fofoHeight}px`; 
+                fofocontainer.style.top = '0px';
                 isSticky = true;
-                isDraggable = false; 
+                isDraggable = false;
+                rotation = 180; 
+            } else if (top + currentHeight > screenHeight - tolerance) {
+                fofocontainer.style.top = `${screenHeight - currentHeight}px`;
+                isSticky = true;
+                isDraggable = false;
+                rotation = 0; 
             }
-            // 如果吸附到边界，则切换动画
+            // 若吸附到边界，则切换为 bound 动画状态
             if (isSticky) {
-                currentAnimation = 3; // 切换到状态3
-                currentFrame = 1; // 重置帧计数
+                currentAnimation = 'bound';
+                animationState = 'bound';
+                // 设置旋转角度
+                fofoImage.style.transform = `rotate(${rotation}deg)`;
             }
         }
-        // 点击fofocontainer时切换动画
-        fofocontainer.addEventListener('click', function() {
-            if (!isMouseMoved) {
-                currentAnimation = (currentAnimation % fofolength) + 1; // 切换到下一个动画状态
-                currentFrame = 1; // 重置帧计数
+
+        // 点击时切换动画（避免与拖动冲突）
+        fofocontainer.addEventListener('click', function(event) {
+            event.preventDefault();
+            console.log(currentAnimation);
+            if (!isMouseMoved && animationState === 'idle') {
+                console.log('sayhiclicked');
+                currentAnimation = 'sayhi';
+                animationState = 'sayhi';
+                sayhiPlayed = false;
+                sayhiFrameIndex = 0; // 重置 sayhi 帧索引
             }
         });
-        // 取消吸附
+
+        // 双击取消吸附，允许重新拖动
         fofocontainer.addEventListener('dblclick', function() {
-            // 检查是否处于吸附状态
             if (!isDraggable) {
                 isDraggable = true;
                 let newLeft = parseInt(fofocontainer.style.left, 10) + initialOffset;
                 let newTop = parseInt(fofocontainer.style.top, 10) + initialOffset;
                 fofocontainer.style.left = `${newLeft}px`;
                 fofocontainer.style.top = `${newTop}px`;
-                currentAnimation = (currentAnimation % fofolength) + 1;
-                currentFrame = 1; 
+                currentAnimation = 'idle';
+                animationState = 'idle';
+                sayhiPlayed = false;
+                boundPlayed = false;
+                idleFrameIndex = 0; // 重置 帧索引
+                sayhiFrameIndex = 0; 
+                boundFrameIndex = 0; 
+                fofoImage.style.transform = 'rotate(0deg)';
             }
         });
+
+        // 启动帧更新
+        startFrameUpdate();
+
+
 
         // 点击按钮显示新面板
         document.getElementById('start-creation').addEventListener('click', function(event) {

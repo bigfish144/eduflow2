@@ -516,6 +516,7 @@
             //生成动画
             function ImagetoAnimation(imageUrl)
             {
+                loadingOverlay.style.display = 'flex';
                 const filename = document.getElementById('material-name').value;
                 const FloderName = 'material/temp';
 
@@ -563,9 +564,10 @@
                         return response.json();
                     })
                     //生成动画成功
-                    .then(data => {
+                    .then(data => { 
                         if (data.video_url && Array.isArray(data.video_url)) {
                             console.log('Animation URLs:', data.video_url);
+                            loadingOverlay.style.display = 'none';
                             updateAnimaitonPreviewGrid(data.video_url);
                             //删除temp文件
                             const FloderName = 'material/temp';
