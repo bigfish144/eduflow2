@@ -163,6 +163,7 @@
                         <select id="choose-voice">
                             <option value="voice1">女声</option>
                             <option value="voice2">男声</option>
+                            <option value="voice-custom">语音克隆</option>
                             <!-- 可以根据需要添加更多选项 -->
                         </select>
                         <select id="choose-char">
@@ -1015,7 +1016,7 @@
                         console.log('Selected emotion:', this.value);
                         updateEmotion(sentence, this.value);
                     };
-                    const emotions = ['平静', '兴奋', '悲伤', '疑惑', '激动'];
+                    const emotions = ['平静', '悲伤', '疑惑', '激动'];
                     emotions.forEach(e => {
                         const option = document.createElement('option');
                         option.value = e;
@@ -2754,6 +2755,7 @@
 
             // 导出视频按钮点击事件
             document.getElementById('preview-btn').addEventListener('click', function() {
+                loadingOverlay.style.display = 'flex';
                 // 过滤掉无效的图层
                 const validLayers = layers.filter(layer => layer instanceof HTMLElement);
                 const layerData = validLayers.map(layer => {
@@ -2793,6 +2795,7 @@
                     return response.json();
                 }).then(data => {
                     alert('视频导出成功: ' + data.url);
+                    window.location.href = `preview_video.html?url=${encodeURIComponent(data.url)}`;
                 }).catch(error => {
                     console.error('导出失败:', error);
                 });

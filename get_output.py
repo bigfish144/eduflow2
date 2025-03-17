@@ -16,7 +16,6 @@ def queue_prompt(prompt, client_id):
     else:
         response.raise_for_status()
 
-
 def get_image_url(filename, subfolder, folder_type):
     # data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
     data = {"filename": filename, "type": folder_type}
@@ -28,7 +27,6 @@ def get_image_url(filename, subfolder, folder_type):
 def get_history(prompt_id):
     with urllib.request.urlopen("http://{}/history/{}".format(server_address, prompt_id)) as response:
         return json.loads(response.read())
-
 
 # 获取图片输出
 async def get_imgoutputs(client_id, prompt):

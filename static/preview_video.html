@@ -61,7 +61,7 @@
             <div class="video-player-panel">
                 <div class="video-container">
                     <video class="this-video" id="thispape-video">
-                        <source src="data/material/test2.webm" type="video/mp4">
+                        <source src="" type="video/mp4">
                         您的浏览器不支持 video 标签。
                     </video>
                 </div>
@@ -70,7 +70,7 @@
                         <span id="currentTime">00:00:00.00</span> / <span id="duration">00:00:00.00</span>
                     </div>
                     <div class="play-button-container">
-                        <button id="play-this-video">
+                        <button id="play-pause-btn">
                             <img src="images/btn_play.png" alt="播放" id="play-icon">
                         </button>
                     </div>
@@ -159,7 +159,7 @@
                                 </div>
                             </div>
                             <audio id="gen-audio-1">
-                                <source src="data/audio_test.wav" type="audio/wav">
+                                <source src="" type="audio/wav">
                                 您的浏览器不支持 audio 元素。
                             </audio>
                         </div>
@@ -296,6 +296,60 @@
     <script>
         
         document.addEventListener("DOMContentLoaded", function() {
+            // 解析 URL 参数
+            function getQueryParam(param) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(param);
+            }
+            // 获取 URL 中的 url 参数
+            const videoUrl = getQueryParam('url');
+
+            // 处理路径，去除 ./static/ 前缀
+            let processedVideoUrl = videoUrl;
+            if (processedVideoUrl && processedVideoUrl.startsWith('./static/')) {
+                processedVideoUrl = processedVideoUrl.substring('./static/'.length);
+            }
+            console.log('Processed Video URL:', processedVideoUrl);
+            // 更新视频的 src 属性
+            if (processedVideoUrl) {
+                const videoElement = document.getElementById('thispape-video');
+                const sourceElement = videoElement.querySelector('source');
+                if (sourceElement) {
+                    sourceElement.src = processedVideoUrl; // 使用处理后的路径
+                    videoElement.load(); // 重新加载视频
+                }
+            }
+            // 播放/暂停功能
+            const videoElement = document.getElementById('thispape-video');
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const playIcon = document.getElementById('play-icon');
+            const currentTimeDisplay = document.getElementById('currentTime');
+            const durationDisplay = document.getElementById('duration');
+
+            playPauseBtn.addEventListener('click', function() {
+                if (videoElement.paused) {
+                    videoElement.play();
+                    playIcon.src = 'images/btn_play.png';
+                } else {
+                    videoElement.pause();
+                    playIcon.src = 'images/btn_pause.png';
+                }
+            });
+            // 初始化获取视频总时长
+            videoElement.addEventListener('loadedmetadata', function() {
+                const duration = videoElement.duration;
+                const minutes = Math.floor(duration / 60);
+                const seconds = Math.floor(duration % 60);
+                const milliseconds = Math.floor((duration % 1) * 100);
+                durationDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
+            });
+            videoElement.addEventListener('timeupdate', function() {
+                const currentTime = videoElement.currentTime;
+                const minutes = Math.floor(currentTime / 60);
+                const seconds = Math.floor(currentTime % 60);
+                const milliseconds = Math.floor((currentTime % 1) * 100);
+                currentTimeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`;
+            });
             //进度条滑动
             const panel = document.querySelector('.track-container');
             const slider = document.querySelector('.slider');
@@ -387,6 +441,7 @@
                 document.getElementById('file-upload-btn').style.display = 'none';
             }
         });
+
 
     </script>
 

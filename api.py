@@ -814,7 +814,7 @@ async def get_gen_video(data: GetCharVideoRequest):
 #     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 #     final_clip.write_videofile(output_path, codec='libx264')
 #     return JSONResponse(content={"url": output_path})
-
+#导出视频合成
 @app.post("/export_video")
 async def export_video(request: Request):
     data = await request.json()
@@ -822,29 +822,24 @@ async def export_video(request: Request):
     selected_scene_index = data.get('selectedSceneIndex', None)
     if selected_scene_index is None:
         raise HTTPException(status_code=400, detail="selectedSceneIndex is required")
-    
     # 筛选出指定scene的素材
     selected_layers = [layer for layer in layers if layer['scene'] == selected_scene_index]
     if not selected_layers:
         raise HTTPException(status_code=400, detail="No layers found for the selected scene index")
-    
     # 按照 layerIndex 排序，layerIndex 越大，越在最前面
     selected_layers.sort(key=lambda x: x['layerIndex'], reverse=False)
     logger.info(f"selected_layers: {selected_layers}")
-    
     # 源分辨率和目标分辨率
     source_width = 480
     source_height = 270
     target_width = 1920
     target_height = 1080
-    
     # 计算缩放因子
     scale_x = target_width / source_width
     scale_y = target_height / source_height
     video_clips = []
     audio_clips = []
     clips = []  # 初始化 clips 列表
-
     # 计算最大时长
     for layer in selected_layers:
         if layer['type'] == 'video':

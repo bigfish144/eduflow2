@@ -37,6 +37,7 @@
   cursor: not-allowed; /* 禁用光标 */
 }
 body {
+  cursor: url('/static/images/cursor/default.png'), auto;
   font-family: Arial, sans-serif;
   background-color: #1C1C28;
   color: #fff;
@@ -78,7 +79,7 @@ body {
   color: white;
   border: none;
   padding: 10px 20px;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   border-radius: 4px;
   margin-right: auto; /* 将按钮推到左边 */
 }
@@ -182,7 +183,7 @@ select{
 .checkbox-group label {
   position: relative;
   padding-left: 24px; /* 为图标留出空间 */
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   user-select: none; /* 防止文本被选中 */
 }
 .checkbox-group label::before {
@@ -223,7 +224,7 @@ select{
   padding: 10px 20px;
   background: #4F4C64;
   border-radius: 5px;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   color: #fff;
   border: solid 1px #6966FF;
   box-shadow: none;
@@ -258,7 +259,7 @@ input[type="file"] {
   border-radius: 16px;
   background: #6966FF;
   color: #fff;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   border: 2px solid transparent;
 }
 .dimension-btn.active{
@@ -322,7 +323,7 @@ input[type="file"] {
   background: #fff; 
   border: 2px solid #6966FF;
   border-radius: 50%;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   margin-top: -5px; 
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   position: relative;
@@ -340,7 +341,7 @@ input[type="range"] {
   border: none;
   border-radius: 4px;
   color: white;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   margin-top: 12px;
 }
 
@@ -379,7 +380,7 @@ input[type="range"] {
   border: none;
   border-radius: 4px;
   color: white;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   margin-top: 12px;
 }
 .secondary-btn:hover {

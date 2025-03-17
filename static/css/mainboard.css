@@ -1,4 +1,5 @@
 * {
+  cursor: url('/static/images/cursor/default.png'), auto;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -52,7 +53,7 @@
 .close-btn{
   background-color: transparent;
   border: none;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 .close-icon{
   width: 24px;
@@ -337,7 +338,7 @@ body {
 .part-tab-button,
 .all-tab-button {
   padding: 10px 20px;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   background-color: #393953;
   border: none;
   box-shadow: none;
@@ -447,7 +448,7 @@ body {
   color: #fff;
   box-shadow: none;
   border: none;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 .content-list{
   height: 28vh;
@@ -472,7 +473,7 @@ body {
 #video-setting img{
   width:20px;
   height:20px;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 .main-panel {
   flex-grow: 1;
@@ -510,7 +511,7 @@ body {
   border: #fff 4px solid;
   background: #6966FF;
   border-radius: 50%;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   margin-top: -2px;
   position: relative;
   z-index: 2;
@@ -651,7 +652,7 @@ body {
   padding:8px 36px;
   box-shadow: none;
   border:none;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 .process-main-btn{
   background-color: #6966FF;
@@ -662,7 +663,7 @@ body {
   padding:8px 36px;
   box-shadow: none;
   border:none;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 
 .custom-select select,
@@ -726,7 +727,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 .audio-play-pause-btn img{
   width: 24px;
@@ -740,7 +741,7 @@ body {
   border-radius: 4px;
   overflow: hidden;
   position: relative;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   margin-left: 10px;
 }
 .audio-progress {
@@ -766,17 +767,17 @@ body {
 #audio-del-btn{
   color: red;
   background-color: #4F4C64;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 #audio-replace-btn{
   color: #fff;
   background-color: #4F4C64;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 #audio-apply-btn{
   color: #fff;
   background-color: #6966FF;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 /*动作处理区*/
 .motion-preview-panel{
@@ -830,7 +831,7 @@ body {
 .lip-choose-box + label {
   position: relative;
   padding-left: 30px; 
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   user-select: none;
   display: flex; 
   align-items: center; 
@@ -901,7 +902,7 @@ body {
   background: white;
   border: 2px solid #7d6df3; 
   border-radius: 50%;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   position: relative;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.2); 
 }
@@ -963,7 +964,7 @@ body {
   background-color: transparent;
   border: none;
   color: white;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   border-radius: 5px;
 }
 .player-controls input[type="range"] {
@@ -1031,7 +1032,7 @@ body {
   width: 20px;
   height: 20px;
   background-color: green;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   border-radius: 50%;
   display: none; /* 默认情况下隐藏旋转按钮 */
 }

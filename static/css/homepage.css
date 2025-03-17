@@ -6,7 +6,7 @@
 .fofo-panel {
     position: fixed;
     z-index: 999;
-    cursor: pointer;
+    cursor: url('/static/images/cursor/point.png'), pointer; 
 }
 .dialog-box {
     position: absolute; /* 绝对定位 */
@@ -43,7 +43,7 @@ body, html  {
     z-index: 1; /* 确保内容在网格图之上 */
 }
 body.hover-cursor {
-    cursor: url('static/images/cursor/point.png'), auto;
+    cursor: url('static/images/cursor/point.png'), auto !important;
 }
 main {
     flex: 1;
@@ -100,18 +100,28 @@ color: #FFFFFF;
 .buttons {
     margin-top: 40px;
 }
-
-.buttons .btn {
-    text-decoration: none;
-    color: #fff;
-    padding: 15px 30px;
-    border-radius: 5px;
-    margin: 0 10px;
-    background-color: #4f5056;
+#watch-demo {
+    padding: 12px 60px;
+    background-color: #4F4C64;
+    color: #bbb;
+    border: none;
+    border-radius: 8px;
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
+    margin-right: 8px;
 }
-
-.buttons .btn.primary {
+#watch-demo:hover {
+    background-color: #726E8E;
+}
+#start-creation{
+    padding: 12px 60px;
     background-color: #6966FF;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
+}
+#start-creation:hover {
+    background-color: #513AC2;
 }
 
 .features {
@@ -218,7 +228,7 @@ body::before {
     color: #fff;
     border: none;
     border-radius: 8px;
-    cursor: pointer;
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
     margin-bottom: 16px;
 }
 
@@ -232,7 +242,7 @@ body::before {
     color: #bbb;
     border: none;
     border-radius: 8px;
-    cursor: pointer;
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
     margin-bottom: 36px;
 }
 
@@ -242,7 +252,7 @@ body::before {
 #close-panel {
     background: none;
     border: none;
-    cursor: pointer; 
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
     padding: 0; 
     outline: none; 
     align-items: center;

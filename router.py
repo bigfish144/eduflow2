@@ -75,7 +75,7 @@ async def process_texttospeech(data):
             prompt["8"]["inputs"]["GPT_weight"] = "paimeng-0-e10.ckpt"
             prompt["3"]["inputs"]["text"] = "说起来，我有一个疑问。那个种子发芽以后，会长出什么东西吗？"
             prompt["4"]["inputs"]["audio"] = "voice2_calm.wav"
-        elif data.emotion == "兴奋":
+        elif data.emotion == "激动":
             prompt["8"]["inputs"]["SoVITS_weight"] = "paimeng-3_e25_s2150.pth"
             prompt["8"]["inputs"]["GPT_weight"] = "paimeng-3-e10.ckpt"
             prompt["3"]["inputs"]["text"] = "真的吗？太好啦！"
@@ -98,7 +98,6 @@ async def process_custommotion(data):
     prompt = load_json_template('./workfolows/moiondiffuser.json')
     prompt["75"]["inputs"]["text"] = data.motionGenPrompt
     prompt["3"]["inputs"]["frames"] = data.motionframe
-    print("自定义生成动作帧数:"+data.motionframe)
     prompt["77"]["inputs"]["select"] = data.motionLerp
     prompt["32"]["inputs"]["filename_prefix"] = "motion-pre/"+data.motionoutputname
     await get_custommotionoutputs(client_id, prompt)

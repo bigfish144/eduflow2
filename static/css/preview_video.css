@@ -1,7 +1,8 @@
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  cursor: url('/static/images/cursor/default.png'), auto;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
   }
   
 body {
@@ -225,7 +226,7 @@ body {
   border-radius: 5px;
   font-size: 16px;
   color: #fff;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 .file-upload-container {
   display: flex;
@@ -242,7 +243,7 @@ body {
   padding: 10px 20px;
   background: #4F4C64;
   border-radius: 5px;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   color: #fff;
   border: solid 1px #6966FF;
   box-shadow: none;
@@ -267,7 +268,7 @@ body {
   border: none;
   border-radius: 4px;
   color: white;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   margin-top: 12px;
 }
 select{
@@ -286,7 +287,7 @@ select{
   color: #fff;
   box-shadow: none;
   border: none;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 
 /* 中间主区域 */
@@ -309,7 +310,7 @@ select{
 #video-setting img{
   width:20px;
   height:20px;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 .main-panel {
   flex-grow: 1;
@@ -331,7 +332,8 @@ select{
   background-color: #1C1C28;
 }
 .this-video{
-  max-height:260px;
+  height: 200px;
+  max-height:200px;
 }
 .player-controls {
   position: relative; /* 使子元素可以绝对定位 */
@@ -355,7 +357,7 @@ select{
   background-color: transparent;
   border: none;
   color: white;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   border-radius: 5px;
 }
 .player-controls input[type="range"] {
@@ -506,7 +508,7 @@ select{
   width: 2px; /* 滑块宽度为 2px */
   height: 110%;
   background-color: white;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   pointer-events: auto; /* 允许滑块被拖动 */
   transition: left 0.1s ease; /* 滑块移动时平滑过渡 */
 }
@@ -575,7 +577,7 @@ select{
 }
 #music-gen-time{
   padding: 4px 12px;
-  background-color: #1C1C28;
+  background-color: #232334;
   width: 48px;
   color: #fff;
   border-radius: 4px;
@@ -622,7 +624,7 @@ select{
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 .audio-play-pause-btn img{
   width: 24px;
@@ -636,7 +638,7 @@ select{
   border-radius: 4px;
   overflow: hidden;
   position: relative;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
   margin-left: 10px;
 }
 .audio-progress {
@@ -662,7 +664,7 @@ select{
   padding:8px 36px;
   box-shadow: none;
   border:none;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 .process-main-btn{
   background-color: #6966FF;
@@ -673,7 +675,7 @@ select{
   padding:8px 36px;
   box-shadow: none;
   border:none;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 /* 后期滤镜面板 */
 .effects-container {
@@ -733,7 +735,7 @@ select{
 #close-export-panel img{
   width: 24px;
   height: 24px;
-  cursor: pointer;
+  cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 #close-export-panel{
   background-color: transparent;
