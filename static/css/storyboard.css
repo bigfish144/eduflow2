@@ -1,4 +1,5 @@
 * {
+    cursor: url('/static/images/cursor/default.png'), auto;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -98,7 +99,7 @@ nav a {
     border: none;
     padding: 8px 12px;
     border-radius: 18px;
-    cursor: pointer;
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 .edit-button {
     margin-left: 80px;
@@ -109,7 +110,7 @@ nav a {
     border: none;
     padding: 8px 12px;
     border-radius: 16px;
-    cursor: pointer;
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 
 /* 添加分镜按钮 */
@@ -129,7 +130,7 @@ nav a {
     font-size: 1.5em;
     border: none;
     border-radius: 50%;
-    cursor: pointer;
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 #newinput{
     height: 48px;
@@ -151,7 +152,7 @@ nav a {
     border: none;
     padding: 8px 12px;
     border-radius: 16px;
-    cursor: pointer;
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 /* 底部操作按钮 */
 .footer-buttons {
@@ -164,7 +165,7 @@ nav a {
     border-radius: 5px;
     border: none;
     font-size: 1em;
-    cursor: pointer;
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
     width: 48%;
 }
 

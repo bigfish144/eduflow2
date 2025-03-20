@@ -377,6 +377,7 @@
                             selectedCameraItem = cameraItem;
                             selectedSceneIndex = parseInt(cameraItem.getAttribute('data-index'), 10); // 获取索引
                             partsceneindex.textContent = "当前分镜素材-"+(selectedSceneIndex + 1).toString().padStart(2, '0');
+                            console.log("当前分镜索引：", selectedSceneIndex);
                             saveStoryboardData();
                             UpdateMotiontext();
                             // 更新播放器

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>透明背景视频测试</title>
+  <style>
+    /* 页面背景颜色仅用于测试对比 */
+    body {
+      background-color: #ccc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    /* 视频容器无背景 */
+    .video-container {
+      background: none;
+      text-align: center;
+    }
+    /* 按钮样式 */
+    .controls {
+      margin-top: 20px;
+    }
+    .controls button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 0 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="video-container">
+    <video id="myVideo" width="640" height="360" >
+      <source src="RMBG/output.webm" type="video/webm">
+      您的浏览器不支持视频播放。
+    </video>
+    <div class="controls">
+      <button id="playBtn">播放</button>
+      <button id="pauseBtn">暂停</button>
+    </div>
+  </div>
+
+  <script>
+    // 获取视频元素和按钮元素
+    const video = document.getElementById('myVideo');
+    const playBtn = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+
+    // 播放按钮点击事件
+    playBtn.addEventListener('click', () => {
+      video.play();
+    });
+
+    // 暂停按钮点击事件
+    pauseBtn.addEventListener('click', () => {
+      video.pause();
+    });
+  </script>
+</body>
+</html>
