@@ -225,7 +225,7 @@
                             <div class="lip-text-choose-panel">
                                 <textarea placeholder="请输入生成文本" id="show-liptext-panel" class="show-text-panel" readonly style="pointer-events: none;"></textarea>
                             </div>
-                            <div id="lip-show-panel" class="show-text-panel" style="display: none;">
+                            <div id="lip-show-panel" class="show-text-panel" >
                                 <video id="char-video" controls style="max-height: 110px; border-radius: 4px;">
                             </div>
                         </div>
@@ -252,7 +252,7 @@
                         
                         <div class="process-btn-container">
                             <button class="process-grey-btn" id="wavtolip-apply-btn">预览</button>
-                            <button class="process-main-btn" id="wavtolip-ensure-btn" style="display: none;">应用</button>
+                            <button class="process-main-btn" id="wavtolip-ensure-btn">应用</button>
                         </div>
                     </div>    
                 </div>
@@ -2135,10 +2135,31 @@
                     console.error('获取motion文件列表时出错:', error);
                 }
             }
+            async function removebgtowebm(selectedSceneIndex,selectedCharValue) {
+                selectedSceneIndex = selectedSceneIndex.toString();
+                try {
+                    const response = await fetch('/remove-bgtowebm', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ selectedSceneIndex: selectedSceneIndex,selectedCharValue: selectedCharValue})
+                    });
+                    if (response.ok) {
+                        console.log('删除背景并转webm成功');
+                    }
+                }
+                catch (error) {
+                    console.error(error);
+                }
+            }
 
             //点击应用口型匹配按钮
             WavtoLipEnsureBtn.addEventListener('click', async function() {
-                deletmotiondata(selectedSceneIndex);
+                loadingOverlay.style.display = 'flex';
+                await removebgtowebm(selectedSceneIndex,selectedCharValue);
+                await deletmotiondata(selectedSceneIndex);
+                loadingOverlay.style.display = 'none';
                 const mergefilename = selectedSceneIndex.toString();+"-"+selectedCharValue.split('.')[0];
                 console.log("应用口型匹配按钮被点击"+mergefilename);
                 getThisPageCharImages();

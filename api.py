@@ -18,6 +18,10 @@ import numpy as np
 import moviepy
 from moviepy.editor import VideoFileClip, CompositeVideoClip, ImageClip,ImageSequenceClip, AudioFileClip, concatenate_audioclips, clips_array, concatenate_videoclips
 import imageio
+from pathlib import Path
+import requests
+import os
+
 
 # 配置日志记录
 logging.basicConfig(level=logging.INFO)
@@ -457,7 +461,7 @@ async def motion_merge(data: MotionMergeModel):
 
     return JSONResponse(content={"status": "success", "message": "视频拼合完成", "fileName": final_video_name})
 
-#删除冗杂数据
+#删除冗余数据
 class DeleteMotiondataModel(BaseModel):
     selectedSceneIndex: str
 @app.post("/delete-motion-data")
@@ -529,6 +533,40 @@ async def wavtolip(data: WavtoLipModel):
     logger.info("开始口型匹配:"+data.fileName)
     return await process_wavtolip(data)
 
+#移除背景
+class RemoveBGRequest(BaseModel):
+    selectedSceneIndex: str
+    selectedCharValue: str
+@app.post("/remove-bgtowebm")
+async def remove_bg_to_webm(request: RemoveBGRequest):
+    selectedSceneIndex = request.selectedSceneIndex
+    selectedCharValue = request.selectedCharValue.split(".")[0]
+    folder_name = "./static/data/char_video"
+    video_name = selectedSceneIndex + "-" + selectedCharValue + ".mp4"
+    video_path = os.path.join(folder_name, video_name)
+    logger.info("开始移除背景:"+video_path)
+    basename = os.path.splitext(video_name)[0]
+    sh_script_path = "/root/autodl-tmp/ComfyUI/demo/runRMBG.sh"
+    try:
+        result = subprocess.run(
+            [sh_script_path, basename, folder_name],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        print(result.stdout.decode())
+    except subprocess.CalledProcessError as e:
+        print(e.stderr.decode())
+        raise HTTPException(status_code=500, detail="Error executing sh script")
+    # 删除MP4文件
+    try:
+        os.remove(video_path)
+        print(f"Deleted file: {video_path}")
+    except Exception as e:
+        print(f"Error deleting file: {video_path}, {e}")
+        raise HTTPException(status_code=500, detail="Error deleting MP4 file")
+
+    return JSONResponse(content={"message": "Background removed and MP4 file deleted"}, status_code=200)    
 #获取Lora模型列表
 @app.get("/get_lora_list", response_class=JSONResponse)
 async def get_lora_list():
@@ -607,30 +645,46 @@ async def upload_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-#保存生成的图片
 class SaveImageRequest(BaseModel):
     imageUrl: str
     fileName: str
     FloderName: str
+#保存生成图片
 @app.post("/save_gen_image")
 async def save_gen_image(request: SaveImageRequest):
-    save_path = "./static/data/"+request.FloderName
+    save_path = "./static/data/" + request.FloderName
     try:
-        # 确保保存路径存在
         os.makedirs(save_path, exist_ok=True)
         # 下载图片
-        response = requests.get(request.imageUrl)
+        response = requests.get(request.imageUrl, stream=True)
         if response.status_code != 200:
             raise HTTPException(status_code=400, detail="Failed to download image")
-        file_extension = ".png"  # 默认使用 .png 扩展名
+        
+        # 获取文件扩展名
+        content_type = response.headers.get('Content-Type')
+        if 'image/png' in content_type:
+            file_extension = ".png"
+        elif 'image/gif' in content_type:
+            file_extension = ".gif"
+        elif 'image/jpeg' in content_type:
+            file_extension = ".jpg"
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported image format")
+        
         # 构建保存路径
         save_filename = f"{request.fileName}{file_extension}"
         save_full_path = os.path.join(save_path, save_filename)
+        
+        # 保存文件
         with open(save_full_path, 'wb') as file:
-            file.write(response.content)
+            shutil.copyfileobj(response.raw, file)
+        
         return {"message": "Image saved successfully", "filename": save_filename}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'response' in locals() and response:
+            response.close()
 
 #获取文件夹中所有生成的图片
 class GetImageRequest(BaseModel):
@@ -701,7 +755,7 @@ async def get_gen_video(data: GetCharVideoRequest):
         # 只获取以 selectedSceneIndex + "-" 开头的视频文件
         video_files = [
             f for f in os.listdir(directory)
-            if os.path.isfile(os.path.join(directory, f)) and f.startswith(selectedSceneIndex + "-")
+            if os.path.isfile(os.path.join(directory, f)) and f.startswith(selectedSceneIndex + "-") and f.endswith('.webm')
         ]
         return {"files": video_files}
     except Exception as e:
@@ -896,13 +950,14 @@ async def export_video(request: Request):
             elif layer['type'] == 'image':
                 # 如果是 GIF 格式
                 if layer['src'].endswith('.gif'):
-                    logger.info('GIF 格式', layer['src'])
-                    gif_reader = imageio.get_reader(layer['src'])
-                    frame_duration = 1 / 24
-                    frames = [frame for frame in gif_reader]
-                    # 使用 ImageSequenceClip 来处理 GIF 动画
-                    gif_clip = ImageSequenceClip(frames, durations=[frame_duration] * len(frames))
-                    gif_clip = gif_clip.loop(duration=max_duration)  # 循环播放，设置循环时长
+                    gif_file = layer['src']
+                    gif_clip = VideoFileClip(gif_file, has_mask=True)
+                    gif_fps = gif_clip.fps
+                    gif_clip = gif_clip.set_fps(gif_fps)
+                    # 计算需要的重复次数来实现循环
+                    loop_count = int(max_duration / gif_clip.duration) + 1
+                    gif_clip = concatenate_videoclips([gif_clip] * loop_count)
+                    gif_clip = gif_clip.subclip(0, max_duration)  # 截取到最大时长
                     clip = gif_clip
                 else:
                     image_clip = ImageClip(layer['src'])

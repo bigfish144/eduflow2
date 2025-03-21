@@ -9,12 +9,14 @@ from moviepy import *
 from tqdm import tqdm
 import imageio
 import numpy as np
+import argparse
+
 # ========================
 # 1. RMBG-2.0 模型初始化
 # ========================
 print("加载 RMBG-2.0 模型...")
 model = AutoModelForImageSegmentation.from_pretrained('briaai/RMBG-2.0', trust_remote_code=True)
-torch.set_float32_matmul_precision('high')
+torch.set_float32_matmul_precision('highest')
 model.to('cuda')
 model.eval()
 
@@ -29,10 +31,16 @@ transform_image = transforms.Compose([
 # ========================
 # 2. 视频与输出设置
 # ========================
-video_path = "input.mp4"          # 输入视频
-frames_dir = "frames_processed"    # 输出序列帧（PNG）目录
-output_video = "output.webm"       # 输出 WebM 文件名
-audio_output = "extracted_audio.mp3"  # 输出音频文件名
+parser = argparse.ArgumentParser(description="Remove background from video.")
+parser.add_argument('--videoname', type=str, required=True, help='Name of the input video file (without extension)')
+parser.add_argument('--bashpath', type=str, default="", help='Base path for output files')
+args = parser.parse_args()
+
+bashpath = args.bashpath
+video_path = os.path.join(bashpath, f"{args.videoname}.mp4")  # 输入视频
+frames_dir = os.path.join(bashpath, f"{args.videoname}_frames")  # 输出序列帧（PNG）目录
+output_video = os.path.join(bashpath, f"{args.videoname}.webm")  # 输出 WebM 文件名
+audio_output = os.path.join(bashpath, f"{args.videoname}.mp3")  # 输出音频文件名
 
 os.makedirs(frames_dir, exist_ok=True)
 
@@ -126,7 +134,7 @@ print(f"视频合成完成，输出文件：{output_video}")
 # ========================
 # 6. 将处理后的帧转换为 GIF
 # ========================
-gif_output = "outgif.gif"
+gif_output = os.path.join(bashpath, f"{args.videoname}.gif")
 frame_files = sorted(glob.glob(os.path.join(frames_dir, "frame_*.png")))
 
 # 读取所有帧并保持透明通道
@@ -145,3 +153,5 @@ print(f"GIF 文件生成完成，输出文件：{gif_output}")
 import shutil
 shutil.rmtree(frames_dir)
 print(f"已删除文件夹：{frames_dir}")
+os.remove(audio_output)
+print(f"已删除文件：{audio_output}")
