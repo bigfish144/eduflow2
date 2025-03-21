@@ -144,7 +144,7 @@ for frame_file in frame_files:
     frames.append(np.array(frame))
 
 # 使用 imageio 保存 GIF，保持透明通道，并使用 Floyd-Steinberg 误差扩散算法
-imageio.mimsave(gif_output, frames, 'GIF', duration=1/24, palettesize=256, disposal=2, quantizer='nq')
+imageio.mimsave(gif_output, frames, 'GIF', duration=1/fps, palettesize=256, disposal=2, quantizer='nq')
 print(f"GIF 文件生成完成，输出文件：{gif_output}")
 
 # ========================

@@ -942,11 +942,23 @@ async def export_video(request: Request):
                 rotate_angle = 0
 
             if layer['type'] == 'video':
-                video_clip = VideoFileClip(layer['src'])
-                video_clips.append(video_clip)
-                if video_clip.audio:
-                    audio_clips.append(video_clip.audio)
-                clip = video_clip
+                if layer['src'].endswith('.webm'):
+                    # 替换 .webm 为 .gif
+                    gif_file = layer['src'].replace('.webm', '.gif')
+                    gif_clip = VideoFileClip(gif_file, has_mask=True)
+                    gif_fps = gif_clip.fps
+                    gif_clip = gif_clip.set_fps(gif_fps)
+                    clip = gif_clip
+                    # 处理音频
+                    video_clip = VideoFileClip(layer['src'])
+                    if video_clip.audio:
+                        audio_clips.append(video_clip.audio)
+                else:
+                    video_clip = VideoFileClip(layer['src'])
+                    video_clips.append(video_clip)
+                    if video_clip.audio:
+                        audio_clips.append(video_clip.audio)
+                    clip = video_clip
             elif layer['type'] == 'image':
                 # 如果是 GIF 格式
                 if layer['src'].endswith('.gif'):
@@ -967,10 +979,6 @@ async def export_video(request: Request):
         except Exception as e:
             logger.error(f"Failed to process clip from {layer['src']}: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to process clip from {layer['src']}")
-
-    if not clips:
-        logger.error("No clips added to final video")
-        raise HTTPException(status_code=400, detail="No clips added to final video")
 
     # 设置所有剪辑的属性
     final_clips = []
