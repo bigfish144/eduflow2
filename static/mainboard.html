@@ -103,6 +103,10 @@
         <p class="center-text">工作台</p>
       </div>
       <div class="right-section">
+        <button class="process-pre-btn" id="combine-thisscene-btn">
+            合成当前镜头
+        </button>
+        </button>
         <button class="preview-btn" id="preview-btn">
             预览
             <img src="images/goahead-btn.png" alt="预览图标" class="preview-icon">
@@ -329,89 +333,123 @@
                 });
             }
             // 镜头列表面板
-            async function loadStoryboardData() { // 获取并加载分镜数据
-                const leftPanel = document.querySelector('.left-panel');
-                leftPanel.innerHTML = '';
-                try {
-                    // 读取现有的 JSON 数据
-                    const response = await fetch('/read-json-data', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            fileName: 'storyboard.json'
-                        })
-                    });
-                    const data = await response.json();
-                    const scenes = data.scenes;
-                    // 遍历 scenes 对象并创建 camera-item
-                    for (const [key, value] of Object.entries(scenes)) {
-                        const cameraItem = document.createElement('div');
-                        cameraItem.className = 'camera-item';
-                        cameraItem.setAttribute('data-index', key); // 存储索引
-                        const cameraNumber = document.createElement('span');
-                        cameraNumber.className = 'camera-number';
-                        cameraNumber.textContent = parseInt(key) + 1;
-                        const sceneImg = document.createElement('img');
-                        sceneImg.src = "images/sceneimg.png"; 
-                        sceneImg.alt = key;
-                        sceneImg.className = 'sceneimg';
-                        const description = document.createElement('p');
-                        description.className = 'camera-description'; 
-                        description.textContent = value;
-                        cameraItem.appendChild(cameraNumber);
-                        cameraItem.appendChild(sceneImg);
-                        cameraItem.appendChild(description);
-                        leftPanel.appendChild(cameraItem);
-                        // 切换分镜
-                        cameraItem.addEventListener('click', async function() {
-                            const partsceneindex = document.getElementById('part-scene-index');
-                            const allCameraItems = document.querySelectorAll('.camera-item');
-                            const showTextPanel = document.getElementById('show-text-panel');
-                            const showLipTextPanel = document.getElementById('show-liptext-panel');
-                            allCameraItems.forEach(item => item.classList.remove('selected'));
-                            cameraItem.classList.add('selected');
-                            showTextPanel.value = description.textContent; 
-                            showLipTextPanel.value = description.textContent;
-                            selectedCameraItem = cameraItem;
-                            selectedSceneIndex = parseInt(cameraItem.getAttribute('data-index'), 10); // 获取索引
-                            partsceneindex.textContent = "当前分镜素材-"+(selectedSceneIndex + 1).toString().padStart(2, '0');
-                            console.log("当前分镜索引：", selectedSceneIndex);
-                            saveStoryboardData();
-                            UpdateMotiontext();
-                            // 更新播放器
-                            await updateAudioPlayers();
-                            //更新当前素材-素材列表
-                            await getThisPageMatImages();
-                            // 获取当前素材-角色图片
-                            await getThisPageCharImages();
-                            // 更新视频编辑器
-                            const currentSceneLayers = layers.filter(layer => layer.getAttribute('sceneindex') === selectedSceneIndex.toString());
-                            const editor = document.getElementById('editor');
-                            editor.innerHTML = ''; // 清空 editor
-                            // 按 layerIndex 排序 layers 数组
-                            currentSceneLayers.sort((a, b) => {
-                                const aIndex = parseInt(a.getAttribute('layerindex'), 10);
-                                const bIndex = parseInt(b.getAttribute('layerindex'), 10);
-                                return aIndex - bIndex;
-                            });                    
-                            currentSceneLayers.forEach(layer => {
-                                editor.appendChild(layer);
-                            });
+            async function loadStoryboardData() {
+            const leftPanel = document.querySelector('.left-panel');
+            leftPanel.innerHTML = '';
+
+            try {
+                // 读取现有的 JSON 数据
+                const response = await fetch('/read-json-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        fileName: 'storyboard.json'
+                    })
+                });
+                const data = await response.json();
+                const scenes = data.scenes;
+
+                // 遍历 scenes 对象并创建 camera-item
+                for (const [key, value] of Object.entries(scenes)) {
+                    const cameraItem = document.createElement('div');
+                    cameraItem.className = 'camera-item';
+                    cameraItem.setAttribute('data-index', key); // 存储索引
+
+                    const cameraNumber = document.createElement('span');
+                    cameraNumber.className = 'camera-number';
+                    cameraNumber.textContent = parseInt(key) + 1;
+
+                    const sceneImg = document.createElement('img');
+                    sceneImg.alt = key;
+                    sceneImg.className = 'sceneimg';
+
+                    // 构造可能存在的 PNG 路径
+                    const pngFilePath = `data/final_video/${key}.png`;
+
+                    // 检查该路径是否存在
+                    try {
+                        const imgResponse = await fetch(pngFilePath, { method: 'HEAD' });
+                        if (imgResponse.ok) {
+                            sceneImg.src = pngFilePath; // 使用生成的第一帧图片
+                        } else {
+                            sceneImg.src = "images/sceneimg.png"; // 默认图片
+                        }
+                    } catch (error) {
+                        console.error(`检查图片失败 ${pngFilePath}:`, error);
+                        sceneImg.src = "images/sceneimg.png"; // 出错时也用默认图片
+                    }
+
+                    const description = document.createElement('p');
+                    description.className = 'camera-description';
+                    description.textContent = value;
+
+                    cameraItem.appendChild(cameraNumber);
+                    cameraItem.appendChild(sceneImg);
+                    cameraItem.appendChild(description);
+                    leftPanel.appendChild(cameraItem);
+
+                    // 切换分镜
+                    cameraItem.addEventListener('click', async function () {
+                        const partsceneindex = document.getElementById('part-scene-index');
+                        const allCameraItems = document.querySelectorAll('.camera-item');
+                        const showTextPanel = document.getElementById('show-text-panel');
+                        const showLipTextPanel = document.getElementById('show-liptext-panel');
+
+                        allCameraItems.forEach(item => item.classList.remove('selected'));
+                        cameraItem.classList.add('selected');
+
+                        showTextPanel.value = description.textContent;
+                        showLipTextPanel.value = description.textContent;
+
+                        selectedCameraItem = cameraItem;
+                        selectedSceneIndex = parseInt(cameraItem.getAttribute('data-index'), 10); // 获取索引
+
+                        partsceneindex.textContent = "当前分镜素材-" + (selectedSceneIndex + 1).toString().padStart(2, '0');
+                        console.log("当前分镜索引：", selectedSceneIndex);
+
+                        saveStoryboardData();
+                        UpdateMotiontext();
+
+                        // 更新播放器
+                        await updateAudioPlayers();
+
+                        // 更新当前素材-素材列表
+                        await getThisPageMatImages();
+
+                        // 获取当前素材-角色图片
+                        await getThisPageCharImages();
+
+                        // 更新视频编辑器
+                        const currentSceneLayers = layers.filter(layer => layer.getAttribute('sceneindex') === selectedSceneIndex.toString());
+                        const editor = document.getElementById('editor');
+                        editor.innerHTML = ''; // 清空 editor
+
+                        // 按 layerIndex 排序 layers 数组
+                        currentSceneLayers.sort((a, b) => {
+                            const aIndex = parseInt(a.getAttribute('layerindex'), 10);
+                            const bIndex = parseInt(b.getAttribute('layerindex'), 10);
+                            return aIndex - bIndex;
                         });
-                    }
-                    // 默认选择第一个 camera-item
-                    const firstCameraItem = leftPanel.querySelector('.camera-item');
-                    if (firstCameraItem) {
-                        firstCameraItem.click();
-                    }
-                } catch (error) {
-                    console.error('加载分镜数据失败:', error);
+
+                        currentSceneLayers.forEach(layer => {
+                            editor.appendChild(layer);
+                        });
+                    });
                 }
+
+                // 默认选择第一个 camera-item
+                const firstCameraItem = leftPanel.querySelector('.camera-item');
+                if (firstCameraItem) {
+                    firstCameraItem.click();
+                }
+            } catch (error) {
+                console.error('加载分镜数据失败:', error);
             }
+        }
             // 加载分镜数据
-            loadStoryboardData(); 
+            loadStoryboardData();
             // 输入分镜描述时更新分镜描述
             const showTextPanel = document.getElementById('show-text-panel');
             showTextPanel.addEventListener('input', function() {
@@ -2774,9 +2812,8 @@
                 const resizers = layer.querySelectorAll('.resizer');
                 resizers.forEach(resizer => resizer.addEventListener('mousedown', handleResize));
             }
-
-            // 导出视频按钮点击事件
-            document.getElementById('preview-btn').addEventListener('click', function() {
+            // 点击合成当前镜头按钮
+            document.getElementById('combine-thisscene-btn').addEventListener('click', function() {
                 loadingOverlay.style.display = 'flex';
                 // 过滤掉无效的图层
                 const validLayers = layers.filter(layer => layer instanceof HTMLElement);
@@ -2817,10 +2854,17 @@
                     return response.json();
                 }).then(data => {
                     alert('视频导出成功: ' + data.url);
-                    window.location.href = `preview_video.html?url=${encodeURIComponent(data.url)}`;
+                    loadingOverlay.style.display = 'none';
+                    // 加载分镜数据
+                    loadStoryboardData();
+                    // window.location.href = `preview_video.html?url=${encodeURIComponent(data.url)}`;
                 }).catch(error => {
                     console.error('导出失败:', error);
                 });
+            });
+            //导出视频按钮跳转事件
+            document.getElementById('preview-btn').addEventListener('click', function() { 
+                window.location.href = 'preview_video.html';
             });
         });
 </script>

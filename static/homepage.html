@@ -32,12 +32,19 @@
         <section class="hero">
             <h1>欢迎来到<br>Eduflow</h1>
             <p>全流程的开源AI科普视频制作产品</p>
+            <div class="line1">
+                <img src="static/images/line1.png" alt="line">
+            </div>
             <div class="buttons">
                 <button id="watch-demo" class="btn-secondary">查看演示</button>
                 <button id="start-creation" class="btn-primary">开始创作</button>
             </div>
         </section>
-
+        <div>
+            <button class="clear-data" id="clear-data">
+                <p>清除数据</p>
+            </button>
+        </div>
         <section class="features">
             <div class="feature">
                 <p><span class="white-text">API</span><br>基于ComfyUI开发</p>
@@ -49,6 +56,9 @@
                 <p><span class="white-text">100%</span><br>一站式工作流</p>
             </div>
         </section>
+        <div class="line2">
+            <img src="static/images/line2.png" alt="line">
+        </div>
 
     </main>
 
@@ -71,6 +81,23 @@
         </div>
         <div class="panel-buttons">
             <button class="btn-secondary" id="no-button">否，帮我生成</button>    
+        </div>
+    </div>
+    <!-- 删除数据面板 -->
+    <div class="new-panel" id="delete-panel">
+        <div class="panel-header">
+            <button id="close-panel2">
+                <img src="static/images/btn_back.png" alt="关闭" />
+            </button>
+            <span >返回</span>
+        </div>
+        <p class="panel-title">请选择删除数据类型</p>
+        <p class="panel-description">所有数据包含本地和ComfyUI，ComfyUI则会保留本地数据</p>
+        <div class="panel-buttons">
+            <button class="btn-primary" id="delete-all-data">删除所有数据</button>   
+        </div>
+        <div class="panel-buttons">
+            <button class="btn-secondary" id="delete-part-data">仅ComfyUI数据</button>    
         </div>
     </div>
     <script>
@@ -289,7 +316,62 @@
 
         document.getElementById('no-button').addEventListener('click', function() {
             window.location.href = 'static/dialog.html'; 
-        });        
+        });
+
+
+        //删除数据
+        deletepanel=document.getElementById('delete-panel');
+        document.getElementById('clear-data').addEventListener('click', function() {
+            deletepanel.style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        });
+        document.getElementById('close-panel2').addEventListener('click', function() {
+            document.getElementById('overlay').style.display = 'none';
+            deletepanel.style.display = 'none';
+        });
+        document.getElementById('delete-all-data').addEventListener('click', function() {
+            fetch('/clear-folders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "option": "all" 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                if (data.message) {
+                    alert("删除成功");  // 弹出成功提示
+                    deletepanel.style.display = 'none';  // 隐藏删除面板
+                    document.getElementById('overlay').style.display = 'none';  // 隐藏遮罩层
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+        document.getElementById('delete-part-data').addEventListener('click', function() {
+            fetch('/clear-folders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "option": "comfyui" 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                if (data.message) {
+                    alert("删除成功");  // 弹出成功提示
+                    deletepanel.style.display = 'none';  // 隐藏删除面板
+                    document.getElementById('overlay').style.display = 'none';  // 隐藏遮罩层
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
     </script>
 </body>
 </html>

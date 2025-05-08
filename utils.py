@@ -18,21 +18,17 @@ import glob
 def create_webp_from_pngs(input_folder, output_path, fps=24):
     # 获取文件夹中所有 PNG 文件的路径
     png_files = sorted(glob.glob(os.path.join(input_folder, '*.png')))
-    
     if not png_files:
         print(f"No PNG files found in {input_folder}")
         return
-    
     # 读取所有 PNG 文件
     images = []
     for png_file in png_files:
         images.append(imageio.imread(png_file))
-    
     # 将最后一帧重复添加 fps * 3 次
     if images:
         last_frame = images[-1]
         images.extend([last_frame] * (fps * 3))
-    
     # 创建 WebP 文件
     imageio.mimsave(output_path, images, fps=fps, format='WEBP')
     print(f"WebP created successfully at {output_path}")

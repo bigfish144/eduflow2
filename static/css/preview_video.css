@@ -159,6 +159,9 @@ body {
   display: inline-block; /* 或者 display: block; */
   margin-left: 16px;
 }
+.camera-item.selected .sceneimg {
+  border: 2px solid #6C83FF; /* 添加描边 */
+}
 .camera-number {
   position: absolute;
   top: 0;
@@ -172,6 +175,8 @@ body {
   display: inline-block; 
   border: 1px solid #fff; 
   border-radius: 8px;
+  width: 213px;
+  height: 130px;
 }
 
 /* 风格化面板 */
@@ -554,7 +559,7 @@ select{
   border-radius: 0 0 8px 8px;
   padding: 12px 20px;
 }
-#show-text-panel{
+#show-musictext-panel{
   resize: none;
   width: 100%;
   height: 48px;
@@ -707,6 +712,39 @@ select{
   background-color: rgba(0, 0, 0, 0.5); /* 50% 黑色透明度 */
   z-index: 1; /* 确保新面板在遮罩层之上 */
 }
+/* 加载中动画 */
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1005;
+}
+.loading-spinner {
+  border: 8px solid rgba(255, 255, 255, 1);
+  border-top: 8px solid #6966FF;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+#loading-animation{
+  width: 480px;
+  height: 480px;
+}
+
 
 /* 新面板样式 */
 .export-panel {
@@ -803,4 +841,11 @@ select{
 #srt-output-container input[type="checkbox"]:checked + label::before,
 #audio-output-container input[type="checkbox"]:checked + label::before {
   background-image: url('/static/images/checked.png'); /* 选中图片路径 */
+}
+
+#audio-material-1.hide {
+  visibility: hidden;
+  position: absolute;
+  height: 200px; /* 保持原高度 */
+  width: 100%;
 }

@@ -200,6 +200,25 @@ body {
   background-color: #16B57F;
   border-radius: 50%;
 }
+.right-section{
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+.process-pre-btn{
+  height: 36px;
+  width: 114px;
+  background-color: #4F4C64;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  padding: 0 16px;
+  position: relative;
+  border: none;
+  box-shadow: none;
+  cursor:pointer;
+}
 .preview-btn {
     height: 36px;
     width: 92px;
@@ -213,6 +232,7 @@ body {
     position: relative;
     border: none;
     box-shadow: none;
+    cursor:pointer;
 }
 .preview-icon {
     width: 16px; /* 图标宽度 */
@@ -303,6 +323,8 @@ body {
   display: inline-block; 
   border: 1px solid #fff; 
   border-radius: 8px;
+  width: 213px;
+  height: 130px;
 }
 
 /* 当前素材列表 */

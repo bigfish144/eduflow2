@@ -8,6 +8,8 @@ from utils import image_to_base64
  
 server_address = "127.0.0.1:8188"
 def queue_prompt(prompt, client_id):
+    # print("Prompt:", prompt)
+    # print("Client ID:", client_id)
     url = f"http://{server_address}/prompt"
     payload = {"prompt": prompt, "client_id": client_id}
     response = requests.post(url, json=payload)
@@ -139,17 +141,28 @@ async def get_audiooutputs(client_id,prompt):
     print(f"prompt_id:{prompt_id}")
     
 #生成自定义动作-musev
-async def get_custommotionoutputs(client_id,prompt):
+import websockets.client
+async def get_custommotionoutputs(client_id, prompt):
     prompt_id = queue_prompt(prompt, client_id)['prompt_id']
-    async with websockets.connect(f"ws://{server_address}/ws?clientId={client_id}") as websocket:        
+    
+    # 设置最大消息大小为 10MB
+    uri = f"ws://{server_address}/ws?clientId={client_id}"
+    
+    async with websockets.client.connect(uri, max_size=10 * 1024 * 1024) as websocket:
         while True:
-            out = await websocket.recv()
-            if isinstance(out, str):
-                message= json.loads(out)
-                if message['type'] == 'executing':
-                    data = message['data']
-                    if data['node'] is None and data['prompt_id'] == prompt_id:
-                        break
+            try:
+                out = await websocket.recv()
+                if isinstance(out, str):
+                    message = json.loads(out)
+                    if message['type'] == 'executing':
+                        data = message['data']
+                        if data['node'] is None and data['prompt_id'] == prompt_id:
+                            break
+            except websockets.exceptions.ConnectionClosed:
+                raise websockets.exceptions.ConnectionClosedError(
+                    "WebSocket connection closed unexpectedly."
+                )
+    
     history = get_history(prompt_id)[prompt_id]
     print(f"prompt_id:{prompt_id}")
 

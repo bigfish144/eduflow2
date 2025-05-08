@@ -78,7 +78,7 @@ nav ul li a.button {
 }
 
 .hero {
-    margin-top: 100px;
+    margin-top: 40px;
     position: relative;
     z-index: 2; /* 确保文字和按钮在网格图上方 */
 }
@@ -99,6 +99,15 @@ color: #FFFFFF;
 }
 .buttons {
     margin-top: 40px;
+}
+.line1 img{
+    height: 24px;
+    width: 277px;
+}
+.line2 img{
+    margin-top: 40px;
+    height: 100px;
+    width: 32px;
 }
 #watch-demo {
     padding: 12px 60px;
@@ -128,7 +137,7 @@ color: #FFFFFF;
     display: flex;
     justify-content: center;
     gap: 50px;
-    margin-top: 100px;
+    margin-top: 20px;
 }
 
 .feature p {
@@ -249,7 +258,8 @@ body::before {
 .btn-secondary:hover {
     background-color: #726E8E;
 }
-#close-panel {
+#close-panel,
+#close-panel2 {
     background: none;
     border: none;
     cursor: url('/static/images/cursor/point.png'), pointer !important;
@@ -257,8 +267,19 @@ body::before {
     outline: none; 
     align-items: center;
 }
-#close-panel img {
+#close-panel img,
+#close-panel2 img {
     width: 24px; /* 根据图片大小调整 */
     height: 24px; /* 根据图片大小调整 */
     margin-top: 5px;
+}
+
+.clear-data{
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    border: none;
+    box-shadow: none;
+    cursor: pointer;
+    font-size: 16px;
+    margin-bottom: 12px;
 }

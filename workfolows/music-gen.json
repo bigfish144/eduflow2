@@ -1,0 +1,138 @@
+{
+  "1": {
+    "inputs": {
+      "seed": 187829596268336,
+      "steps": 100,
+      "cfg": 7,
+      "sampler_name": "dpmpp_3m_sde_gpu",
+      "scheduler": "exponential",
+      "denoise": 1,
+      "model": [
+        "2",
+        0
+      ],
+      "positive": [
+        "3",
+        0
+      ],
+      "negative": [
+        "4",
+        0
+      ],
+      "latent_image": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "K采样器"
+    }
+  },
+  "2": {
+    "inputs": {
+      "ckpt_name": "stable-audio-open-1.0_audio-open1.0.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Checkpoint加载器（简易）"
+    }
+  },
+  "3": {
+    "inputs": {
+      "text": [
+        "9",
+        0
+      ],
+      "clip": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP文本编码"
+    }
+  },
+  "4": {
+    "inputs": {
+      "text": "",
+      "clip": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP文本编码"
+    }
+  },
+  "5": {
+    "inputs": {
+      "clip_name": "t5-base/model.safetensors",
+      "type": "stable_audio",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "加载CLIP"
+    }
+  },
+  "6": {
+    "inputs": {
+      "seconds": 10,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentAudio",
+    "_meta": {
+      "title": "空Latent音频"
+    }
+  },
+  "7": {
+    "inputs": {
+      "samples": [
+        "1",
+        0
+      ],
+      "vae": [
+        "2",
+        2
+      ]
+    },
+    "class_type": "VAEDecodeAudio",
+    "_meta": {
+      "title": "VAE解码（音频）"
+    }
+  },
+  "9": {
+    "inputs": {
+      "from_translate": "auto",
+      "to_translate": "english",
+      "add_proxies": false,
+      "proxies": "",
+      "auth_data": "",
+      "service": "GoogleTranslator",
+      "text": "大自然，清晨，鸟叫，溪流，",
+      "Show proxy": "proxy_hide",
+      "Show authorization": "authorization_hide",
+      "speak_and_recognation": true
+    },
+    "class_type": "DeepTranslatorTextNode",
+    "_meta": {
+      "title": "Deep Translator Text Node"
+    }
+  },
+  "16": {
+    "inputs": {
+      "filename_prefix": "audio/ComfyUI",
+      "audio": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "SaveAudio",
+    "_meta": {
+      "title": "保存音频"
+    }
+  }
+}

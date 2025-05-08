@@ -21,7 +21,7 @@ import imageio
 from pathlib import Path
 import requests
 import os
-
+import re
 
 # 配置日志记录
 logging.basicConfig(level=logging.INFO)
@@ -868,6 +868,62 @@ async def get_gen_video(data: GetCharVideoRequest):
 #     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 #     final_clip.write_videofile(output_path, codec='libx264')
 #     return JSONResponse(content={"url": output_path})
+
+def move_and_find_latest_audio(description: str, source_dir: str, target_dir: str):
+    os.makedirs(target_dir, exist_ok=True)
+    safe_description = re.sub(r'[<>:"/\\|\?\*\s,，,、]', '_', description)
+    logger.info(f"Searching in {source_dir} for pattern: {safe_description}_.*\.flac")
+
+    matched_files = []
+    for filename in os.listdir(source_dir):
+        if filename.startswith(f"{safe_description}_") and filename.endswith(".flac"):
+            # 提取数字部分（尽可能提取）
+            match = re.search(rf"{re.escape(safe_description)}_(\d+)", filename)
+            number = int(match.group(1)) if match else -1
+            matched_files.append((number, filename))
+
+    logger.info(f"Matched files: {matched_files}")
+    
+    if not matched_files:
+        return None
+
+    # 找出最大数字对应的文件
+    matched_files.sort(reverse=True, key=lambda x: x[0])
+    latest_number, latest_filename = matched_files[0]
+
+    src_path = os.path.join(source_dir, latest_filename)
+    dst_path = os.path.join(target_dir, latest_filename)
+
+    if os.path.exists(dst_path):
+        os.remove(dst_path)
+
+    shutil.move(src_path, dst_path)
+    logger.info(f"Moved file: {src_path} -> {dst_path}")
+
+    return f"data/music/{latest_filename}"
+
+#生成背景音乐
+class GenerateMusicRequest(BaseModel):
+    description: str
+    duration: float
+@app.post("/generate_music")
+async def generate_music(data: GenerateMusicRequest):
+    description = data.description
+    duration = data.duration
+    logger.info(f"生成背景音乐: {description}, 时长: {duration}")
+    await process_generate_music(description, duration)
+    logger.info("背景音乐生成完成")
+    # 源目录和目标目录
+    source_dir = "../output/music"
+    target_dir = "./static/data/music"
+    result_path = move_and_find_latest_audio(description, source_dir, target_dir)
+    # 返回最新的文件路径
+    if result_path:
+        return JSONResponse(content={"audio_url": result_path})
+    else:
+        raise HTTPException(status_code=404, detail="未找到匹配的音频文件")
+
+
 #导出视频合成
 @app.post("/export_video")
 async def export_video(request: Request):
@@ -1000,9 +1056,139 @@ async def export_video(request: Request):
     output_path = f"./static/data/final_video/{selected_scene_index}.mp4"
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     final_clip.write_videofile(output_path, codec='libx264', fps=24)
+    # 获取视频的第一帧
+    video_capture = cv2.VideoCapture(output_path)
+    success, frame = video_capture.read()
+
+    if success:
+        # 定义同名的 PNG 图片路径
+        first_frame_path = os.path.splitext(output_path)[0] + ".png"
+        # 保存第一帧为 PNG 文件
+        cv2.imwrite(first_frame_path, frame)
+        logger.info(f"视频首帧已保存至: {first_frame_path}")
+
+    # 释放 VideoCapture 对象
+    video_capture.release()
     return JSONResponse(content={"url": output_path})
 
 
+import tempfile
+import uuid
+from fastapi.responses import StreamingResponse
+from urllib.parse import unquote
+from moviepy.editor import CompositeAudioClip
+#保存bgm
+class SaveBGMRequest(BaseModel):
+    src_filename: str  # 原始文件名，如 music_001.flac
+    dest_filename: str = "bgm.flac"  # 目标文件名，默认为 bgm.flac
+@app.post("/save-bgm")
+async def save_bgm(request: SaveBGMRequest):
+    # ✅ 使用 unquote 解码文件名
+    src_filename = unquote(request.src_filename)
+    dest_filename = request.dest_filename
+    src_path = os.path.join("./static/data/music", src_filename)
+    dest_path = os.path.join("./static/data/music", dest_filename)
+    if not os.path.exists(src_path):
+        raise HTTPException(status_code=404, detail=f"源文件 {request.src_filename} 不存在")
+    try:
+        if os.path.exists(dest_path):
+            os.remove(dest_path)
+
+        shutil.copyfile(src_path, dest_path)
+        return {"message": f"{dest_filename} 已更新"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"保存失败: {str(e)}")
+
+
+# 导出视频
+class ExportVideoRequest(BaseModel):
+    export_name: str
+    resolution: str
+
+@app.post("/export-video")
+async def export_video(request: ExportVideoRequest):
+    input_dir = "./static/data/final_video"
+    output_dir = "./static/data/exported"
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    resolutions = {
+        "480p": (854, 480),
+        "720p": (1280, 720),
+        "1080p": (1920, 1080)
+    }
+    if request.resolution not in resolutions:
+        raise HTTPException(status_code=400, detail="不支持的分辨率")
+
+    target_size = resolutions[request.resolution]
+
+    video_files = [f for f in os.listdir(input_dir) if f.endswith(".mp4")]
+    if not video_files:
+        raise HTTPException(status_code=404, detail="未找到任何视频文件")
+
+    try:
+        video_files.sort(key=lambda x: int(os.path.splitext(x)[0]))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="文件名必须为纯数字.mp4格式")
+
+    clips = []
+    for filename in video_files:
+        file_path = os.path.join(input_dir, filename)
+        try:
+            clip = VideoFileClip(file_path).resize(target_size)
+            clips.append(clip)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"加载视频失败: {filename}")
+
+    # Step 1: 拼接视频片段
+    final_clip = concatenate_videoclips(clips)
+
+    # Step 2: 提取整个视频的原声音轨
+    original_audio = final_clip.audio
+
+    # Step 3: 加载 BGM 并调整音量
+    bgm_path = "./static/data/music/bgm.flac"
+    bgm = None
+    if os.path.exists(bgm_path):
+        logger.info("检测到 BGM 文件，正在叠加进视频...")
+        bgm = AudioFileClip(bgm_path).volumex(0.5)
+
+    # Step 4: 合并原声与 BGM
+    final_audio = None
+    if original_audio and bgm:
+        final_audio = CompositeAudioClip([original_audio, bgm])
+    elif original_audio:
+        final_audio = original_audio
+    elif bgm:
+        final_audio = bgm
+    else:
+        logger.warning("没有可用音频轨道")
+
+    # Step 5: 设置合成后的音频轨道
+    if final_audio:
+        final_clip = final_clip.set_audio(final_audio)
+
+    # Step 6: 导出最终视频
+    temp_dir = tempfile.gettempdir()
+    unique_id = str(uuid.uuid4())
+    temp_output_path = os.path.join(temp_dir, f"{unique_id}_{request.export_name}.mp4")
+
+    try:
+        final_clip.write_videofile(temp_output_path, codec="libx264", audio_codec="aac")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="视频合成失败")
+
+    def iterfile():
+        with open(temp_output_path, mode="rb") as f:
+            while chunk := f.read(1024 * 1024):  # 1MB chunks
+                yield chunk
+        os.remove(temp_output_path)  # 清理临时文件
+
+    headers = {
+        'Content-Disposition': f'attachment; filename="{request.export_name}.mp4"'
+    }
+
+    return StreamingResponse(iterfile(), media_type="video/mp4", headers=headers)
 #文生图
 # class TextToImageModel(BaseModel):
 #     prompt: str
@@ -1065,3 +1251,68 @@ if __name__ == '__main__':
     uvicorn.run(app, host="0.0.0.0", port=8000)
 # cd /root/autodl-tmp/ComfyUI/demo
 # 运行命令：uvicorn api:app --reload
+
+#删除数据
+def clear_folder_contents(folder_path: str):
+    """
+    清空指定文件夹内容，但保留该文件夹。
+    参数:
+        folder_path (str): 文件夹路径
+    """
+    if not os.path.exists(folder_path):
+        raise HTTPException(status_code=404, detail=f"路径 {folder_path} 不存在")
+
+    if not os.path.isdir(folder_path):
+        raise HTTPException(status_code=400, detail=f"{folder_path} 不是一个文件夹")
+
+    for item in os.listdir(folder_path):
+        item_path = os.path.join(folder_path, item)
+        if os.path.isfile(item_path) or os.path.islink(item_path):
+            os.remove(item_path)
+        elif os.path.isdir(item_path):
+            shutil.rmtree(item_path)
+
+class ClearFolderRequest(BaseModel):
+    option: str
+@app.post("/clear-folders")
+async def clear_folders(request: ClearFolderRequest):
+    option = request.option
+    print(request.option)
+    base_dir = "/root/autodl-tmp/ComfyUI"
+    all_folders = [ 
+        os.path.join(base_dir, "demo/static/data/music"),
+        os.path.join(base_dir, "demo/static/data/audio"),
+        os.path.join(base_dir, "demo/static/data/motion-pre"),
+        os.path.join(base_dir, "demo/static/data/motion"),
+        os.path.join(base_dir, "demo/static/data/char_video"),
+        os.path.join(base_dir, "demo/static/data/final_video"),
+        os.path.join(base_dir, "output/music"),
+        os.path.join(base_dir, "output/audio"),
+        os.path.join(base_dir, "output/motion-pre"),
+        os.path.join(base_dir, "output/motion"),
+        os.path.join(base_dir, "output/char_video"),
+    ]
+    comfyui_folders = [
+        os.path.join(base_dir, "output/music"),
+        os.path.join(base_dir, "output/audio"),
+        os.path.join(base_dir, "output/motion-pre"),
+        os.path.join(base_dir, "output/motion"),
+        os.path.join(base_dir, "output/char_video"),
+    ]
+    if option == "all":
+        logger.info("开始清空所有文件夹内容")
+        target_folders = all_folders
+    elif option == "comfyui":
+        logger.info("开始清空ComfyUI相关文件夹内容")
+        target_folders = comfyui_folders
+    else:
+        raise HTTPException(status_code=400, detail="无效的选项")
+    deleted_paths = []
+    for folder in target_folders:
+        try:
+            clear_folder_contents(folder)
+            deleted_paths.append(folder)
+        except Exception as e:
+            return {"error": f"在处理路径 {folder} 时出错: {str(e)}"}
+
+    return {"message": f"已根据选项 `{option}` 清空以下文件夹内容", "folders_cleared": deleted_paths}

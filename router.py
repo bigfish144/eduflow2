@@ -237,6 +237,19 @@ async def process_generate_animation(data):
     print(videosurls)
     return {"video_url": videosurls}
 
+import re
+#生成背景音乐
+async def process_generate_music(description, duration):
+    client_id = str(uuid.uuid4())
+    prompt = load_json_template('./workfolows/music-gen.json')
+    prompt["9"]["inputs"]["text"] = description
+    prompt["6"]["inputs"]["seconds"] = duration
+    safe_description = re.sub(r'[<>:"/\\|\?\*\s,，,、]', '_', description)
+    print(safe_description)
+    prompt["16"]["inputs"]["filename_prefix"] = f"music/{safe_description}"
+    await get_audiooutputs(client_id, prompt)
+    return {"outputname": description}
+
 
 # #文生图
 # async def process_generateimg(data, request_count=1):
