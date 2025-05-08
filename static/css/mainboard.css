@@ -48,6 +48,14 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+#loading-animation{
+  width: 360px;
+  height: 360px;
+}
+#loading-text{
+  font-size: 20px;
+  font-weight: bold;
+}
 
 /* 新面板-生成语音设置 */
 .close-btn{
@@ -200,6 +208,7 @@ body {
   background-color: #16B57F;
   border-radius: 50%;
 }
+
 .right-section{
   display: flex;
   flex-direction: row;

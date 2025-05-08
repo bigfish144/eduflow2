@@ -741,10 +741,13 @@ select{
   100% { transform: rotate(360deg); }
 }
 #loading-animation{
-  width: 480px;
-  height: 480px;
+  width: 360px;
+  height: 360px;
 }
-
+#loading-text{
+  font-size: 20px;
+  font-weight: bold;
+}
 
 /* 新面板样式 */
 .export-panel {

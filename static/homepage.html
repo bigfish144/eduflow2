@@ -20,11 +20,13 @@
         </div>
         <nav>
             <ul>
-                <li><a href="#">社区</a></li>
-                <li><a href="#">Github</a></li>
-                <li><a href="#">关于我们</a></li>
-                <li><a href="#">教程</a></li>
-                <li><a href="#" class="button">工作台</a></li>
+                <li>
+                    <button id="icon-show">徽章墙</button>
+                </li>
+                <li><a href="https://github.com/bigfish144/eduflow2">Github</a></li>
+                <li><a href="">关于我们</a></li>
+                <li><a href="">教程</a></li>
+                <li><a href="http://localhost:8000/static/mainboard.html" class="button">工作台</a></li>
             </ul>
         </nav>
     </header>
@@ -69,7 +71,7 @@
     <div class="overlay" id="overlay"></div>
     <div class="new-panel" id="new-panel">
         <div class="panel-header">
-            <button id="close-panel">
+            <button id="close-panel" class="close-panel">
                 <img src="static/images/btn_back.png" alt="关闭" />
             </button>
             <span >返回</span>
@@ -86,7 +88,7 @@
     <!-- 删除数据面板 -->
     <div class="new-panel" id="delete-panel">
         <div class="panel-header">
-            <button id="close-panel2">
+            <button id="close-panel2" class="close-panel">
                 <img src="static/images/btn_back.png" alt="关闭" />
             </button>
             <span >返回</span>
@@ -100,7 +102,74 @@
             <button class="btn-secondary" id="delete-part-data">仅ComfyUI数据</button>    
         </div>
     </div>
+    <!-- 徽章墙面板 -->
+    <div class="new-panel" id="icon-panel">
+        <div class="panel-header">
+            <button id="close-panel3" class="close-panel">
+                <img src="static/images/btn_back.png" alt="关闭" />
+            </button>
+            <span >返回</span>
+        </div>
+        <p class="panel-title2">徽章墙</p>
+        <div class="icon-container">
+            <div>
+                <img src="static/images/FOFO/huizhang/1.png" alt="徽章1">
+                <p>徽章之生成视频</p>
+            </div>
+            <div>
+                <img src="static/images/FOFO/huizhang/2.png" alt="徽章2">
+                <p>徽章之生成文稿</p>
+            </div>
+            <div>
+                <img src="static/images/FOFO/huizhang/3.png" alt="徽章3">
+                <p>徽章之生成图片</p>
+            </div>
+            <div>
+                <img src="static/images/FOFO/huizhang/4.png" alt="徽章4">
+                <p>徽章之生成音频</p>
+            </div>
+            <div>
+                <img src="static/images/FOFO/huizhang/5.png" alt="徽章5">
+                <p>徽章之生成动作</p>
+            </div>
+            <div>
+                <img src="static/images/FOFO/huizhang/6.png" alt="徽章6">
+                <p>徽章之生成表情</p>
+            </div>
+            
+        </div>
+    </div>
+    <!-- 查看演示面板 -->
+    <div class="new-panel2" id="demovideo-panel">
+        <div class="panel-header">
+            <button  class="close-panel" id="close-panel4">
+                <img src="static/images/btn_back.png" alt="关闭" />
+            </button>
+            <span >返回</span>
+        </div>
+        <div class="demovideo-container">
+            <video src="static/images/demovideo.mp4" id="demovideo" style="height: 480px;" controls></video>
+        </div>
+    </div>
     <script>
+        //徽章墙面板
+        const iconPanel = document.getElementById('icon-panel');
+        document.getElementById('icon-show').addEventListener('click', () => {
+            iconPanel.style.display = 'block';
+        });
+        document.getElementById('close-panel3').addEventListener('click', () => {
+            iconPanel.style.display = 'none';
+        });
+        //演示视频面板
+        const demovideoPanel = document.getElementById('demovideo-panel');
+        document.getElementById('watch-demo').addEventListener('click', () => {
+            demovideoPanel.style.display = 'block';
+            document.getElementById('demovideo').play();
+        });
+        document.getElementById('close-panel4').addEventListener('click', () => {
+            demovideoPanel.style.display = 'none';
+            document.getElementById('demovideo').pause();
+        });
         // FOFO桌宠
         // 对话框元素
         const dialogBox = document.getElementById('dialog-box');

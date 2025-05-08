@@ -11,7 +11,7 @@
     <nav class="top-nav">
       <div class="left-section">
         <img src="images/LOGO.png" alt="Logo" class="logo">
-        <button class="menu-btn">菜单</button>
+        <button class="menu-btn" id="go-homepage">首页</button>
       </div>
       <div class="nav-center">
         <p class="center-text">工作台</p>
@@ -237,9 +237,9 @@
         <!-- 遮罩层 -->
         <div class="overlay" id="overlay"></div>
         <!-- 加载动画-->
-        <div id="loading-overlay" class="loading-overlay" >
-            <img id="loading-animation" src="images/FOFO/videogen/videogen_00.png" alt="Loading Animation">
-            <p>生成中，请稍候...</p>
+        <div id="loading-overlay" class="loading-overlay" style="display: none;">
+            <img id="loading-animation" src="images/FOFO/videogen.webp" alt="Loading Animation">
+            <p id="loading-text">正在努力生成中，请稍候...</p>
         </div>
          <!-- 新面板 -->
          <div class="export-panel" id="export-panel">
@@ -286,10 +286,20 @@
             //动画播放
             const loadingOverlay = document.getElementById('loading-overlay');
             const loadingAnimation = document.getElementById('loading-animation');
+            const loadingText = document.getElementById('loading-text');
+            let dotCount = 0;
+            function updateLoadingText() {
+                if (!loadingText) return;
+                const baseText = "正在努力生成中，请稍候";
+                dotCount = (dotCount % 3) + 1;
+                loadingText.textContent = baseText + ".".repeat(dotCount);
+            }
+            setInterval(updateLoadingText, 500);
 
+
+            // 镜头列表面板
             let selectedSceneIndex = -1; // 用于存储当前选中的 sceneIndex
             let selectedCameraItem = null; // 用于存储当前选中的 camera-item
-            // 镜头列表面板
             async function loadStoryboardData() {
                 const leftPanel = document.querySelector('.left-panel');
                 leftPanel.innerHTML = '';
@@ -548,6 +558,8 @@
             // 音乐生成按钮点击事件
             document.getElementById('music-gen-btn').addEventListener('click', async function () {
                 console.log("音乐生成按钮点击事件");
+                loadingOverlay.style.display = 'flex';
+                loadingAnimation.src = 'images/FOFO/audiogen.webp'
                 const description = document.getElementById('show-musictext-panel').value;
                 const duration = document.getElementById('music-gen-time').value;
                 if (!description || !duration) {
@@ -569,6 +581,7 @@
                     const audiobox = document.getElementById('audio-material-1');
                     const audioElement = document.getElementById('gen-audio-1');
                     const sourceElement = audioElement.querySelector('source');
+                    loadingOverlay.style.display = 'none';
                     // 显示播放器
                     audiobox.classList.remove('hide');
                     // 设置音频路径并加载
@@ -644,7 +657,8 @@
 
             // 导出按钮点击事件（实际导出逻辑）
             document.getElementById('export-button').addEventListener('click', async function () {
-                loadingoverlay.style.display = 'flex';
+                console.log('导出');
+                loadingOverlay.style.display = 'flex';
                 const exportName = document.getElementById('export-name').value || 'output';
                 const resolution = document.getElementById('export-resolution').value || '720p';
                 if (!exportName) {
@@ -673,7 +687,7 @@
                     document.body.appendChild(link);
                     link.click();
                     link.remove();
-                    loadingoverlay.style.display = 'none';
+                    loadingOverlay.style.display = 'none';
 
                 } catch (error) {
                     console.error("导出错误:", error);
@@ -698,7 +712,10 @@
                 document.getElementById('file-upload-btn').style.display = 'none';
             }
         });
-
+        //返回首页
+        document.getElementById('go-homepage').addEventListener('click', function() {
+            window.location.href = '/';
+        });
 
     </script>
 

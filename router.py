@@ -90,8 +90,13 @@ async def process_texttospeech(data):
             prompt["8"]["inputs"]["GPT_weight"] = "paimeng-0-e10.ckpt"
             prompt["3"]["inputs"]["text"] = "他似乎没沮丧，斗志反而更高了。"
             prompt["4"]["inputs"]["audio"] = "voice2_confused.wav"
-        await get_audiooutputs(client_id, prompt)
-        return {"outputname": data.output_name}
+    elif data.tts_char == "voice2":
+        prompt["8"]["inputs"]["SoVITS_weight"] = "zhuohao_all2_e15_s525.pth"
+        prompt["8"]["inputs"]["GPT_weight"] = "zhuohao_all2-e15.ckpt"
+        prompt["3"]["inputs"]["text"] = "一天，派派正在未来牧场帮忙修剪草坪，忽然接到了一个电话。"
+        prompt["4"]["inputs"]["audio"] = "zhuohao.wav"
+    await get_audiooutputs(client_id, prompt)
+    return {"outputname": data.output_name}
 #自定义生成动作-MotionDiffuser
 async def process_custommotion(data):
     client_id = str(uuid.uuid4())

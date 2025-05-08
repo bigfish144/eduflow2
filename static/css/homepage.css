@@ -70,11 +70,20 @@ nav ul li a {
     color: #fff;
     font-size: 16px;
 }
-
+#icon-show{
+    text-decoration: none;
+    color: #fff;
+    font-size: 16px;
+    box-shadow: none;
+    border: none;
+    background-color: transparent;
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
+}
 nav ul li a.button {
     background-color: #6966FF;
     padding: 10px 20px;
     border-radius: 5px;
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
 }
 
 .hero {
@@ -167,6 +176,22 @@ body::before {
     z-index: -1; /* 确保网格位于内容下方 */
 }
 /* 新面板样式 */
+
+.icon-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 三列等宽 */
+    gap: 16px; /* 图片之间间距 */
+    justify-items: center; /* 水平居中 */
+    align-items: center; /* 垂直居中 */
+    padding: 16px;
+  }
+  
+.icon-container img {
+width: 160px; /* 可根据实际需求调整 */
+height: 160px;
+object-fit: contain;
+}
+
 .overlay {
     position: fixed;
     top: 0;
@@ -193,7 +218,21 @@ body::before {
     transform: translate(-50%, -50%);
     border: 1px solid rgba(255, 255, 255, 0.5);
 }
-
+.new-panel2 {
+    width: 860px;
+    background-color: #393953;
+    border-radius: 16px;
+    color: #fff;
+    text-align: center;
+    display: none;
+    z-index: 1001;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
 .panel-header {
     font-size: 16px;
     color: #bbb;
@@ -212,10 +251,15 @@ body::before {
 }
 
 .panel-title {
-    
     font-size: 24px;
     font-weight: bold;
     margin-top: 100px;
+    margin-bottom: 10px;
+}
+.panel-title2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 12px;
     margin-bottom: 10px;
 }
 
@@ -258,8 +302,7 @@ body::before {
 .btn-secondary:hover {
     background-color: #726E8E;
 }
-#close-panel,
-#close-panel2 {
+.close-panel{
     background: none;
     border: none;
     cursor: url('/static/images/cursor/point.png'), pointer !important;
@@ -267,8 +310,7 @@ body::before {
     outline: none; 
     align-items: center;
 }
-#close-panel img,
-#close-panel2 img {
+.close-panel img{
     width: 24px; /* 根据图片大小调整 */
     height: 24px; /* 根据图片大小调整 */
     margin-top: 5px;
@@ -279,7 +321,7 @@ body::before {
     color: rgba(255, 255, 255, 0.5);
     border: none;
     box-shadow: none;
-    cursor: pointer;
+    cursor: url('/static/images/cursor/point.png'), pointer !important;
     font-size: 16px;
     margin-bottom: 12px;
 }

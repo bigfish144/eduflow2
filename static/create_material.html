@@ -10,8 +10,8 @@
 <body>
     <!-- 加载动画-->
     <div id="loading-overlay" class="loading-overlay" style="display: none;">
-        <div class="loading-spinner"></div>
-        <p>生成中，请稍候...</p>
+        <img id="loading-animation" src="images/FOFO/paint.png" alt="Loading Animation">
+        <p id="loading-text">正在努力生成中，请稍候...</p>
     </div>
     <div class="app-container">
         <header>
@@ -140,6 +140,18 @@
 
     <script>
         window.onload = function() {
+            //动画播放
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const loadingAnimation = document.getElementById('loading-animation');
+            const loadingText = document.getElementById('loading-text');
+            let dotCount = 0;
+            function updateLoadingText() {
+                if (!loadingText) return;
+                const baseText = "正在努力生成中，请稍候";
+                dotCount = (dotCount % 3) + 1;
+                loadingText.textContent = baseText + ".".repeat(dotCount);
+            }
+            setInterval(updateLoadingText, 500);
             //获取lora列表
             const selectElement = document.getElementById('lora-model');
             fetch('/get_lora_list')

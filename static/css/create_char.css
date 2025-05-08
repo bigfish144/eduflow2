@@ -26,6 +26,14 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+#loading-animation{
+  width: 360px;
+  height: 360px;
+}
+#loading-text{
+  font-size: 20px;
+  font-weight: bold;
+}
 /* 禁用 */
 .disabled-input {
   color: #4F4C64; /* 置灰文字颜色 */
