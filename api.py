@@ -1271,14 +1271,42 @@ def clear_folder_contents(folder_path: str):
             os.remove(item_path)
         elif os.path.isdir(item_path):
             shutil.rmtree(item_path)
+def clear_json_file_content(file_path: str):
+    """
+    清空指定 JSON 文件的内容，但保留该文件。
+    参数:
+        file_path (str): JSON 文件路径
+    """
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail=f"文件 {file_path} 不存在")
+
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            # 如果是 Material_data.json，则写入 {"0": []}
+            if "Material_data.json" in file_path:
+                f.write('{"0": []}')
+            else:
+                f.write("{}")  # 默认清空内容为 {}
+        logger.info(f"已清空 JSON 文件内容: {file_path}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"无法清空文件 {file_path}: {str(e)}")
+
 
 class ClearFolderRequest(BaseModel):
     option: str
 @app.post("/clear-folders")
 async def clear_folders(request: ClearFolderRequest):
     option = request.option
-    print(request.option)
     base_dir = "/root/autodl-tmp/ComfyUI"
+
+    # 需要清空内容的 JSON 文件列表
+    json_files_to_clear = [
+        os.path.join(base_dir, "demo/static/data/emotion_analysis.json"),
+        os.path.join(base_dir, "demo/static/data/Material_data.json"),
+        os.path.join(base_dir, "demo/static/data/storyboard.json"),
+        os.path.join(base_dir, "demo/static/data/textsplit.json"),
+    ]
+
     all_folders = [ 
         os.path.join(base_dir, "demo/static/data/music"),
         os.path.join(base_dir, "demo/static/data/audio"),
@@ -1292,6 +1320,7 @@ async def clear_folders(request: ClearFolderRequest):
         os.path.join(base_dir, "output/motion"),
         os.path.join(base_dir, "output/char_video"),
     ]
+
     comfyui_folders = [
         os.path.join(base_dir, "output/music"),
         os.path.join(base_dir, "output/audio"),
@@ -1299,6 +1328,7 @@ async def clear_folders(request: ClearFolderRequest):
         os.path.join(base_dir, "output/motion"),
         os.path.join(base_dir, "output/char_video"),
     ]
+
     if option == "all":
         logger.info("开始清空所有文件夹内容")
         target_folders = all_folders
@@ -1307,7 +1337,10 @@ async def clear_folders(request: ClearFolderRequest):
         target_folders = comfyui_folders
     else:
         raise HTTPException(status_code=400, detail="无效的选项")
+
     deleted_paths = []
+    
+    # 清空文件夹内容
     for folder in target_folders:
         try:
             clear_folder_contents(folder)
@@ -1315,4 +1348,12 @@ async def clear_folders(request: ClearFolderRequest):
         except Exception as e:
             return {"error": f"在处理路径 {folder} 时出错: {str(e)}"}
 
-    return {"message": f"已根据选项 `{option}` 清空以下文件夹内容", "folders_cleared": deleted_paths}
+    # 清空 JSON 文件内容
+    for json_file in json_files_to_clear:
+        try:
+            clear_json_file_content(json_file)
+            deleted_paths.append(json_file)
+        except Exception as e:
+            return {"error": f"在处理文件 {json_file} 时出错: {str(e)}"}
+
+    return {"message": f"已根据选项 `{option}` 清空以下文件夹和 JSON 文件内容", "paths_cleared": deleted_paths}
