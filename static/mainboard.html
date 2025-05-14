@@ -218,7 +218,7 @@
                         </div>
                         <div class="process-btn-container">
                             <button class="process-grey-btn" id="motion-pose-pre">姿态预览</button>
-                            <button class="process-main-btn" id ="motion-render-pre">角色渲染</button>
+                            <button class="process-main-btn" id ="motion-render-pre" style="display: none;">角色渲染</button>
                         </div>
                     </div>
                 </div>
@@ -2020,6 +2020,7 @@
                     loadingOverlay.style.display = 'none'; // 隐藏加载图标
                     overlay.style.display = 'none';
                     motionSettingPanel.style.display = 'none';
+                    motionrenderbtn.style.display = 'block';
                     
                 }
             }
